@@ -1,4 +1,4 @@
-name = "sentence-coach-api"
+name = "koto-lift-api"
 main = "api/explain.ts"
 compatibility_date = "2024-01-01"
 

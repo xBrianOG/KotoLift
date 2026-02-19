@@ -1,4 +1,4 @@
-# Sentence Coach
+# Koto Lift
 
 A mobile-first, offline-capable PWA for practicing English and Spanish with Japanese as the base language.
 

@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import type { ExplainResponse } from '../types';
+import { useState } from "react";
+import type { ExplainResponse } from "../types";
 
-const API_URL = import.meta.env.VITE_EXPLAIN_API_URL || '/api/explain';
+const API_URL = import.meta.env.VITE_EXPLAIN_API_URL || "/api/explain";
 
 export function ExplainScreen() {
-  const [sentence, setSentence] = useState('');
-  const [focus, setFocus] = useState<'english' | 'spanish' | 'both'>('both');
+  const [sentence, setSentence] = useState("");
+  const [focus, setFocus] = useState<"english" | "spanish" | "both">("both");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ExplainResponse | null>(null);
@@ -18,41 +18,102 @@ export function ExplainScreen() {
     setError(null);
     setResult(null);
 
+    console.log("[ExplainScreen] Starting explain request");
+    console.log("[ExplainScreen] API URL:", API_URL);
+    console.log("[ExplainScreen] Sentence:", sentence.trim());
+    console.log("[ExplainScreen] Focus:", focus);
+
     try {
+      const requestBody = { sentence: sentence.trim(), focus };
+      console.log("[ExplainScreen] Request body:", requestBody);
+
       const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sentence: sentence.trim(), focus })
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody),
       });
 
+      console.log("[ExplainScreen] Response status:", response.status);
+      console.log("[ExplainScreen] Response ok:", response.ok);
+      console.log(
+        "[ExplainScreen] Response headers:",
+        Object.fromEntries(response.headers.entries()),
+      );
+
       if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
+        // Try to get detailed error from response
+        let errorDetails = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          console.error("[ExplainScreen] Error response data:", errorData);
+          if (errorData.error) {
+            errorDetails = errorData.error;
+          }
+          if (errorData.details) {
+            errorDetails += ` - ${errorData.details}`;
+          }
+        } catch (jsonError) {
+          console.error(
+            "[ExplainScreen] Could not parse error response as JSON:",
+            jsonError,
+          );
+          // Try to get text response
+          try {
+            const errorText = await response.text();
+            console.error("[ExplainScreen] Error response text:", errorText);
+          } catch (textError) {
+            console.error(
+              "[ExplainScreen] Could not read error response text:",
+              textError,
+            );
+          }
+        }
+        throw new Error(errorDetails);
       }
 
       const data = await response.json();
+      console.log("[ExplainScreen] Success! Received data:", data);
+      console.log("[ExplainScreen] Data keys:", Object.keys(data));
       setResult(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to get explanation');
+      console.error("[ExplainScreen] Error occurred:", err);
+      console.error("[ExplainScreen] Error type:", typeof err);
+      console.error(
+        "[ExplainScreen] Error name:",
+        err instanceof Error ? err.name : "unknown",
+      );
+      console.error(
+        "[ExplainScreen] Error message:",
+        err instanceof Error ? err.message : String(err),
+      );
+      if (err instanceof Error && err.stack) {
+        console.error("[ExplainScreen] Error stack:", err.stack);
+      }
+
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to get explanation";
+      setError(errorMessage);
     } finally {
       setLoading(false);
+      console.log("[ExplainScreen] Request completed");
     }
   };
 
   const handleAddAsCard = async () => {
     if (!result?.suggested_flashcard) return;
 
-    const { createCard } = await import('../services/cards');
-    const { ensureReviewStates } = await import('../services/review');
+    const { createCard } = await import("../services/cards");
+    const { ensureReviewStates } = await import("../services/review");
 
     const card = await createCard(
       result.suggested_flashcard.ja,
       result.suggested_flashcard.en,
       result.suggested_flashcard.es,
-      result.suggested_flashcard.tags
+      result.suggested_flashcard.tags,
     );
     await ensureReviewStates(card);
 
-    alert('Card added successfully!');
+    alert("Card added successfully!");
   };
 
   return (
@@ -64,35 +125,35 @@ export function ExplainScreen() {
             onChange={(e) => setSentence(e.target.value)}
             placeholder="Enter a sentence to explain..."
             rows={3}
-            style={{ width: '100%', marginBottom: 16 }}
+            style={{ width: "100%", marginBottom: 16 }}
             maxLength={500}
           />
-          
+
           <select
             value={focus}
             onChange={(e) => setFocus(e.target.value as typeof focus)}
-            style={{ width: '100%', marginBottom: 16 }}
+            style={{ width: "100%", marginBottom: 16 }}
           >
             <option value="english">Focus: English</option>
             <option value="spanish">Focus: Spanish</option>
             <option value="both">Focus: Both</option>
           </select>
 
-          <button 
-            type="submit" 
-            className="btn btn-primary" 
-            style={{ width: '100%' }}
+          <button
+            type="submit"
+            className="btn btn-primary"
+            style={{ width: "100%" }}
             disabled={loading || !sentence.trim()}
           >
-            {loading ? 'Explaining...' : 'Explain'}
+            {loading ? "Explaining..." : "Explain"}
           </button>
         </div>
       </form>
 
       {error && (
-        <div className="card" style={{ background: 'var(--danger)' }}>
+        <div className="card" style={{ background: "var(--danger)" }}>
           <p>{error}</p>
-          <p style={{ fontSize: '0.875rem', marginTop: 8 }}>
+          <p style={{ fontSize: "0.875rem", marginTop: 8 }}>
             Make sure you're online and the API is configured.
           </p>
         </div>
@@ -102,9 +163,15 @@ export function ExplainScreen() {
         <div>
           <div className="card">
             <h3>Translations</h3>
-            <p><span className="lang-badge">JA</span> {result.translations.ja}</p>
-            <p><span className="lang-badge">EN</span> {result.translations.en}</p>
-            <p><span className="lang-badge">ES</span> {result.translations.es}</p>
+            <p>
+              <span className="lang-badge">JA</span> {result.translations.ja}
+            </p>
+            <p>
+              <span className="lang-badge">EN</span> {result.translations.en}
+            </p>
+            <p>
+              <span className="lang-badge">ES</span> {result.translations.es}
+            </p>
           </div>
 
           <div className="card">
@@ -119,8 +186,12 @@ export function ExplainScreen() {
               {result.grammar_points.map((point, i) => (
                 <div key={i} style={{ marginBottom: 12 }}>
                   <p style={{ fontWeight: 600 }}>{point.title}</p>
-                  <p style={{ color: 'var(--text-secondary)' }}>{point.explanation}</p>
-                  <p style={{ fontStyle: 'italic', color: 'var(--accent)' }}>"{point.example}"</p>
+                  <p style={{ color: "var(--text-secondary)" }}>
+                    {point.explanation}
+                  </p>
+                  <p style={{ fontStyle: "italic", color: "var(--accent)" }}>
+                    "{point.example}"
+                  </p>
                 </div>
               ))}
             </div>
@@ -132,15 +203,20 @@ export function ExplainScreen() {
               {result.vocabulary.map((vocab, i) => (
                 <div key={i} style={{ marginBottom: 8 }}>
                   <span style={{ fontWeight: 600 }}>{vocab.term}</span>
-                  <span style={{ color: 'var(--text-secondary)' }}> - {vocab.meaning}</span>
-                  {vocab.notes && <p style={{ fontSize: '0.875rem' }}>{vocab.notes}</p>}
+                  <span style={{ color: "var(--text-secondary)" }}>
+                    {" "}
+                    - {vocab.meaning}
+                  </span>
+                  {vocab.notes && (
+                    <p style={{ fontSize: "0.875rem" }}>{vocab.notes}</p>
+                  )}
                 </div>
               ))}
             </div>
           )}
 
           {result.mistakes.length > 0 && (
-            <div className="card" style={{ background: 'var(--danger)' }}>
+            <div className="card" style={{ background: "var(--danger)" }}>
               <h3>Mistakes</h3>
               <ul>
                 {result.mistakes.map((mistake, i) => (
@@ -155,32 +231,60 @@ export function ExplainScreen() {
               <h3>Alternatives</h3>
               {result.alternatives.map((alt, i) => (
                 <div key={i} style={{ marginBottom: 12 }}>
-                  <span className="lang-badge" style={{ fontSize: '0.6rem' }}>{alt.tone}</span>
-                  <p><span className="lang-badge" style={{ fontSize: '0.6rem' }}>JA</span> {alt.ja}</p>
-                  <p><span className="lang-badge" style={{ fontSize: '0.6rem' }}>EN</span> {alt.en}</p>
-                  <p><span className="lang-badge" style={{ fontSize: '0.6rem' }}>ES</span> {alt.es}</p>
+                  <span className="lang-badge" style={{ fontSize: "0.6rem" }}>
+                    {alt.tone}
+                  </span>
+                  <p>
+                    <span className="lang-badge" style={{ fontSize: "0.6rem" }}>
+                      JA
+                    </span>{" "}
+                    {alt.ja}
+                  </p>
+                  <p>
+                    <span className="lang-badge" style={{ fontSize: "0.6rem" }}>
+                      EN
+                    </span>{" "}
+                    {alt.en}
+                  </p>
+                  <p>
+                    <span className="lang-badge" style={{ fontSize: "0.6rem" }}>
+                      ES
+                    </span>{" "}
+                    {alt.es}
+                  </p>
                 </div>
               ))}
             </div>
           )}
 
           {result.suggested_flashcard && (
-            <div className="card" style={{ border: '2px solid var(--accent)' }}>
+            <div className="card" style={{ border: "2px solid var(--accent)" }}>
               <h3>Suggested Flashcard</h3>
-              <p><span className="lang-badge">JA</span> {result.suggested_flashcard.ja}</p>
-              <p><span className="lang-badge">EN</span> {result.suggested_flashcard.en}</p>
-              <p><span className="lang-badge">ES</span> {result.suggested_flashcard.es}</p>
+              <p>
+                <span className="lang-badge">JA</span>{" "}
+                {result.suggested_flashcard.ja}
+              </p>
+              <p>
+                <span className="lang-badge">EN</span>{" "}
+                {result.suggested_flashcard.en}
+              </p>
+              <p>
+                <span className="lang-badge">ES</span>{" "}
+                {result.suggested_flashcard.es}
+              </p>
               {result.suggested_flashcard.tags.length > 0 && (
                 <div style={{ marginTop: 8 }}>
-                  {result.suggested_flashcard.tags.map(tag => (
-                    <span key={tag} className="tag">{tag}</span>
+                  {result.suggested_flashcard.tags.map((tag) => (
+                    <span key={tag} className="tag">
+                      {tag}
+                    </span>
                   ))}
                 </div>
               )}
-              <button 
-                className="btn btn-success" 
+              <button
+                className="btn btn-success"
                 onClick={handleAddAsCard}
-                style={{ width: '100%', marginTop: 16 }}
+                style={{ width: "100%", marginTop: 16 }}
               >
                 Add as Card
               </button>

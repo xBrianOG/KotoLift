@@ -1,46 +1,76 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export default async function handler(req: any, res: any) {
+  console.log("[API] ========== NEW REQUEST ==========");
+  console.log("[API] Method:", req.method);
+  console.log("[API] URL:", req.url);
+  console.log("[API] Headers:", JSON.stringify(req.headers, null, 2));
+
   try {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
     if (req.method === "OPTIONS") {
+      console.log("[API] Handling OPTIONS request");
       return res.status(200).end();
     }
 
     if (req.method !== "POST") {
+      console.error("[API] Invalid method:", req.method);
       return res.status(405).json({ error: "Method not allowed" });
     }
 
-    console.log("Request body:", req.body);
-    console.log("Has GEMINI_API_KEY:", !!process.env.GEMINI_API_KEY);
+    console.log("[API] Request body:", JSON.stringify(req.body, null, 2));
+    console.log("[API] Has GEMINI_API_KEY:", !!process.env.GEMINI_API_KEY);
+    if (process.env.GEMINI_API_KEY) {
+      console.log("[API] API Key length:", process.env.GEMINI_API_KEY.length);
+      console.log(
+        "[API] API Key prefix:",
+        process.env.GEMINI_API_KEY.substring(0, 10) + "...",
+      );
+    }
 
     const ip =
       req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "unknown";
     const rateLimitKey = `rate_limit:${ip}`;
+    console.log("[API] Client IP:", ip);
 
     if (!global.rateLimitStore) {
       global.rateLimitStore = new Map();
+      console.log("[API] Initialized rate limit store");
     }
 
     const current = global.rateLimitStore.get(rateLimitKey) || 0;
+    console.log("[API] Current rate limit count for IP:", current);
+
     if (current > 10) {
+      console.error("[API] Rate limit exceeded for IP:", ip);
       return res.status(429).json({ error: "Rate limit exceeded" });
     }
 
     global.rateLimitStore.set(rateLimitKey, current + 1);
+    console.log("[API] Updated rate limit count to:", current + 1);
 
     const { sentence, focus } = req.body || {};
+    console.log("[API] Extracted sentence:", sentence);
+    console.log("[API] Extracted focus:", focus);
 
     if (!sentence || typeof sentence !== "string" || sentence.length > 500) {
+      console.error("[API] Invalid sentence:", {
+        sentence,
+        type: typeof sentence,
+        length: sentence?.length,
+      });
       return res.status(400).json({ error: "Invalid sentence" });
     }
 
     if (!["english", "spanish", "both"].includes(focus || "both")) {
+      console.error("[API] Invalid focus:", focus);
       return res.status(400).json({ error: "Invalid focus" });
     }
+
+    console.log("[API] Validation passed");
 
     const focusText =
       focus === "both"
@@ -81,12 +111,18 @@ Return STRICT JSON only (no markdown, no code blocks, no explanation):
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      console.error("GEMINI_API_KEY not found in environment");
+      console.error("[API] GEMINI_API_KEY not found in environment");
+      console.error(
+        "[API] Available env vars:",
+        Object.keys(process.env).filter((k) => !k.includes("SECRET")),
+      );
       return res.status(500).json({ error: "API key not configured" });
     }
 
-    console.log("Calling Gemini API...");
+    console.log("[API] Initializing Gemini API client...");
     const genAI = new GoogleGenerativeAI(apiKey);
+
+    console.log("[API] Creating model instance (gemini-2.5-flash)...");
     const model = genAI.getGenerativeModel({
       model: "gemini-2.5-flash",
       generationConfig: {
@@ -95,35 +131,79 @@ Return STRICT JSON only (no markdown, no code blocks, no explanation):
       },
     });
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-    console.log("Gemini response received");
+    console.log("[API] Sending request to Gemini API...");
+    console.log("[API] Prompt length:", prompt.length);
 
+    const result = await model.generateContent(prompt);
+    console.log("[API] Gemini API call completed");
+
+    const response = await result.response;
+    console.log("[API] Response object received");
+
+    const text = response.text();
+    console.log("[API] Response text length:", text.length);
+    console.log("[API] Response text preview:", text.substring(0, 200));
+
+    console.log("[API] Cleaning response text...");
     const cleanText = text
       .replace(/```json\n?/g, "")
       .replace(/```\n?/g, "")
       .trim();
+    console.log("[API] Cleaned text length:", cleanText.length);
 
+    console.log("[API] Extracting JSON from response...");
     const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      console.error("No JSON found in response:", cleanText);
-      return res.status(502).json({ error: "Invalid LLM response" });
+      console.error("[API] No JSON found in response");
+      console.error("[API] Clean text:", cleanText);
+      return res
+        .status(502)
+        .json({ error: "Invalid LLM response - no JSON found" });
     }
 
+    console.log("[API] JSON match found, length:", jsonMatch[0].length);
+    console.log("[API] Parsing JSON...");
+
     const parsed = JSON.parse(jsonMatch[0]);
+    console.log("[API] JSON parsed successfully");
+    console.log("[API] Parsed object keys:", Object.keys(parsed));
+    console.log("[API] Sending success response");
+
     return res.status(200).json(parsed);
   } catch (error) {
-    console.error("Top-level error:", error);
+    console.error("[API] ========== ERROR OCCURRED ==========");
+    console.error("[API] Error type:", typeof error);
     console.error(
-      "Error stack:",
-      error instanceof Error ? error.stack : "No stack",
+      "[API] Error name:",
+      error instanceof Error ? error.name : "unknown",
     );
+    console.error(
+      "[API] Error message:",
+      error instanceof Error ? error.message : String(error),
+    );
+    console.error("[API] Error object:", error);
+
+    if (error instanceof Error && error.stack) {
+      console.error("[API] Error stack:", error.stack);
+    }
+
+    // Check if it's a Gemini API specific error
+    if (error && typeof error === "object" && "message" in error) {
+      console.error("[API] Error details:", JSON.stringify(error, null, 2));
+    }
+
     return res.status(500).json({
       error: "Internal error",
       details: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
+      stack:
+        process.env.NODE_ENV === "development"
+          ? error instanceof Error
+            ? error.stack
+            : undefined
+          : undefined,
     });
+  } finally {
+    console.log("[API] ========== REQUEST COMPLETE ==========");
   }
 }
 

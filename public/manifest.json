@@ -1,6 +1,6 @@
 {
-  "name": "Sentence Coach",
-  "short_name": "Coach",
+  "name": "Koto Lift",
+  "short_name": "Koto",
   "description": "Multi-language flashcard app with SRS",
   "start_url": "/",
   "display": "standalone",
