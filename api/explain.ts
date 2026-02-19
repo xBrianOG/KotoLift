@@ -1,13 +1,10 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Vercel serverless function handler
 export default async function handler(req: any, res: any) {
-  // Set CORS headers
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  // Handle OPTIONS request for CORS
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
@@ -16,18 +13,21 @@ export default async function handler(req: any, res: any) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const ip =
-    (req.headers["x-forwarded-for"] as string) ||
-    req.socket.remoteAddress ||
-    "unknown";
+  const ip = req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "unknown";
   const rateLimitKey = `rate_limit:${ip}`;
 
-  const current = (global as any).rateLimitStore?.get(rateLimitKey) || 0;
+  if (!global.rateLimitStore) {
+    global.rateLimitStore = new Map();
+  }
+
+  const current = global.rateLimitStore.get(rateLimitKey) || 0;
   if (current > 10) {
     return res.status(429).json({ error: "Rate limit exceeded" });
   }
 
-  const { sentence, focus } = req.body as { sentence?: string; focus?: string };
+  global.rateLimitStore.set(rateLimitKey, current + 1);
+
+  const { sentence, focus } = req.body;
 
   if (!sentence || typeof sentence !== "string" || sentence.length > 500) {
     return res.status(400).json({ error: "Invalid sentence" });
@@ -37,17 +37,7 @@ export default async function handler(req: any, res: any) {
     return res.status(400).json({ error: "Invalid focus" });
   }
 
-  if (!(global as any).rateLimitStore) {
-    (global as any).rateLimitStore = new Map();
-  }
-  (global as any).rateLimitStore.set(rateLimitKey, current + 1);
-
-  const focusText =
-    focus === "both"
-      ? "English and Spanish"
-      : focus === "english"
-        ? "English"
-        : "Spanish";
+  const focusText = focus === "both" ? "English and Spanish" : focus === "english" ? "English" : "Spanish";
 
   const prompt = `You are a language tutor helping a native Japanese speaker learning English and Spanish.
 
@@ -98,11 +88,7 @@ Return STRICT JSON only (no markdown, no code blocks, no explanation):
     const response = await result.response;
     const text = response.text();
 
-    // Remove markdown code blocks if present
-    const cleanText = text
-      .replace(/```json\n?/g, "")
-      .replace(/```\n?/g, "")
-      .trim();
+    const cleanText = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
 
     const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
@@ -111,7 +97,6 @@ Return STRICT JSON only (no markdown, no code blocks, no explanation):
     }
 
     const parsed = JSON.parse(jsonMatch[0]);
-
     return res.status(200).json(parsed);
   } catch (error) {
     console.error("Error:", error);
@@ -121,3 +106,8 @@ Return STRICT JSON only (no markdown, no code blocks, no explanation):
     });
   }
 }
+
+declare global {
+  var rateLimitStore: Map<string, number>;
+}
+
