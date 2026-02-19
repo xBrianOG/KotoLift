@@ -70,7 +70,38 @@ Or deploy to Vercel/Cloudflare Pages for full PWA experience.
 
 ## Explain Feature
 
-### Backend Setup (Cloudflare Worker)
+### Backend Setup
+
+The Explain feature uses **Google Gemini API** (free tier: 15 requests/minute, 1500 requests/day).
+
+#### Option 1: Vercel Deployment (Recommended)
+
+1. Get a free Gemini API key:
+   - Go to [Google AI Studio](https://makersuite.google.com/app/apikey)
+   - Click "Create API Key"
+   - Copy your API key
+
+2. Deploy to Vercel:
+
+   ```bash
+   npm install -g vercel
+   vercel
+   ```
+
+3. Set the environment variable:
+
+   ```bash
+   vercel env add GEMINI_API_KEY
+   ```
+
+   Paste your Gemini API key when prompted.
+
+4. Redeploy:
+   ```bash
+   vercel --prod
+   ```
+
+#### Option 2: Cloudflare Worker
 
 1. Create a Cloudflare account
 2. Install Wrangler: `npm install -g wrangler`
@@ -81,9 +112,9 @@ Or deploy to Vercel/Cloudflare Pages for full PWA experience.
 4. Add the namespace ID to `wrangler.toml`
 5. Set the API key:
    ```bash
-   wrangler secret put ANTHROPIC_API_KEY
+   wrangler secret put GEMINI_API_KEY
    ```
-   Enter your Anthropic API key when prompted.
+   Enter your Gemini API key when prompted.
 6. Deploy:
    ```bash
    wrangler deploy
@@ -94,7 +125,7 @@ Or deploy to Vercel/Cloudflare Pages for full PWA experience.
 Update `src/components/ExplainScreen.tsx` to point to your worker URL:
 
 ```typescript
-const API_URL = 'https://your-worker.your-account.workers.dev/api/explain';
+const API_URL = "https://your-worker.your-account.workers.dev/api/explain";
 ```
 
 Or set `VITE_EXPLAIN_API_URL` in your `.env` file.
@@ -128,6 +159,7 @@ public/
 ## Data Models
 
 ### Card
+
 ```typescript
 {
   id: string;           // uuid
@@ -141,6 +173,7 @@ public/
 ```
 
 ### ReviewState
+
 ```typescript
 {
   id: string;

@@ -1,50 +1,61 @@
-export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
-    if (request.method !== 'POST') {
-      return new Response('Method not allowed', { status: 405 });
-    }
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-    const url = new URL(request.url);
-    if (url.pathname !== '/api/explain') {
-      return new Response('Not found', { status: 404 });
-    }
+// Vercel serverless function handler
+export default async function handler(req: any, res: any) {
+  // Set CORS headers
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
-    const rateLimitKey = `rate_limit:${ip}`;
-    const current = await env.RATE_LIMIT.get(rateLimitKey);
-    
-    if (current && parseInt(current) > 10) {
-      return new Response('Rate limit exceeded', { status: 429 });
-    }
+  // Handle OPTIONS request for CORS
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
 
-    let body: unknown;
-    try {
-      body = await request.json();
-    } catch {
-      return new Response('Invalid JSON', { status: 400 });
-    }
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
 
-    const { sentence, focus } = body as { sentence?: string; focus?: string };
-    
-    if (!sentence || typeof sentence !== 'string' || sentence.length > 500) {
-      return new Response('Invalid sentence', { status: 400 });
-    }
+  const ip =
+    (req.headers["x-forwarded-for"] as string) ||
+    req.socket.remoteAddress ||
+    "unknown";
+  const rateLimitKey = `rate_limit:${ip}`;
 
-    if (!['english', 'spanish', 'both'].includes(focus || 'both')) {
-      return new Response('Invalid focus', { status: 400 });
-    }
+  const current = (global as any).rateLimitStore?.get(rateLimitKey) || 0;
+  if (current > 10) {
+    return res.status(429).json({ error: "Rate limit exceeded" });
+  }
 
-    if (current) {
-      await env.RATE_LIMIT.put(rateLimitKey, (parseInt(current) + 1).toString(), { expirationTtl: 3600 });
-    } else {
-      await env.RATE_LIMIT.put(rateLimitKey, '1', { expirationTtl: 3600 });
-    }
+  const { sentence, focus } = req.body as { sentence?: string; focus?: string };
 
-    const focusText = focus === 'both' ? 'English and Spanish' : focus === 'english' ? 'English' : 'Spanish';
+  if (!sentence || typeof sentence !== "string" || sentence.length > 500) {
+    return res.status(400).json({ error: "Invalid sentence" });
+  }
 
-    const systemPrompt = `You are a language tutor helping a native Japanese speaker learning English and Spanish.
+  if (!["english", "spanish", "both"].includes(focus || "both")) {
+    return res.status(400).json({ error: "Invalid focus" });
+  }
 
-Return STRICT JSON only (no markdown, no explanation):
+  if (!(global as any).rateLimitStore) {
+    (global as any).rateLimitStore = new Map();
+  }
+  (global as any).rateLimitStore.set(rateLimitKey, current + 1);
+
+  const focusText =
+    focus === "both"
+      ? "English and Spanish"
+      : focus === "english"
+        ? "English"
+        : "Spanish";
+
+  const prompt = `You are a language tutor helping a native Japanese speaker learning English and Spanish.
+
+Explain this sentence (focus on ${focusText}):
+
+"${sentence}"
+
+Return STRICT JSON only (no markdown, no code blocks, no explanation):
 
 {
   "detected_language": "ja|en|es",
@@ -68,53 +79,45 @@ Return STRICT JSON only (no markdown, no explanation):
   }
 }`;
 
-    const userPrompt = `Explain this sentence (focus on ${focusText}):
-
-"${sentence}"`;
-
-    try {
-      const llmResponse = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': env.ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01'
-        },
-        body: JSON.stringify({
-          model: 'claude-3-haiku-20240307',
-          max_tokens: 2000,
-          system: systemPrompt,
-          messages: [{ role: 'user', content: userPrompt }]
-        })
-      });
-
-      if (!llmResponse.ok) {
-        const error = await llmResponse.text();
-        console.error('LLM error:', error);
-        return new Response('LLM error', { status: 502 });
-      }
-
-      const llmData = await llmResponse.json() as { content?: Array<{ text?: string }> };
-      const text = llmData.content?.[0]?.text || '';
-      
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        return new Response('Invalid LLM response', { status: 502 });
-      }
-
-      const parsed = JSON.parse(jsonMatch[0]);
-
-      return new Response(JSON.stringify(parsed), {
-        headers: { 'Content-Type': 'application/json' }
-      });
-    } catch (error) {
-      console.error('Error:', error);
-      return new Response('Internal error', { status: 500 });
-    }
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ error: "API key not configured" });
   }
-};
 
-interface Env {
-  ANTHROPIC_API_KEY: string;
-  RATE_LIMIT: KVNamespace;
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: "gemini-1.5-flash",
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 2000,
+      },
+    });
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    // Remove markdown code blocks if present
+    const cleanText = text
+      .replace(/```json\n?/g, "")
+      .replace(/```\n?/g, "")
+      .trim();
+
+    const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.error("No JSON found in response:", cleanText);
+      return res.status(502).json({ error: "Invalid LLM response" });
+    }
+
+    const parsed = JSON.parse(jsonMatch[0]);
+
+    return res.status(200).json(parsed);
+  } catch (error) {
+    console.error("Error:", error);
+    return res.status(500).json({
+      error: "Internal error",
+      details: error instanceof Error ? error.message : String(error),
+    });
+  }
 }
