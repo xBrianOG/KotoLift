@@ -1,0 +1,9 @@
+name = "sentence-coach-api"
+main = "api/explain.ts"
+compatibility_date = "2024-01-01"
+
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = ""
+
+[vars]
