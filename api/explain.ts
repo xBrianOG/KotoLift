@@ -1,45 +1,55 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export default async function handler(req: any, res: any) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  try {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
-  }
+    if (req.method === "OPTIONS") {
+      return res.status(200).end();
+    }
 
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
+    if (req.method !== "POST") {
+      return res.status(405).json({ error: "Method not allowed" });
+    }
 
-  const ip = req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "unknown";
-  const rateLimitKey = `rate_limit:${ip}`;
+    console.log("Request body:", req.body);
+    console.log("Has GEMINI_API_KEY:", !!process.env.GEMINI_API_KEY);
 
-  if (!global.rateLimitStore) {
-    global.rateLimitStore = new Map();
-  }
+    const ip =
+      req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "unknown";
+    const rateLimitKey = `rate_limit:${ip}`;
 
-  const current = global.rateLimitStore.get(rateLimitKey) || 0;
-  if (current > 10) {
-    return res.status(429).json({ error: "Rate limit exceeded" });
-  }
+    if (!global.rateLimitStore) {
+      global.rateLimitStore = new Map();
+    }
 
-  global.rateLimitStore.set(rateLimitKey, current + 1);
+    const current = global.rateLimitStore.get(rateLimitKey) || 0;
+    if (current > 10) {
+      return res.status(429).json({ error: "Rate limit exceeded" });
+    }
 
-  const { sentence, focus } = req.body;
+    global.rateLimitStore.set(rateLimitKey, current + 1);
 
-  if (!sentence || typeof sentence !== "string" || sentence.length > 500) {
-    return res.status(400).json({ error: "Invalid sentence" });
-  }
+    const { sentence, focus } = req.body || {};
 
-  if (!["english", "spanish", "both"].includes(focus || "both")) {
-    return res.status(400).json({ error: "Invalid focus" });
-  }
+    if (!sentence || typeof sentence !== "string" || sentence.length > 500) {
+      return res.status(400).json({ error: "Invalid sentence" });
+    }
 
-  const focusText = focus === "both" ? "English and Spanish" : focus === "english" ? "English" : "Spanish";
+    if (!["english", "spanish", "both"].includes(focus || "both")) {
+      return res.status(400).json({ error: "Invalid focus" });
+    }
 
-  const prompt = `You are a language tutor helping a native Japanese speaker learning English and Spanish.
+    const focusText =
+      focus === "both"
+        ? "English and Spanish"
+        : focus === "english"
+          ? "English"
+          : "Spanish";
+
+    const prompt = `You are a language tutor helping a native Japanese speaker learning English and Spanish.
 
 Explain this sentence (focus on ${focusText}):
 
@@ -69,15 +79,16 @@ Return STRICT JSON only (no markdown, no code blocks, no explanation):
   }
 }`;
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return res.status(500).json({ error: "API key not configured" });
-  }
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      console.error("GEMINI_API_KEY not found in environment");
+      return res.status(500).json({ error: "API key not configured" });
+    }
 
-  try {
+    console.log("Calling Gemini API...");
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: "gemini-2.5-flash",
       generationConfig: {
         temperature: 0.7,
         maxOutputTokens: 2000,
@@ -87,8 +98,12 @@ Return STRICT JSON only (no markdown, no code blocks, no explanation):
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
+    console.log("Gemini response received");
 
-    const cleanText = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    const cleanText = text
+      .replace(/```json\n?/g, "")
+      .replace(/```\n?/g, "")
+      .trim();
 
     const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
@@ -99,10 +114,15 @@ Return STRICT JSON only (no markdown, no code blocks, no explanation):
     const parsed = JSON.parse(jsonMatch[0]);
     return res.status(200).json(parsed);
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Top-level error:", error);
+    console.error(
+      "Error stack:",
+      error instanceof Error ? error.stack : "No stack",
+    );
     return res.status(500).json({
       error: "Internal error",
       details: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
     });
   }
 }
@@ -110,4 +130,3 @@ Return STRICT JSON only (no markdown, no code blocks, no explanation):
 declare global {
   var rateLimitStore: Map<string, number>;
 }
-
