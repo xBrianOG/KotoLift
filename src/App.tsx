@@ -14,7 +14,22 @@ function App() {
   return (
     <div className="container">
       <header className="header">
-        <h1>🍅 Koto Lift</h1>
+        <h1
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            margin: 0,
+          }}
+        >
+          <img
+            src="/kotolift-logo.svg"
+            alt="Koto Lift Logo"
+            style={{ width: 28, height: 28 }}
+          />
+          <span>Koto Lift</span>
+        </h1>
+
         <nav className="nav">
           <button
             className={`nav-btn ${screen === "review" ? "active" : ""}`}
@@ -22,24 +37,28 @@ function App() {
           >
             Review
           </button>
+
           <button
             className={`nav-btn ${screen === "drill" ? "active" : ""}`}
             onClick={() => setScreen("drill")}
           >
             Drill
           </button>
+
           <button
             className={`nav-btn ${screen === "cards" ? "active" : ""}`}
             onClick={() => setScreen("cards")}
           >
             Cards
           </button>
+
           <button
             className={`nav-btn ${screen === "add" ? "active" : ""}`}
             onClick={() => setScreen("add")}
           >
             Add
           </button>
+
           <button
             className={`nav-btn ${screen === "explain" ? "active" : ""}`}
             onClick={() => setScreen("explain")}
