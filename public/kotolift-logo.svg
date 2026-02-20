@@ -1,0 +1,55 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+
+  <!-- Background (optional, remove if you want transparent) -->
+  <rect width="512" height="512" fill="white"/>
+
+  <!-- House Roof -->
+  <path d="M96 220 L256 100 L416 220"
+        fill="none"
+        stroke="#1E3A8A"
+        stroke-width="20"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+
+  <!-- House Base -->
+  <rect x="140" y="220" width="232" height="180"
+        fill="none"
+        stroke="#1E3A8A"
+        stroke-width="20"
+        rx="12"/>
+
+  <!-- Kanji 住 -->
+  <text x="256"
+        y="340"
+        font-size="140"
+        font-family="Noto Sans JP, sans-serif"
+        text-anchor="middle"
+        fill="#1E3A8A"
+        font-weight="700">
+    住
+  </text>
+
+  <!-- Strawberry Body -->
+  <ellipse cx="370" cy="360" rx="60" ry="70"
+           fill="#E11D48"/>
+
+  <!-- Strawberry Seeds -->
+  <circle cx="350" cy="330" r="4" fill="#FDE68A"/>
+  <circle cx="380" cy="320" r="4" fill="#FDE68A"/>
+  <circle cx="360" cy="350" r="4" fill="#FDE68A"/>
+  <circle cx="395" cy="350" r="4" fill="#FDE68A"/>
+  <circle cx="370" cy="375" r="4" fill="#FDE68A"/>
+  <circle cx="340" cy="370" r="4" fill="#FDE68A"/>
+
+  <!-- Strawberry Leaves -->
+  <path d="M370 290
+           C340 260, 400 260, 370 290"
+        fill="#22C55E"/>
+  <path d="M350 295
+           C320 270, 380 270, 350 295"
+        fill="#16A34A"/>
+  <path d="M390 295
+           C360 270, 420 270, 390 295"
+        fill="#16A34A"/>
+
+</svg>
