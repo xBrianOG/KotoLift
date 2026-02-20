@@ -3,6 +3,20 @@ import type { ExplainResponse } from "../types";
 
 const API_URL = import.meta.env.VITE_EXPLAIN_API_URL || "/api/explain";
 
+// Simple in-editor logger that only outputs in DEV mode
+const log = (...args: any[]) => {
+  if (import.meta.env.DEV) {
+    // eslint-disable-next-line no-console
+    console.log(...args);
+  }
+};
+const logError = (...args: any[]) => {
+  if (import.meta.env.DEV) {
+    // eslint-disable-next-line no-console
+    console.error(...args);
+  }
+};
+
 export function ExplainScreen() {
   const [sentence, setSentence] = useState("");
   const [focus, setFocus] = useState<"english" | "spanish" | "both">("both");
@@ -18,14 +32,14 @@ export function ExplainScreen() {
     setError(null);
     setResult(null);
 
-    console.log("[ExplainScreen] Starting explain request");
-    console.log("[ExplainScreen] API URL:", API_URL);
-    console.log("[ExplainScreen] Sentence:", sentence.trim());
-    console.log("[ExplainScreen] Focus:", focus);
+    log("[ExplainScreen] Starting explain request");
+    log("[ExplainScreen] API URL:", API_URL);
+    log("[ExplainScreen] Sentence:", sentence.trim());
+    log("[ExplainScreen] Focus:", focus);
 
     try {
       const requestBody = { sentence: sentence.trim(), focus };
-      console.log("[ExplainScreen] Request body:", requestBody);
+      log("[ExplainScreen] Request body:", requestBody);
 
       const response = await fetch(API_URL, {
         method: "POST",
@@ -33,9 +47,9 @@ export function ExplainScreen() {
         body: JSON.stringify(requestBody),
       });
 
-      console.log("[ExplainScreen] Response status:", response.status);
-      console.log("[ExplainScreen] Response ok:", response.ok);
-      console.log(
+      log("[ExplainScreen] Response status:", response.status);
+      log("[ExplainScreen] Response ok:", response.ok);
+      log(
         "[ExplainScreen] Response headers:",
         Object.fromEntries(response.headers.entries()),
       );
@@ -72,22 +86,22 @@ export function ExplainScreen() {
       }
 
       const data = await response.json();
-      console.log("[ExplainScreen] Success! Received data:", data);
-      console.log("[ExplainScreen] Data keys:", Object.keys(data));
+      log("[ExplainScreen] Success! Received data:", data);
+      log("[ExplainScreen] Data keys:", Object.keys(data));
       setResult(data);
     } catch (err) {
-      console.error("[ExplainScreen] Error occurred:", err);
-      console.error("[ExplainScreen] Error type:", typeof err);
-      console.error(
+      logError("[ExplainScreen] Error occurred:", err);
+      logError("[ExplainScreen] Error type:", typeof err);
+      logError(
         "[ExplainScreen] Error name:",
         err instanceof Error ? err.name : "unknown",
       );
-      console.error(
+      logError(
         "[ExplainScreen] Error message:",
         err instanceof Error ? err.message : String(err),
       );
       if (err instanceof Error && err.stack) {
-        console.error("[ExplainScreen] Error stack:", err.stack);
+        logError("[ExplainScreen] Error stack:", err.stack);
       }
 
       const errorMessage =
@@ -95,7 +109,7 @@ export function ExplainScreen() {
       setError(errorMessage);
     } finally {
       setLoading(false);
-      console.log("[ExplainScreen] Request completed");
+      log("[ExplainScreen] Request completed");
     }
   };
 

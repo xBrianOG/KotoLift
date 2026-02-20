@@ -45,8 +45,11 @@ export function DrillScreen() {
   
   if (direction === 'random') {
     const langs: Language[] = ['ja', 'en', 'es'];
-    fromLang = langs[Math.floor(Math.random() * 2)];
-    toLang = fromLang === 'ja' ? (Math.random() > 0.5 ? 'en' : 'es') : 'ja';
+    // Pick a random source language from the available options
+    fromLang = langs[Math.floor(Math.random() * langs.length)];
+    // Pick a random target language that is not the same as the source
+    const others = langs.filter(l => l !== fromLang);
+    toLang = others[Math.floor(Math.random() * others.length)];
   } else {
     const parts = direction.split('-') as [Language, Language];
     [fromLang, toLang] = parts;
