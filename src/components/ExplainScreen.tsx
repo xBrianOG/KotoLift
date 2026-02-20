@@ -135,7 +135,7 @@ export function ExplainScreen() {
   };
 
   return (
-    <div>
+    <div className="explain-page" style={{ paddingBottom: 'calc(68px + env(safe-area-inset-bottom))' }}>
       <form onSubmit={handleSubmit}>
         <div className="card">
           <textarea
@@ -177,6 +177,14 @@ export function ExplainScreen() {
         </div>
       )}
 
+      {result?.suggested_flashcard && (
+        <div className="explain-bottom-bar" style={{ position: 'fixed', left: 0, right: 0, bottom: 0, padding: '8px', paddingBottom: 'calc(8px + env(safe-area-inset-bottom))', zIndex: 60, background: 'white' }}>
+          <button className="btn btn-success" onClick={handleAddAsCard} style={{ width: '100%' }}>
+            Add as Card
+          </button>
+        </div>
+      )}
+
       {result && (
         <div>
           <Accordion title="Translations">
@@ -184,6 +192,13 @@ export function ExplainScreen() {
             <p><span className="lang-badge">EN</span> {result.translations.en}</p>
             <p><span className="lang-badge">ES</span> {result.translations.es}</p>
           </Accordion>
+
+          {result.naturalness && (
+            <Accordion title="Naturalness">
+              <p>Score: {result.naturalness.score_1_to_5}/5</p>
+              <p>{result.naturalness.comment}</p>
+            </Accordion>
+          )}
 
           <Accordion title="Grammar Points">
             {result.grammar_points.length > 0 && (
@@ -250,13 +265,7 @@ export function ExplainScreen() {
         </div>
       )}
 
-      {result?.suggested_flashcard && (
-        <div className="explain-bottom-bar" style={{ position: 'fixed', left: 0, right: 0, bottom: 0, padding: '8px', paddingBottom: 'calc(8px + env(safe-area-inset-bottom))', zIndex: 60, background: 'white' }}>
-          <button className="btn btn-success" onClick={handleAddAsCard} style={{ width: '100%' }}>
-            Add as Card
-          </button>
-        </div>
-      )}
+      
     </div>
   );
 }
