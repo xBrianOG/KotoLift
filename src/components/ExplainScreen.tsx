@@ -1,7 +1,49 @@
 import { useState } from "react";
 import type { ExplainResponse } from "../types";
+import { normalizeExplainResponse } from "../utils/explainAdapter";
 
 const API_URL = import.meta.env.VITE_EXPLAIN_API_URL || "/api/explain";
+
+// Normalize backend payloads (Gemini or OpenAI) into a stable ExplainResponse shape
+function normalizeExplainResponse(input: any): any /* ExplainResponse */ {
+  const detected_language = input?.detected_language ?? input?.language ?? 'ja';
+
+  const translationsRaw = input?.translations ?? {};
+  const translations = {
+    ja: translationsRaw?.ja ?? input?.ja ?? '',
+    en: translationsRaw?.en ?? input?.en ?? '',
+    es: translationsRaw?.es ?? input?.es ?? '',
+  } as const;
+
+  const naturalness = input?.naturalness ?? {
+    score_1_to_5: input?.naturalness?.score_1_to_5 ?? 0,
+    comment: input?.naturalness?.comment ?? '',
+  };
+
+  const grammar_points = input?.grammar_points ?? [];
+  const vocabulary = input?.vocabulary ?? [];
+  const alternatives = input?.alternatives ?? [];
+  const mistakes = (input?.mistakes ?? []) as string[];
+
+  const suggested_flashcard = input?.suggested_flashcard ?? {
+    ja: input?.suggested_ja ?? '',
+    en: input?.suggested_en ?? '',
+    es: input?.suggested_es ?? '',
+    tags: input?.suggested_tags ?? [],
+  };
+
+  return {
+    detected_language,
+    translations,
+    naturalness,
+    grammar_points,
+    vocabulary,
+    alternatives,
+    mistakes,
+    suggested_flashcard,
+  };
+}
+// End normalization helper
 
 // Simple in-editor logger that only outputs in DEV mode
 const log = (...args: any[]) => {
@@ -88,7 +130,8 @@ export function ExplainScreen() {
       const data = await response.json();
       log("[ExplainScreen] Success! Received data:", data);
       log("[ExplainScreen] Data keys:", Object.keys(data));
-      setResult(data);
+      // Normalize incoming payload to the ExplainResponse shape expected by the UI
+      setResult(normalizeExplainResponse(data));
     } catch (err) {
       logError("[ExplainScreen] Error occurred:", err);
       logError("[ExplainScreen] Error type:", typeof err);
