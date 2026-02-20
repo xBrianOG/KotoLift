@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import OpenAI from "openai";
 
 export default async function handler(req: any, res: any) {
   console.log("[API] ========== NEW REQUEST ==========");
@@ -22,12 +22,12 @@ export default async function handler(req: any, res: any) {
     }
 
     console.log("[API] Request body:", JSON.stringify(req.body, null, 2));
-    console.log("[API] Has GEMINI_API_KEY:", !!process.env.GEMINI_API_KEY);
-    if (process.env.GEMINI_API_KEY) {
-      console.log("[API] API Key length:", process.env.GEMINI_API_KEY.length);
+    console.log("[API] Has OPENAI_API_KEY:", !!process.env.OPENAI_API_KEY);
+    if (process.env.OPENAI_API_KEY) {
+      console.log("[API] API Key length:", process.env.OPENAI_API_KEY.length);
       console.log(
         "[API] API Key prefix:",
-        process.env.GEMINI_API_KEY.substring(0, 10) + "...",
+        process.env.OPENAI_API_KEY.substring(0, 10) + "...",
       );
     }
 
@@ -109,9 +109,9 @@ Return STRICT JSON only (no markdown, no code blocks, no explanation):
   }
 }`;
 
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
-      console.error("[API] GEMINI_API_KEY not found in environment");
+      console.error("[API] OPENAI_API_KEY not found in environment");
       console.error(
         "[API] Available env vars:",
         Object.keys(process.env).filter((k) => !k.includes("SECRET")),
@@ -119,28 +119,36 @@ Return STRICT JSON only (no markdown, no code blocks, no explanation):
       return res.status(500).json({ error: "API key not configured" });
     }
 
-    console.log("[API] Initializing Gemini API client...");
-    const genAI = new GoogleGenerativeAI(apiKey);
-
-    console.log("[API] Creating model instance (gemini-2.5-flash)...");
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
-      generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 2000,
-      },
+    console.log("[API] Initializing OpenAI API client...");
+    const openai = new OpenAI({
+      apiKey: apiKey,
     });
 
-    console.log("[API] Sending request to Gemini API...");
+    console.log("[API] Sending request to OpenAI API (gpt-4o-mini)...");
     console.log("[API] Prompt length:", prompt.length);
 
-    const result = await model.generateContent(prompt);
-    console.log("[API] Gemini API call completed");
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a language tutor helping a native Japanese speaker learning English and Spanish. Always respond with valid JSON only, no markdown formatting.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      temperature: 0.7,
+      max_tokens: 2000,
+      response_format: { type: "json_object" },
+    });
 
-    const response = await result.response;
-    console.log("[API] Response object received");
+    console.log("[API] OpenAI API call completed");
+    console.log("[API] Response received");
 
-    const text = response.text();
+    const text = completion.choices[0]?.message?.content || "";
     console.log("[API] Response text length:", text.length);
     console.log("[API] Response text preview:", text.substring(0, 200));
 
@@ -187,7 +195,7 @@ Return STRICT JSON only (no markdown, no code blocks, no explanation):
       console.error("[API] Error stack:", error.stack);
     }
 
-    // Check if it's a Gemini API specific error
+    // Check if it's an OpenAI API specific error
     if (error && typeof error === "object" && "message" in error) {
       console.error("[API] Error details:", JSON.stringify(error, null, 2));
     }
