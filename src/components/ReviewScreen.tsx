@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { getDueReviewStates, rateReview, getMixedReviewStates } from '../services/review';
 import type { Card, ReviewState, Rating, Language, ReviewDirection } from '../types';
 
@@ -16,6 +16,10 @@ export function ReviewScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
   const [loading, setLoading] = useState(true);
+  // Swipe handling refs
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+  const swipeCooldown = useRef(false);
 
   const loadCards = useCallback(async () => {
     setLoading(true);
@@ -57,6 +61,39 @@ export function ReviewScreen() {
     }
   };
 
+  // Swipe helpers
+  const onTouchStart = (e: any) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchEndX.current = null;
+  };
+
+  const onTouchMove = (e: any) => {
+    touchEndX.current = e.touches[0].clientX;
+  };
+
+  const onTouchEnd = () => {
+    if (swipeCooldown.current) return;
+    const start = touchStartX.current;
+    const end = (typeof touchEndX.current === 'number' ? touchEndX.current : start);
+    if (start == null) return;
+    const dx = (end as number) - (start as number);
+    const SWIPE_THRESHOLD = 60; // px
+    if (dx < -SWIPE_THRESHOLD) {
+      // Swipe left => Again
+      swipeCooldown.current = true;
+      handleRate('again').finally(() => {
+        // cooldown to avoid rapid multiple triggers
+        setTimeout(() => { swipeCooldown.current = false; }, 200);
+      });
+    } else if (dx > SWIPE_THRESHOLD) {
+      // Swipe right => Good
+      swipeCooldown.current = true;
+      handleRate('good').finally(() => {
+        setTimeout(() => { swipeCooldown.current = false; }, 200);
+      });
+    }
+  };
+
   const currentCard = cards[currentIndex];
   const dir = DIRECTIONS.find(d => d.value === direction)!;
 
@@ -91,8 +128,9 @@ export function ReviewScreen() {
   const promptText = currentCard.card[`${dir.from}Text` as keyof Card] as string;
   const answerText = currentCard.card[`${dir.to}Text` as keyof Card] as string;
 
+  // Top area: direction selector and quick progress
   return (
-    <div>
+    <div className="container" style={{ paddingBottom: 140 }}>
       <div style={{ marginBottom: 24 }}>
         <select 
           value={direction} 
@@ -103,14 +141,21 @@ export function ReviewScreen() {
             <option key={d.value} value={d.value}>{d.label}</option>
           ))}
         </select>
-        <div className="progress">
-          {currentIndex + 1} / {cards.length}
+        <div className="progress" style={{ marginTop: 6 }}>
+          {cards.length - currentIndex} left today
         </div>
       </div>
 
-      <div className="card" onClick={() => setShowAnswer(!showAnswer)}>
+      <div
+        className="card"
+        onClick={() => setShowAnswer(!showAnswer)}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        style={{ touchAction: 'pan-y' }}
+      >
         <span className="lang-badge">{dir.from}</span>
-        <p style={{ fontSize: '1.5rem', marginTop: 16, textAlign: 'center' }}>
+        <p style={{ fontSize: 20, lineHeight: 1.6, marginTop: 16, textAlign: 'center' }}>
           {promptText}
         </p>
         
@@ -118,7 +163,7 @@ export function ReviewScreen() {
           <>
             <hr style={{ margin: '24px 0', borderColor: 'var(--border)' }} />
             <span className="lang-badge">{dir.to}</span>
-            <p style={{ fontSize: '1.5rem', marginTop: 16, textAlign: 'center' }}>
+            <p style={{ fontSize: 20, lineHeight: 1.6, marginTop: 16, textAlign: 'center' }}>
               {answerText}
             </p>
             {currentCard.card.tags.length > 0 && (
@@ -138,19 +183,18 @@ export function ReviewScreen() {
         )}
       </div>
 
-      {showAnswer && (
-        <div className="btn-group">
-          <button className="btn btn-danger" onClick={() => handleRate('again')}>
-            Again
-          </button>
-          <button className="btn btn-warning" onClick={() => handleRate('good')}>
-            Good
-          </button>
-          <button className="btn btn-success" onClick={() => handleRate('easy')}>
-            Easy
-          </button>
-        </div>
-      )}
+      {/* Sticky bottom bar with actions */}
+      <div className="review-bottom-bar" aria-label="review-actions">
+        <button className="btn btn-danger btn-full" onClick={() => handleRate('again')}>
+          Again
+        </button>
+        <button className="btn btn-warning btn-full" onClick={() => handleRate('good')}>
+          Good
+        </button>
+        <button className="btn btn-success btn-full" onClick={() => handleRate('easy')}>
+          Easy
+        </button>
+      </div>
     </div>
   );
 }

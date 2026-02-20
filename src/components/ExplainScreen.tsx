@@ -1,6 +1,8 @@
 import { useState } from "react";
+import type { FormEvent } from "react";
 import type { ExplainResponse } from "../types";
 import { normalizeExplainResponse } from "../utils/explainAdapter";
+import { Accordion } from "./Accordion";
 
 const API_URL = import.meta.env.VITE_EXPLAIN_API_URL || "/api/explain";
 
@@ -25,7 +27,7 @@ export function ExplainScreen() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ExplainResponse | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!sentence.trim()) return;
 
@@ -140,7 +142,7 @@ export function ExplainScreen() {
             value={sentence}
             onChange={(e) => setSentence(e.target.value)}
             placeholder="Enter a sentence to explain..."
-            rows={3}
+            rows={4}
             style={{ width: "100%", marginBottom: 16 }}
             maxLength={500}
           />
@@ -177,135 +179,82 @@ export function ExplainScreen() {
 
       {result && (
         <div>
-          <div className="card">
-            <h3>Translations</h3>
-            <p>
-              <span className="lang-badge">JA</span> {result.translations.ja}
-            </p>
-            <p>
-              <span className="lang-badge">EN</span> {result.translations.en}
-            </p>
-            <p>
-              <span className="lang-badge">ES</span> {result.translations.es}
-            </p>
-          </div>
+          <Accordion title="Translations">
+            <p><span className="lang-badge">JA</span> {result.translations.ja}</p>
+            <p><span className="lang-badge">EN</span> {result.translations.en}</p>
+            <p><span className="lang-badge">ES</span> {result.translations.es}</p>
+          </Accordion>
 
-          <div className="card">
-            <h3>Naturalness</h3>
-            <p>Score: {result.naturalness.score_1_to_5}/5</p>
-            <p>{result.naturalness.comment}</p>
-          </div>
-
-          {result.grammar_points.length > 0 && (
-            <div className="card">
-              <h3>Grammar Points</h3>
-              {result.grammar_points.map((point, i) => (
+          <Accordion title="Grammar Points">
+            {result.grammar_points.length > 0 && (
+              result.grammar_points.map((point, i) => (
                 <div key={i} style={{ marginBottom: 12 }}>
                   <p style={{ fontWeight: 600 }}>{point.title}</p>
-                  <p style={{ color: "var(--text-secondary)" }}>
-                    {point.explanation}
-                  </p>
+                  <p style={{ color: "var(--text-secondary)" }}>{point.explanation}</p>
                   <p style={{ fontStyle: "italic", color: "var(--accent)" }}>
                     "{point.example}"
                   </p>
                 </div>
-              ))}
-            </div>
-          )}
+              ))
+            )}
+          </Accordion>
 
-          {result.vocabulary.length > 0 && (
-            <div className="card">
-              <h3>Vocabulary</h3>
-              {result.vocabulary.map((vocab, i) => (
+          <Accordion title="Vocabulary">
+            {result.vocabulary.length > 0 && (
+              result.vocabulary.map((vocab, i) => (
                 <div key={i} style={{ marginBottom: 8 }}>
                   <span style={{ fontWeight: 600 }}>{vocab.term}</span>
-                  <span style={{ color: "var(--text-secondary)" }}>
-                    {" "}
-                    - {vocab.meaning}
-                  </span>
-                  {vocab.notes && (
-                    <p style={{ fontSize: "0.875rem" }}>{vocab.notes}</p>
-                  )}
+                  <span style={{ color: "var(--text-secondary)" }}> - {vocab.meaning}</span>
+                  {vocab.notes && <p style={{ fontSize: "0.875rem" }}>{vocab.notes}</p>}
                 </div>
-              ))}
-            </div>
-          )}
+              ))
+            )}
+          </Accordion>
 
-          {result.mistakes.length > 0 && (
-            <div className="card" style={{ background: "var(--danger)" }}>
-              <h3>Mistakes</h3>
+          <Accordion title="Alternatives">
+            {result.alternatives.map((alt, i) => (
+              <div key={i} style={{ marginBottom: 12 }}>
+                <span className="lang-badge" style={{ fontSize: "0.6rem" }}>{alt.tone}</span>
+                <p><span className="lang-badge" style={{ fontSize: "0.6rem" }}>JA</span> {alt.ja}</p>
+                <p><span className="lang-badge" style={{ fontSize: "0.6rem" }}>EN</span> {alt.en}</p>
+                <p><span className="lang-badge" style={{ fontSize: "0.6rem" }}>ES</span> {alt.es}</p>
+              </div>
+            ))}
+          </Accordion>
+
+          <Accordion title="Mistakes">
+            {result.mistakes.length > 0 ? (
               <ul>
                 {result.mistakes.map((mistake, i) => (
                   <li key={i}>{mistake}</li>
                 ))}
               </ul>
-            </div>
-          )}
-
-          {result.alternatives.length > 0 && (
-            <div className="card">
-              <h3>Alternatives</h3>
-              {result.alternatives.map((alt, i) => (
-                <div key={i} style={{ marginBottom: 12 }}>
-                  <span className="lang-badge" style={{ fontSize: "0.6rem" }}>
-                    {alt.tone}
-                  </span>
-                  <p>
-                    <span className="lang-badge" style={{ fontSize: "0.6rem" }}>
-                      JA
-                    </span>{" "}
-                    {alt.ja}
-                  </p>
-                  <p>
-                    <span className="lang-badge" style={{ fontSize: "0.6rem" }}>
-                      EN
-                    </span>{" "}
-                    {alt.en}
-                  </p>
-                  <p>
-                    <span className="lang-badge" style={{ fontSize: "0.6rem" }}>
-                      ES
-                    </span>{" "}
-                    {alt.es}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
+            ) : null}
+          </Accordion>
 
           {result.suggested_flashcard && (
             <div className="card" style={{ border: "2px solid var(--accent)" }}>
               <h3>Suggested Flashcard</h3>
-              <p>
-                <span className="lang-badge">JA</span>{" "}
-                {result.suggested_flashcard.ja}
-              </p>
-              <p>
-                <span className="lang-badge">EN</span>{" "}
-                {result.suggested_flashcard.en}
-              </p>
-              <p>
-                <span className="lang-badge">ES</span>{" "}
-                {result.suggested_flashcard.es}
-              </p>
+              <p><span className="lang-badge">JA</span> {result.suggested_flashcard.ja}</p>
+              <p><span className="lang-badge">EN</span> {result.suggested_flashcard.en}</p>
+              <p><span className="lang-badge">ES</span> {result.suggested_flashcard.es}</p>
               {result.suggested_flashcard.tags.length > 0 && (
                 <div style={{ marginTop: 8 }}>
                   {result.suggested_flashcard.tags.map((tag) => (
-                    <span key={tag} className="tag">
-                      {tag}
-                    </span>
+                    <span key={tag} className="tag">{tag}</span>
                   ))}
                 </div>
               )}
-              <button
-                className="btn btn-success"
-                onClick={handleAddAsCard}
-                style={{ width: "100%", marginTop: 16 }}
-              >
-                Add as Card
-              </button>
             </div>
           )}
+        </div>
+      )}
+
+      {result?.suggested_flashcard && (
+        <div className="explain-bottom-bar" style={{ position: 'fixed', left: 0, right: 0, bottom: 0, padding: '8px', paddingBottom: 'calc(8px + env(safe-area-inset-bottom))', zIndex: 60, background: 'white' }}>
+          <button className="btn btn-success" onClick={handleAddAsCard} style={{ width: '100%' }}>
+            Add as Card
+          </button>
         </div>
       )}
     </div>

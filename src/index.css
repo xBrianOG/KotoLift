@@ -178,6 +178,44 @@ input:focus, textarea:focus, select:focus {
   font-size: 0.875rem;
 }
 
+/* Mobile safe-area aware bottom bars */
+.review-bottom-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 8px;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  background: rgba(0, 0, 0, 0.0);
+  display: grid;
+  gap: 8px;
+  z-index: 50;
+}
+.btn-full {
+  height: 52px;
+  min-height: 52px;
+  width: 100%;
+}
+
+/* Simple accordions for Explain screen */
+.accordion { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 12px; overflow: hidden; background: var(--bg-card); }
+.accordion-header { padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+.accordion-content { padding: 10px 12px; }
+
+/* Sticky helper for explain bottom bar on mobile */
+.explain-bottom-bar { padding: 0 8px; }
+
+/* Safe-area friendly container tweaks for mobile */
+@media (max-width: 600px) {
+  .container {
+    padding: 12px;
+  }
+
+  .card { padding: 16px; }
+  .review-bottom-bar { padding: 8px; padding-bottom: calc(8px + env(safe-area-inset-bottom)); }
+  .explain-bottom-bar { padding: 0; }
+}
+
 @media (max-width: 480px) {
   .container {
     padding: 12px;
