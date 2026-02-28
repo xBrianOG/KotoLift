@@ -1,79 +1,118 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ReviewScreen } from "./components/ReviewScreen";
 import { CardListScreen } from "./components/CardListScreen";
 import { AddCardScreen } from "./components/AddCardScreen";
 import { ExplainScreen } from "./components/ExplainScreen";
 import { DrillScreen } from "./components/DrillScreen";
+import { HomeScreen } from "./components/HomeScreen";
+import { SettingsScreen } from "./components/SettingsScreen";
+import { VideoImportScreen } from "./components/VideoImportScreen";
+import { TranscriptViewerScreen } from "./components/TranscriptViewerScreen";
+import { AppShell } from "./components/AppShell";
+import { LoginScreen } from "./components/LoginScreen";
+import { isLoggedIn, clearAuth } from "./services/auth";
+import type { TranscriptData } from "./components/TranscriptViewerScreen";
 import "./types";
 
-type Screen = "review" | "cards" | "add" | "explain" | "drill";
+type Screen = "home" | "review" | "cards" | "add" | "explain" | "drill" | "settings" | "videoImport" | "transcript";
 
 function App() {
-  const [screen, setScreen] = useState<Screen>("review");
+  const [screen, setScreen] = useState<Screen>("home");
+  const [authenticated, setAuthenticated] = useState<boolean | null>(null);
+  const [transcriptData, setTranscriptData] = useState<TranscriptData | null>(null);
+
+  useEffect(() => {
+    setAuthenticated(isLoggedIn());
+    
+    const saved = localStorage.getItem('transcript.last');
+    if (saved) {
+      try {
+        setTranscriptData(JSON.parse(saved));
+      } catch {}
+    }
+  }, []);
+
+  const navigate = (to: string) => {
+    const valid = ["home", "review", "drill", "cards", "add", "explain", "settings", "videoImport", "transcript"] as const;
+    if ((valid as any).includes(to)) setScreen(to as Screen);
+  };
+
+  const handleLogin = () => {
+    setAuthenticated(true);
+  };
+
+  const handleLogout = () => {
+    clearAuth();
+    setAuthenticated(false);
+  };
+
+  const handleViewTranscript = (data: TranscriptData) => {
+    setTranscriptData(data);
+    localStorage.setItem('transcript.last', JSON.stringify(data));
+    navigate('transcript');
+  };
+
+  const handleAuthError = () => {
+    handleLogout();
+  };
+
+  if (authenticated === null) {
+    return (
+      <div className="screen" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  if (!authenticated) {
+    return <LoginScreen onLogin={handleLogin} />;
+  }
 
   return (
-    <div className="container">
-      <header className="header">
-        <h1
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-            margin: 0,
+    <AppShell current={screen} onNavigate={navigate}>
+      {screen === "home" && <HomeScreen onNavigate={navigate} />}
+      {screen === "review" && (
+        <ReviewScreen
+          onExplain={(card) => {
+            // Persist some initial sentence for Explain detail flow
+            if (card?.jaText) {
+              localStorage.setItem("explain.initial", JSON.stringify({ sentence: card.jaText }));
+            }
+            navigate('explain')
           }}
-        >
-          <img
-            src="/kotolift-logo.svg"
-            alt="Koto Lift Logo"
-            style={{ width: 28, height: 28 }}
-          />
-          <span>Koto Lift</span>
-        </h1>
-
-        <nav className="nav">
-          <button
-            className={`nav-btn ${screen === "review" ? "active" : ""}`}
-            onClick={() => setScreen("review")}
-          >
-            Review
-          </button>
-
-          <button
-            className={`nav-btn ${screen === "drill" ? "active" : ""}`}
-            onClick={() => setScreen("drill")}
-          >
-            Drill
-          </button>
-
-          <button
-            className={`nav-btn ${screen === "cards" ? "active" : ""}`}
-            onClick={() => setScreen("cards")}
-          >
-            Cards
-          </button>
-
-          <button
-            className={`nav-btn ${screen === "add" ? "active" : ""}`}
-            onClick={() => setScreen("add")}
-          >
-            Add
-          </button>
-
-          <button
-            className={`nav-btn ${screen === "explain" ? "active" : ""}`}
-            onClick={() => setScreen("explain")}
-          >
-            Explain
-          </button>
-        </nav>
-      </header>
-
-      {screen === "review" && <ReviewScreen />}
+          onNavigateHome={() => navigate('home')}
+        />
+      )}
       {screen === "drill" && <DrillScreen />}
-      {screen === "cards" && <CardListScreen />}
-      {screen === "add" && <AddCardScreen onSave={() => setScreen("cards")} />}
+      {screen === "cards" && (
+        <CardListScreen
+          onExplain={(card) => {
+            if (card?.jaText) {
+              localStorage.setItem("explain.initial", JSON.stringify({ sentence: card.jaText }));
+            }
+            navigate('explain')
+          }}
+        />
+      )}
+      {screen === "add" && <AddCardScreen onSave={() => navigate('cards')} onNavigateToVideoImport={() => navigate('videoImport')} />}
+      {screen === "videoImport" && (
+        <VideoImportScreen
+          onComplete={(count) => {
+            navigate('cards');
+          }}
+          onCancel={() => navigate('add')}
+          onViewTranscript={handleViewTranscript}
+        />
+      )}
+      {screen === "transcript" && transcriptData && (
+        <TranscriptViewerScreen
+          data={transcriptData}
+          onBack={() => navigate('videoImport')}
+        />
+      )}
       {screen === "explain" && <ExplainScreen />}
-    </div>
+      {screen === "settings" && <SettingsScreen onBack={() => navigate('home')} onSignOut={handleLogout} />}
+    </AppShell>
   );
 }
 

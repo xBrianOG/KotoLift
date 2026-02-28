@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getDueReviewStates, rateReview, getMixedReviewStates } from '../services/review';
+import { addStars, updateStreak } from '../services/stats';
+import { ProgressBar } from './ProgressBar';
+import { Stars } from './Stars';
 import type { Card, ReviewState, Rating, Language, ReviewDirection } from '../types';
 
 const DIRECTIONS: { value: ReviewDirection; label: string; from: Language; to: Language }[] = [
@@ -10,12 +13,14 @@ const DIRECTIONS: { value: ReviewDirection; label: string; from: Language; to: L
   { value: 'mixed', label: 'Mixed', from: 'ja', to: 'en' },
 ];
 
-export function ReviewScreen() {
+export const ReviewScreen: React.FC<{ onExplain?: (card: Card) => void; onNavigateHome?: ()=>void }>= ({ onExplain, onNavigateHome }) => {
   const [direction, setDirection] = useState<ReviewDirection>('ja-en');
   const [cards, setCards] = useState<Array<ReviewState & { card: Card }>>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [completed, setCompleted] = useState(false);
+  const [score, setScore] = useState<number>(0);
   // Swipe handling refs
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
@@ -53,11 +58,15 @@ export function ReviewScreen() {
 
     await rateReview(rating, current);
     setShowAnswer(false);
-    
+    const delta = rating === 'easy' ? 2 : rating === 'good' ? 1 : 0;
+    setScore((s) => s + delta);
     if (currentIndex < cards.length - 1) {
       setCurrentIndex(currentIndex + 1);
     } else {
-      loadCards();
+      updateStreak();
+      const starsEarned = Math.floor(score / 2);
+      addStars(starsEarned);
+      setCompleted(true);
     }
   };
 
@@ -97,6 +106,23 @@ export function ReviewScreen() {
   const currentCard = cards[currentIndex];
   const dir = DIRECTIONS.find(d => d.value === direction)!;
 
+  // End-of-lesson completion view
+  if (completed) {
+    const stars = Math.min(5, Math.max(1, Math.floor(score / 2) + 1));
+    return (
+      <div className="container" style={{ padding: 16, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="card" style={{ padding: 28, textAlign: 'center' }}>
+          <h2 style={{ margin: 0, fontSize: '2rem' }}>Nice!</h2>
+          <div style={{ marginTop: 8 }}><Stars count={stars} /></div>
+          <p style={{ marginTop: 12 }}>You completed today's lesson.</p>
+          <button className="primaryButton" onClick={onNavigateHome ?? (() => {})} style={{ marginTop: 16 }}>
+            Back to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return <div className="empty-state">Loading...</div>;
   }
@@ -131,6 +157,12 @@ export function ReviewScreen() {
   // Top area: direction selector and quick progress
   return (
     <div className="container" style={{ paddingBottom: 140 }}>
+      {/* Progress bar at top of lesson */}
+      {cards.length > 0 && (
+        <div style={{ marginBottom: 12 }}>
+          <ProgressBar current={currentIndex + 1} total={cards.length} />
+        </div>
+      )}
       <div style={{ marginBottom: 24 }}>
         <select 
           value={direction} 
@@ -180,6 +212,14 @@ export function ReviewScreen() {
           <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginTop: 24 }}>
             Tap to reveal answer
           </p>
+        )}
+        {onExplain && currentCard && (
+          <button
+            onClick={() => onExplain(currentCard.card)}
+            style={{ width: '100%', marginTop: 8, borderRadius: 8, padding: '12px 16px', background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+          >
+            Explain
+          </button>
         )}
       </div>
 

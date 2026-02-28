@@ -1,15 +1,41 @@
 :root {
-  --bg-primary: #1a1a2e;
-  --bg-secondary: #16213e;
-  --bg-card: #0f3460;
-  --text-primary: #f8f9fa;
-  --text-secondary: #adb5bd;
-  --accent: #e63946;
-  --accent-hover: #ff6b6b;
-  --success: #2d6a4f;
-  --warning: #f4a261;
-  --danger: #e63946;
-  --border: #2d4a6a;
+  /* Colors */
+  --bg: #f5f5f7;
+  --surface: #ffffff;
+  --text: #1d1d1f;
+  --text-secondary: #86868b;
+  --accent: #34c759;
+  --accent-light: #e8f5e9;
+  --border: #e5e5ea;
+  --danger: #ff3b30;
+  --warning: #ff9500;
+  
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 20px;
+  --space-2xl: 24px;
+  
+  /* Radii */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  
+  /* Typography */
+  --font-xs: 11px;
+  --font-sm: 13px;
+  --font-base: 15px;
+  --font-lg: 17px;
+  --font-xl: 20px;
+  --font-2xl: 28px;
+  --font-3xl: 34px;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 * {
@@ -20,13 +46,18 @@
 
 html, body, #root {
   height: 100%;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
-  color: var(--text-primary);
-  line-height: 1.5;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: var(--font-base);
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 button {
@@ -34,123 +65,126 @@ button {
   cursor: pointer;
   border: none;
   outline: none;
+  background: transparent;
 }
 
 input, textarea, select {
   font-family: inherit;
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 12px;
-  background: var(--bg-card);
-  color: var(--text-primary);
-  font-size: 16px;
+  border-radius: var(--radius-sm);
+  padding: var(--space-md);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--font-base);
 }
 
 input:focus, textarea:focus, select:focus {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  outline: none;
+  border-color: var(--accent);
 }
 
 .container {
   max-width: 600px;
   margin: 0 auto;
-  padding: 16px;
+  padding: var(--space-lg);
   min-height: 100%;
   display: flex;
   flex-direction: column;
 }
 
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 0;
-  margin-bottom: 24px;
+.screen {
+  padding: var(--space-lg);
+  padding-bottom: calc(80px + env(safe-area-inset-bottom));
+  min-height: 100%;
 }
 
-.header h1 {
-  font-size: 1.5rem;
-  font-weight: 600;
-}
-
-.nav {
-  display: flex;
-  gap: 8px;
-}
-
-.nav-btn {
-  padding: 8px 16px;
-  border-radius: 8px;
-  background: var(--bg-card);
-  color: var(--text-primary);
-  font-size: 0.875rem;
-  transition: background 0.2s;
-}
-
-.nav-btn:hover {
-  background: var(--border);
-}
-
-.nav-btn.active {
-  background: var(--accent);
-}
-
+/* Card - iOS style */
 .card {
-  background: var(--bg-card);
-  border-radius: 16px;
-  padding: 24px;
-  margin-bottom: 16px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.card--elevated {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border: 1px solid rgba(0,0,0,0.04);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04);
 }
 
 .btn {
-  padding: 14px 24px;
-  border-radius: 12px;
-  font-size: 1rem;
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
   font-weight: 600;
   transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn:active {
+  transform: scale(0.98);
+  opacity: 0.9;
 }
 
 .btn-primary {
   background: var(--accent);
   color: white;
+  height: 48px;
+  border-radius: var(--radius-md);
 }
 
 .btn-primary:hover {
-  background: var(--accent-hover);
-  transform: translateY(-2px);
+  background: #2db150;
 }
 
-.btn-success {
-  background: var(--success);
-  color: white;
+.btn-secondary {
+  background: var(--surface);
+  color: var(--accent);
+  border: 1px solid var(--border);
 }
 
-.btn-warning {
-  background: var(--warning);
-  color: var(--bg-primary);
-}
+.btn-success { background: var(--accent); color: white; }
+.btn-warning { background: var(--warning); color: white; }
+.btn-danger { background: var(--danger); color: white; }
 
-.btn-danger {
-  background: var(--danger);
-  color: white;
+.btn-full {
+  height: 52px;
+  min-height: 52px;
+  width: 100%;
 }
 
 .btn-group {
   display: flex;
-  gap: 12px;
-  margin-top: 24px;
+  gap: var(--space-md);
+  margin-top: var(--space-xl);
 }
 
 .btn-group .btn {
   flex: 1;
 }
 
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: 20px;
+  background: var(--accent-light);
+  color: var(--accent);
+  font-size: var(--font-xs);
+  font-weight: 600;
+  gap: 4px;
+}
+
 .lang-badge {
   display: inline-block;
-  padding: 4px 8px;
+  padding: 2px 6px;
   border-radius: 4px;
-  background: var(--border);
-  font-size: 0.75rem;
+  background: var(--bg);
+  font-size: var(--font-xs);
   font-weight: 600;
   text-transform: uppercase;
 }
@@ -159,8 +193,8 @@ input:focus, textarea:focus, select:focus {
   display: inline-block;
   padding: 4px 10px;
   border-radius: 12px;
-  background: var(--border);
-  font-size: 0.75rem;
+  background: var(--bg);
+  font-size: var(--font-xs);
   margin-right: 6px;
   margin-bottom: 6px;
 }
@@ -174,65 +208,144 @@ input:focus, textarea:focus, select:focus {
 .progress {
   text-align: center;
   color: var(--text-secondary);
-  margin-bottom: 16px;
-  font-size: 0.875rem;
+  margin-bottom: var(--space-md);
+  font-size: var(--font-sm);
 }
 
-/* Mobile safe-area aware bottom bars */
+/* Bottom Tab Bar - iOS native feel */
+.bottom-tab {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 60px;
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--surface);
+  border-top: 0.5px solid var(--border);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 100;
+}
+
+.tab-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 0;
+  color: var(--text-secondary);
+  font-size: var(--font-xs);
+  background: transparent;
+  transition: all 0.2s;
+  border-radius: var(--radius-md);
+}
+
+.tab-btn.active {
+  color: var(--accent);
+}
+
+.tab-btn.active::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  width: 32px;
+  height: 32px;
+  background: var(--accent);
+  opacity: 0.12;
+  border-radius: 50%;
+  z-index: -1;
+}
+
+.tab-btn:active {
+  transform: scale(0.95);
+}
+
+.tab-icon {
+  width: 24px;
+  height: 24px;
+  stroke-width: 1.5;
+}
+
+/* Settings List - iOS grouped style */
+.settings-section {
+  margin-bottom: var(--space-xl);
+}
+
+.settings-section-title {
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--space-sm);
+  margin-left: var(--space-lg);
+}
+
+.settings-group {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  /* Ensure container has proper rounded corners */
+}
+
+.settings-group .settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 0.5px solid var(--border);
+  font-size: var(--font-base);
+  background: var(--surface);
+  /* Clean hairline separator */
+}
+
+.settings-group .settings-row:last-child {
+  border-bottom: none;
+}
+
+.settings-row-label {
+  color: var(--text);
+}
+
+.settings-row-value {
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+/* Review Bottom Bar */
 .review-bottom-bar {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
-  padding: 8px;
-  padding-bottom: calc(8px + env(safe-area-inset-bottom));
-  background: rgba(0, 0, 0, 0.0);
+  padding: var(--space-sm);
+  padding-bottom: calc(var(--space-sm) + env(safe-area-inset-bottom));
+  background: var(--surface);
+  border-top: 0.5px solid var(--border);
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  gap: var(--space-sm);
   z-index: 50;
 }
-.btn-full {
-  height: 52px;
-  min-height: 52px;
+
+/* Primary Button */
+.primaryButton {
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: var(--space-md) var(--space-lg);
+  font-weight: 600;
+  font-size: var(--font-base);
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
-}
-
-/* Simple accordions for Explain screen */
-.accordion { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 12px; overflow: hidden; background: var(--bg-card); }
-.accordion-header { padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-.accordion-content { padding: 10px 12px; }
-
-/* Sticky helper for explain bottom bar on mobile */
-.explain-bottom-bar { padding: 0 8px; }
-
-/* Safe-area friendly container tweaks for mobile */
-@media (max-width: 600px) {
-  .container {
-    padding: 12px;
-  }
-
-  .card { padding: 16px; }
-  .review-bottom-bar { padding: 8px; padding-bottom: calc(8px + env(safe-area-inset-bottom)); }
-  .explain-bottom-bar { padding: 0; }
-}
-
-@media (max-width: 480px) {
-  .container {
-    padding: 12px;
-  }
-  
-  .header h1 {
-    font-size: 1.25rem;
-  }
-  
-  .card {
-    padding: 16px;
-  }
-}
-@supports (min-height: 100dvh) {
-  .explain-page { min-height: 100dvh; }
-}
-@supports not (min-height: 100dvh) {
-  .explain-page { min-height: 100vh; }
 }

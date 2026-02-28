@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { FormEvent } from "react";
 import type { ExplainResponse } from "../types";
 import { normalizeExplainResponse } from "../utils/explainAdapter";
@@ -20,8 +20,21 @@ const logError = (...args: any[]) => {
   }
 };
 
-export function ExplainScreen() {
-  const [sentence, setSentence] = useState("");
+export function ExplainScreen({ initialSentence }: { initialSentence?: string } = {}) {
+  const [sentence, setSentence] = useState<string>(initialSentence ?? "");
+  useEffect(() => {
+    if (initialSentence) setSentence(initialSentence);
+    // If not prefilled via props, check for a stored explain payload from Cards/Review
+    try {
+      const raw = localStorage.getItem('explain.initial');
+      if (!initialSentence && raw) {
+        const payload = JSON.parse(raw);
+        if (payload?.sentence) setSentence(payload.sentence);
+      }
+    } catch {
+      // ignore
+    }
+  }, [initialSentence]);
   const [focus, setFocus] = useState<"english" | "spanish" | "both">("both");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

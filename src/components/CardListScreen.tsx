@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { getAllCards, deleteCard, searchCards, getAllTags } from '../services/cards';
 import type { Card } from '../types';
 
-export function CardListScreen() {
+export function CardListScreen({ onExplain }: { onExplain?: (card: any) => void } = {}) {
   const [cards, setCards] = useState<Card[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -101,6 +101,15 @@ export function CardListScreen() {
                   🗑️
                 </button>
               </div>
+              {onExplain && (
+                <button
+                  onClick={() => onExplain(card)}
+                  style={{ width: '100%', marginTop: 6, padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-card)' }}
+                >
+                  Explain
+                </button>
+              )}
+              
             </div>
             <p style={{ marginTop: 8, color: 'var(--text-secondary)' }}>
               <span className="lang-badge" style={{ fontSize: '0.6rem' }}>EN</span> {card.enText}

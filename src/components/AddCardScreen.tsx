@@ -4,9 +4,10 @@ import { ensureReviewStates } from '../services/review';
 
 interface AddCardScreenProps {
   onSave: () => void;
+  onNavigateToVideoImport?: () => void;
 }
 
-export function AddCardScreen({ onSave }: AddCardScreenProps) {
+export function AddCardScreen({ onSave, onNavigateToVideoImport }: AddCardScreenProps) {
   const [jaText, setJaText] = useState('');
   const [enText, setEnText] = useState('');
   const [esText, setEsText] = useState('');
@@ -121,6 +122,26 @@ export function AddCardScreen({ onSave }: AddCardScreenProps) {
         >
           {saving ? 'Saving...' : 'Save Card'}
         </button>
+
+        {onNavigateToVideoImport && (
+          <button 
+            type="button"
+            onClick={onNavigateToVideoImport}
+            style={{ 
+              width: '100%', 
+              marginTop: 'var(--space-md)',
+              padding: 'var(--space-md)',
+              background: 'transparent',
+              border: '1px solid var(--border)',
+              borderRadius: 8,
+              color: 'var(--text-secondary)',
+              fontSize: 'var(--font-sm)',
+              cursor: 'pointer'
+            }}
+          >
+            🎬 Import from video
+          </button>
+        )}
       </form>
     </div>
   );
