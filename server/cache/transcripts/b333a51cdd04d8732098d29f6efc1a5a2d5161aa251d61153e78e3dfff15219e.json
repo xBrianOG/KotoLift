@@ -1,0 +1,102 @@
+{
+  "title": "Generate Flashcards in NotebookLM (NotebookLM)",
+  "segments": [
+    {
+      "id": "seg-1",
+      "startMs": 0,
+      "endMs": 12480,
+      "text": "Helo, sekarang saya ingin menunjukkan kepada anda bagaimana menghasilkan flashcards dalam notebook LM."
+    },
+    {
+      "id": "seg-2",
+      "startMs": 12480,
+      "endMs": 17480,
+      "text": "Jadi, buka fail notebook LM."
+    },
+    {
+      "id": "seg-3",
+      "startMs": 17480,
+      "endMs": 21880,
+      "text": "Di sebelah kanan, anda harus melihat bahagian studio ini."
+    },
+    {
+      "id": "seg-4",
+      "startMs": 21880,
+      "endMs": 28600,
+      "text": "Sekiranya anda pemilik atau penulis file, anda harus melihat beberapa pilihan yang boleh anda gunakan."
+    },
+    {
+      "id": "seg-5",
+      "startMs": 28600,
+      "endMs": 36600,
+      "text": "Salah satunya adalah pilihan flashcards, jadi jika anda menekannya, ia akan mengembangkan flashcards"
+    },
+    {
+      "id": "seg-6",
+      "startMs": 36600,
+      "endMs": 40920,
+      "text": "pada notebook LM anda secara berikatan."
+    },
+    {
+      "id": "seg-7",
+      "startMs": 40920,
+      "endMs": 48840,
+      "text": "Dan anda boleh menekan ikon pensel untuk mengubah peraturan, seperti lebih banyak kartu, lebih banyak"
+    },
+    {
+      "id": "seg-8",
+      "startMs": 48840,
+      "endMs": 52480,
+      "text": "atau tahap kesulitan."
+    },
+    {
+      "id": "seg-9",
+      "startMs": 52480,
+      "endMs": 57840,
+      "text": "Dan anda boleh menekan butang penyumbat untuk menggunakan peraturan tersebut secara berikatan untuk"
+    },
+    {
+      "id": "seg-10",
+      "startMs": 57840,
+      "endMs": 62000,
+      "text": "mengembangkan flashcards baru."
+    },
+    {
+      "id": "seg-11",
+      "startMs": 62000,
+      "endMs": 67160,
+      "text": "Ini adalah contoh flashcards yang terkaitkan dalam fail notebook LM ini."
+    },
+    {
+      "id": "seg-12",
+      "startMs": 67160,
+      "endMs": 78160,
+      "text": "Jadi, anda boleh menekan butang seterusnya atau butang sebelumnya untuk melihat flashcard sebelumnya."
+    },
+    {
+      "id": "seg-13",
+      "startMs": 78160,
+      "endMs": 84520,
+      "text": "Anda boleh menekan butang jawapan C di sini untuk melihat jawapannya."
+    },
+    {
+      "id": "seg-14",
+      "startMs": 84520,
+      "endMs": 89640,
+      "text": "Dan anda boleh menekan butang penjelasan untuk menjelaskan flashcard dan jika anda muncul"
+    },
+    {
+      "id": "seg-15",
+      "startMs": 89640,
+      "endMs": 98520,
+      "text": "di chat."
+    },
+    {
+      "id": "seg-16",
+      "startMs": 98520,
+      "endMs": 99040,
+      "text": "Terima kasih."
+    }
+  ],
+  "languageDetected": "malay"
+}

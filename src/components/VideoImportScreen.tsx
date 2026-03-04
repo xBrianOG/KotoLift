@@ -1,17 +1,19 @@
 import { useState } from 'react';
-import { analyzeVideo, VideoSegment } from '../services/api';
+import { analyzeVideo, VideoSegment, translateText, type SupportedLang } from '../services/api';
 import { createCard } from '../services/cards';
 import { ensureReviewStates } from '../services/review';
+import { getLearningSettings } from '../services/settings';
 
 interface VideoImportScreenProps {
   onComplete: (createdCount: number) => void;
   onCancel: () => void;
-  onViewTranscript?: (data: { url: string; title: string; segments: VideoSegment[] }) => void;
+  onViewTranscript?: (data: { url: string; title: string; segments: VideoSegment[]; sourceLang: string }) => void;
+  onOpenPlayer?: (data: { url: string; title: string; segments: VideoSegment[]; sourceLang: string }) => void;
 }
 
-export function VideoImportScreen({ onComplete, onCancel, onViewTranscript }: VideoImportScreenProps) {
+export function VideoImportScreen({ onComplete, onCancel, onViewTranscript, onOpenPlayer }: VideoImportScreenProps) {
   const [url, setUrl] = useState('');
-  const [lang, setLang] = useState('ja');
+  const [lang, setLang] = useState('en');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [segments, setSegments] = useState<VideoSegment[]>([]);
@@ -31,7 +33,8 @@ export function VideoImportScreen({ onComplete, onCancel, onViewTranscript }: Vi
     setSelected(new Set());
 
     try {
-      const result = await analyzeVideo(url, lang);
+      const settings = getLearningSettings();
+      const result = await analyzeVideo(url, lang, settings.preferWhisper);
       setSegments(result.segments);
       setTitle(result.title || 'Video');
     } catch (err) {
@@ -44,7 +47,13 @@ export function VideoImportScreen({ onComplete, onCancel, onViewTranscript }: Vi
 
   const handleViewTranscript = () => {
     if (onViewTranscript && segments.length > 0) {
-      onViewTranscript({ url, title, segments });
+      onViewTranscript({ url, title, segments, sourceLang: lang });
+    }
+  };
+
+  const handleOpenPlayer = () => {
+    if (onOpenPlayer && segments.length > 0) {
+      onOpenPlayer({ url, title, segments, sourceLang: lang });
     }
   };
 
@@ -79,13 +88,38 @@ export function VideoImportScreen({ onComplete, onCancel, onViewTranscript }: Vi
       const selectedSegments = segments.filter(s => selected.has(s.id));
       let createdCount = 0;
 
+      const sourceLang = lang as SupportedLang;
+      const targetLangs: SupportedLang[] = sourceLang === 'en' 
+        ? ['es', 'ja'] 
+        : sourceLang === 'es' 
+          ? ['en', 'ja'] 
+          : ['en', 'es'];
+
       for (const seg of selectedSegments) {
+        // Translate to other languages
+        const translations: Record<string, string> = {};
+        await Promise.all(
+          targetLangs.map(async (tlang) => {
+            try {
+              translations[tlang] = await translateText(seg.text, sourceLang, tlang);
+            } catch (e) {
+              console.error('Translation error:', e);
+              translations[tlang] = '(translation failed)';
+            }
+          })
+        );
+
         const card = await createCard(
           seg.text,
-          '',
-          '',
+          translations.en || '',
+          translations.es || '',
           ['imported'],
-          `Imported from video`
+          `Imported from video`,
+          sourceLang,
+          undefined,
+          seg.startMs,
+          seg.endMs,
+          translations.ja || ''
         );
         await ensureReviewStates(card);
         createdCount++;
@@ -146,10 +180,9 @@ export function VideoImportScreen({ onComplete, onCancel, onViewTranscript }: Vi
           style={{ width: '100%' }}
           disabled={loading}
         >
-          <option value="ja">Japanese</option>
           <option value="en">English</option>
+          <option value="ja">Japanese</option>
           <option value="es">Spanish</option>
-          <option value="ko">Korean</option>
         </select>
       </div>
 
@@ -192,6 +225,26 @@ export function VideoImportScreen({ onComplete, onCancel, onViewTranscript }: Vi
           }}
         >
           📖 View Full Transcript
+        </button>
+      )}
+
+      {segments.length > 0 && onOpenPlayer && (
+        <button 
+          onClick={handleOpenPlayer}
+          style={{ 
+            width: '100%',
+            marginBottom: 'var(--space-md)',
+            padding: 'var(--space-md)',
+            background: 'var(--accent)',
+            color: 'white',
+            border: 'none',
+            borderRadius: 8,
+            fontSize: 'var(--font-base)',
+            fontWeight: 500,
+            cursor: 'pointer'
+          }}
+        >
+          ▶️ Open Video Player
         </button>
       )}
 

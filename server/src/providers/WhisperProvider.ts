@@ -20,6 +20,7 @@ const CACHE_DIR = './cache/transcripts';
 
 interface WhisperResponse {
   text: string;
+  language?: string;
   segments?: Array<{
     start: number;
     end: number;
@@ -133,9 +134,13 @@ export class WhisperProvider implements VideoProvider {
       await this.downloadAudio(videoId, tempFile);
       console.log(`[Whisper] Transcribing audio...`);
       
-      const segments = await this.transcribeAudio(tempFile, lang);
+      const { segments, languageDetected } = await this.transcribeAudio(tempFile, lang);
       
-      const result: AnalyzeResult = { title, segments };
+      const result: AnalyzeResult = { 
+        title, 
+        segments,
+        languageDetected
+      };
       
       cacheResult(url, lang, result);
       
@@ -153,11 +158,11 @@ export class WhisperProvider implements VideoProvider {
   }
 
   private async downloadAudio(videoId: string, outputPath: string): Promise<void> {
-    const cmd = `yt-dlp -f "bestaudio[ext=m4a]" -o "${outputPath}" "https://www.youtube.com/watch?v=${videoId}"`;
+    const cmd = `yt-dlp -f "bestaudio" -o "${outputPath}" "https://www.youtube.com/watch?v=${videoId}"`;
     await execAsync(cmd);
   }
 
-  private async transcribeAudio(audioPath: string, lang?: string): Promise<Segment[]> {
+  private async transcribeAudio(audioPath: string, lang?: string): Promise<{ segments: Segment[], languageDetected?: string }> {
     const form = new FormData();
     
     form.append('file', fs.createReadStream(audioPath), {
@@ -185,22 +190,22 @@ export class WhisperProvider implements VideoProvider {
       }
     );
 
-    const data = response.data;
+    const data = response.data as WhisperResponse;
     
-    return this.parseWhisperResponse(data);
+    return {
+      segments: this.parseWhisperResponse(data),
+      languageDetected: data.language
+    };
   }
 
-  private mapLanguageCode(lang: string): string {
+  private mapLanguageCode(lang: string | undefined): string {
+    if (!lang || lang === 'auto') return '';
     const langMap: Record<string, string> = {
       'ja': 'ja',
       'en': 'en',
-      'es': 'es',
-      'ko': 'ko',
-      'zh': 'zh',
-      'fr': 'fr',
-      'de': 'de'
+      'es': 'es'
     };
-    return langMap[lang] || 'en';
+    return langMap[lang] || '';
   }
 
   private parseWhisperResponse(data: WhisperResponse): Segment[] {

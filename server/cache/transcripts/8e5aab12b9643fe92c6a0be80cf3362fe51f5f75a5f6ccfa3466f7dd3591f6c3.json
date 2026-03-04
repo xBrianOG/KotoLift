@@ -1,0 +1,102 @@
+{
+  "title": "Generate Flashcards in NotebookLM (NotebookLM)",
+  "segments": [
+    {
+      "id": "seg-1",
+      "startMs": 0,
+      "endMs": 12480,
+      "text": "Hello, now I would like to show you on how to generate flashcards in NotebookLM."
+    },
+    {
+      "id": "seg-2",
+      "startMs": 12480,
+      "endMs": 17480,
+      "text": "So open a NotebookLM file."
+    },
+    {
+      "id": "seg-3",
+      "startMs": 17480,
+      "endMs": 21880,
+      "text": "On the right hand side, you should see the Studio section."
+    },
+    {
+      "id": "seg-4",
+      "startMs": 21880,
+      "endMs": 27000,
+      "text": "If you are an owner or an editor of the file, you should see several options that you can"
+    },
+    {
+      "id": "seg-5",
+      "startMs": 27000,
+      "endMs": 28600,
+      "text": "use."
+    },
+    {
+      "id": "seg-6",
+      "startMs": 28600,
+      "endMs": 31820,
+      "text": "One of it is the flashcards option."
+    },
+    {
+      "id": "seg-7",
+      "startMs": 31820,
+      "endMs": 40920,
+      "text": "So if you click on it, it will generate flashcards on your NotebookLM accordingly."
+    },
+    {
+      "id": "seg-8",
+      "startMs": 40920,
+      "endMs": 49120,
+      "text": "And you can click on the pencil icon to customize the settings such as fewer cards, more, or"
+    },
+    {
+      "id": "seg-9",
+      "startMs": 49120,
+      "endMs": 52480,
+      "text": "level of difficulty."
+    },
+    {
+      "id": "seg-10",
+      "startMs": 52480,
+      "endMs": 58400,
+      "text": "And you can click on the generate button to use those settings accordingly to generate"
+    },
+    {
+      "id": "seg-11",
+      "startMs": 58400,
+      "endMs": 62000,
+      "text": "new flashcards."
+    },
+    {
+      "id": "seg-12",
+      "startMs": 62000,
+      "endMs": 67920,
+      "text": "This is an example of the flashcards related in this NotebookLM file."
+    },
+    {
+      "id": "seg-13",
+      "startMs": 67920,
+      "endMs": 78120,
+      "text": "So you can click the next button or the previous button to see the previous flashcard."
+    },
+    {
+      "id": "seg-14",
+      "startMs": 78120,
+      "endMs": 84520,
+      "text": "And you can click on the see answer option here to see the answer of it."
+    },
+    {
+      "id": "seg-15",
+      "startMs": 84520,
+      "endMs": 98520,
+      "text": "And you can click the explain button to explain the flashcard and it will appear on the chat."
+    },
+    {
+      "id": "seg-16",
+      "startMs": 98520,
+      "endMs": 99040,
+      "text": "Thank you."
+    }
+  ],
+  "languageDetected": "english"
+}

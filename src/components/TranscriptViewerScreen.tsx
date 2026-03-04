@@ -1,5 +1,8 @@
 import { useState, useMemo } from 'react';
 import { createCard } from '../services/cards';
+import { ensureReviewStates } from '../services/review';
+import { translateText, type SupportedLang } from '../services/api';
+import { db } from '../db';
 
 export interface TranscriptSegment {
   id: string;
@@ -12,6 +15,7 @@ export interface TranscriptData {
   url: string;
   title: string;
   segments: TranscriptSegment[];
+  sourceLang: string;
 }
 
 function formatTime(ms: number): string {
@@ -51,13 +55,77 @@ export function TranscriptViewerScreen({ data, onBack }: TranscriptViewerScreenP
     return data.segments.filter(s => s.text.toLowerCase().includes(q));
   }, [data.segments, search]);
 
+  const sourceLang = data.sourceLang as SupportedLang;
+  const targetLangs: SupportedLang[] = sourceLang === 'en' 
+    ? ['es', 'ja'] 
+    : sourceLang === 'es' 
+      ? ['en', 'ja'] 
+      : ['en', 'es'];
+
+  const checkDuplicate = async (url: string, startMs: number, text: string): Promise<boolean> => {
+    const existing = await db.cards.where('sourceUrl').equals(url).toArray();
+    return existing.some(c => c.startMs === startMs && c.sourceText === text);
+  };
+
   const handleSave = async (seg: TranscriptSegment) => {
-    if (savingIds.has(seg.id)) return;
+    console.log('handleSave called for:', seg.id);
+    
+    if (savingIds.has(seg.id)) {
+      console.log('Already saving, returning');
+      return;
+    }
+    
+    console.log('Checking duplicate for:', data.url, seg.startMs);
+    const isDup = await checkDuplicate(data.url, seg.startMs, seg.text);
+    console.log('Is duplicate:', isDup);
+    
+    if (isDup) {
+      console.log('Skipping - already exists');
+      setSavedIds(prev => new Set(prev).add(seg.id));
+      return;
+    }
     
     setSavingIds(prev => new Set(prev).add(seg.id));
+    console.log('Starting translation for:', seg.text.substring(0, 30));
     
     try {
-      await createCard(seg.text, '', '', ['imported'], `Video: ${data.title}`);
+      const translations: Record<string, string> = {};
+      
+      console.log('Translating to:', targetLangs, 'from:', sourceLang);
+      
+      await Promise.all(
+        targetLangs.map(async (lang) => {
+          try {
+            const result = await translateText(seg.text, sourceLang, lang);
+            translations[lang] = result;
+            console.log('Translation for', lang, ':', result.substring(0, 50));
+          } catch (e) {
+            console.error('Translation error for', lang, ':', e);
+            translations[lang] = '(translation failed)';
+          }
+        })
+      );
+
+      console.log('All translations:', translations);
+
+      await createCard(
+        seg.text,
+        translations.en || '',
+        translations.es || '',
+        ['imported'], 
+        `Video: ${data.title}`,
+        sourceLang,
+        data.url,
+        seg.startMs,
+        seg.endMs,
+        translations.ja || ''
+      );
+      const savedCard = await db.cards.where('sourceUrl').equals(data.url)
+        .and(c => c.startMs === seg.startMs && c.sourceText === seg.text)
+        .first();
+      if (savedCard) {
+        await ensureReviewStates(savedCard);
+      }
       setSavedIds(prev => new Set(prev).add(seg.id));
     } catch (err) {
       console.error('Failed to save card:', err);
@@ -77,7 +145,37 @@ export function TranscriptViewerScreen({ data, onBack }: TranscriptViewerScreenP
         if (savedIds.has(id)) continue;
         const seg = data.segments.find(s => s.id === id);
         if (seg) {
-          await createCard(seg.text, '', '', ['imported'], `Video: ${data.title}`);
+          const isDup = await checkDuplicate(data.url, seg.startMs, seg.text);
+          if (isDup) {
+            setSavedIds(prev => new Set(prev).add(id));
+            continue;
+          }
+
+          const translations: Record<string, string> = {};
+          await Promise.all(
+            targetLangs.map(async (lang) => {
+              translations[lang] = await translateText(seg.text, sourceLang, lang).catch(() => '(translation failed)');
+            })
+          );
+
+          await createCard(
+            seg.text,
+            translations.en || '',
+            translations.es || '',
+            ['imported'],
+            `Video: ${data.title}`,
+            sourceLang,
+            data.url,
+            seg.startMs,
+            seg.endMs,
+            translations.ja || ''
+          );
+          const savedCard = await db.cards.where('sourceUrl').equals(data.url)
+            .and(c => c.startMs === seg.startMs && c.sourceText === seg.text)
+            .first();
+          if (savedCard) {
+            await ensureReviewStates(savedCard);
+          }
           setSavedIds(prev => new Set(prev).add(id));
         }
       }

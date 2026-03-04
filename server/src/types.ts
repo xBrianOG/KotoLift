@@ -8,6 +8,7 @@ export interface Segment {
 export interface AnalyzeResult {
   title: string;
   segments: Segment[];
+  languageDetected?: string;
 }
 
 export interface AnalyzeRequest {

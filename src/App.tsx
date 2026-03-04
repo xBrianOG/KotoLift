@@ -8,21 +8,29 @@ import { HomeScreen } from "./components/HomeScreen";
 import { SettingsScreen } from "./components/SettingsScreen";
 import { VideoImportScreen } from "./components/VideoImportScreen";
 import { TranscriptViewerScreen } from "./components/TranscriptViewerScreen";
+import { VideoPlayerScreen } from "./components/VideoPlayerScreen";
 import { AppShell } from "./components/AppShell";
 import { LoginScreen } from "./components/LoginScreen";
-import { isLoggedIn, clearAuth } from "./services/auth";
+import { isLoggedIn, clearAuth, devLogin, isDevMode } from "./services/auth";
 import type { TranscriptData } from "./components/TranscriptViewerScreen";
+import type { VideoPlayerData } from "./components/VideoPlayerScreen";
 import "./types";
 
-type Screen = "home" | "review" | "cards" | "add" | "explain" | "drill" | "settings" | "videoImport" | "transcript";
+type Screen = "home" | "review" | "cards" | "add" | "explain" | "drill" | "settings" | "videoImport" | "transcript" | "videoPlayer";
 
 function App() {
   const [screen, setScreen] = useState<Screen>("home");
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
   const [transcriptData, setTranscriptData] = useState<TranscriptData | null>(null);
+  const [videoPlayerData, setVideoPlayerData] = useState<VideoPlayerData | null>(null);
 
   useEffect(() => {
-    setAuthenticated(isLoggedIn());
+    // Auto-login in dev mode
+    if (isDevMode() && !isLoggedIn()) {
+      devLogin().then(() => setAuthenticated(true)).catch(console.error);
+    } else {
+      setAuthenticated(isLoggedIn());
+    }
     
     const saved = localStorage.getItem('transcript.last');
     if (saved) {
@@ -33,7 +41,7 @@ function App() {
   }, []);
 
   const navigate = (to: string) => {
-    const valid = ["home", "review", "drill", "cards", "add", "explain", "settings", "videoImport", "transcript"] as const;
+    const valid = ["home", "review", "drill", "cards", "add", "explain", "settings", "videoImport", "transcript", "videoPlayer"] as const;
     if ((valid as any).includes(to)) setScreen(to as Screen);
   };
 
@@ -50,6 +58,11 @@ function App() {
     setTranscriptData(data);
     localStorage.setItem('transcript.last', JSON.stringify(data));
     navigate('transcript');
+  };
+
+  const handleOpenPlayer = (data: VideoPlayerData) => {
+    setVideoPlayerData(data);
+    navigate('videoPlayer');
   };
 
   const handleAuthError = () => {
@@ -102,11 +115,18 @@ function App() {
           }}
           onCancel={() => navigate('add')}
           onViewTranscript={handleViewTranscript}
+          onOpenPlayer={handleOpenPlayer}
         />
       )}
       {screen === "transcript" && transcriptData && (
         <TranscriptViewerScreen
           data={transcriptData}
+          onBack={() => navigate('videoImport')}
+        />
+      )}
+      {screen === "videoPlayer" && videoPlayerData && (
+        <VideoPlayerScreen
+          data={videoPlayerData}
           onBack={() => navigate('videoImport')}
         />
       )}

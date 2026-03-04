@@ -1,13 +1,36 @@
-export type Language = 'ja' | 'en' | 'es';
+export type Language = 'ja' | 'en' | 'es' | 'ko' | 'zh' | 'fr' | 'de';
 
 export interface Card {
   id: string;
-  jaText: string;
-  enText: string;
-  esText: string;
+  // New flexible model
+  sourceText?: string;
+  sourceLang?: string;
+  translations?: Record<string, string | undefined>;
+  // Legacy fields (for backward compatibility)
+  jaText?: string;
+  enText?: string;
+  esText?: string;
   tags: string[];
   notes?: string;
+  // Source tracking for video imports
+  sourceUrl?: string;
+  startMs?: number;
+  endMs?: number;
   createdAt: number;
+}
+
+// Helper to get display text from a card
+export function getCardSourceText(card: Card): string {
+  if (card.sourceText) return card.sourceText;
+  return card.jaText || '';
+}
+
+export function getCardTranslation(card: Card, lang: string): string | undefined {
+  if (card.translations) return card.translations[lang];
+  if (lang === 'ja') return card.jaText;
+  if (lang === 'en') return card.enText;
+  if (lang === 'es') return card.esText;
+  return undefined;
 }
 
 export interface ReviewState {

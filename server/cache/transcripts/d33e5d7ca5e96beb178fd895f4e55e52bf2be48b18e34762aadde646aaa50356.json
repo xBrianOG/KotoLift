@@ -1,0 +1,900 @@
+{
+  "title": "Learn Anything Faster: Save 90% of Your Time by Using Gemini Flash + NotebookLm + Anki Cards",
+  "segments": [
+    {
+      "id": "seg-1",
+      "startMs": 0,
+      "endMs": 6000,
+      "text": "You want to be smarter, you want to get better grades, you want to make more money, you want to do better work."
+    },
+    {
+      "id": "seg-2",
+      "startMs": 6000,
+      "endMs": 8000,
+      "text": "This is the video for you."
+    },
+    {
+      "id": "seg-3",
+      "startMs": 8000,
+      "endMs": 14000,
+      "text": "I've been studying my whole life, I've been going to school, and now I'm doing cyber security."
+    },
+    {
+      "id": "seg-4",
+      "startMs": 14000,
+      "endMs": 17000,
+      "text": "And a lot of the courses are very difficult."
+    },
+    {
+      "id": "seg-5",
+      "startMs": 17000,
+      "endMs": 24000,
+      "text": "But I'm going to show you how to pass them, how to get good grades, and also how to do better in your workplace."
+    },
+    {
+      "id": "seg-6",
+      "startMs": 24000,
+      "endMs": 30000,
+      "text": "Now, the prerequisite for this video is that you get sleep and have a lot of energy working."
+    },
+    {
+      "id": "seg-7",
+      "startMs": 30000,
+      "endMs": 35000,
+      "text": "Those are the fundamental parts of your brain working."
+    },
+    {
+      "id": "seg-8",
+      "startMs": 35000,
+      "endMs": 44000,
+      "text": "Having bad sleep is the equivalent of causing as much brain damage as getting hit in the head, basically."
+    },
+    {
+      "id": "seg-9",
+      "startMs": 44000,
+      "endMs": 52000,
+      "text": "And having no energy just by the loss of thermodynamics will cause you to not be able to compute anything."
+    },
+    {
+      "id": "seg-10",
+      "startMs": 52000,
+      "endMs": 54000,
+      "text": "So those are the two things you need to fix first."
+    },
+    {
+      "id": "seg-11",
+      "startMs": 54000,
+      "endMs": 58000,
+      "text": "But then I'm going to show you the tools that I use to study faster."
+    },
+    {
+      "id": "seg-12",
+      "startMs": 58000,
+      "endMs": 60000,
+      "text": "First of all, we have Notebook LM."
+    },
+    {
+      "id": "seg-13",
+      "startMs": 60000,
+      "endMs": 69000,
+      "text": "Let's say you have an assignment to do, and your teacher tells you to look at all these 10 different YouTube videos."
+    },
+    {
+      "id": "seg-14",
+      "startMs": 69000,
+      "endMs": 74000,
+      "text": "Now, each video is an hour long, and you don't want to spend 10 hours."
+    },
+    {
+      "id": "seg-15",
+      "startMs": 74000,
+      "endMs": 82000,
+      "text": "First of all, what you could do is use a tool like I have here, which is the video speed controller."
+    },
+    {
+      "id": "seg-16",
+      "startMs": 82000,
+      "endMs": 84000,
+      "text": "Which is a great tool, by the way."
+    },
+    {
+      "id": "seg-17",
+      "startMs": 84000,
+      "endMs": 91000,
+      "text": "In which you can increase the YouTube video speed very quickly by just pressing D or S like this."
+    },
+    {
+      "id": "seg-18",
+      "startMs": 91000,
+      "endMs": 97000,
+      "text": "That's an amazing tool, really, because you can just quickly change the speed of the video."
+    },
+    {
+      "id": "seg-19",
+      "startMs": 97000,
+      "endMs": 99000,
+      "text": "But let's say you don't want to watch..."
+    },
+    {
+      "id": "seg-20",
+      "startMs": 99000,
+      "endMs": 102000,
+      "text": "Even if you watch everything on double speed, that's still going to be 5 hours."
+    },
+    {
+      "id": "seg-21",
+      "startMs": 102000,
+      "endMs": 107000,
+      "text": "So what you can do is use this free tool called NotebookLM.google."
+    },
+    {
+      "id": "seg-22",
+      "startMs": 107000,
+      "endMs": 112000,
+      "text": "Now let's go, insert this, and let this guy cook."
+    },
+    {
+      "id": "seg-23",
+      "startMs": 112000,
+      "endMs": 120000,
+      "text": "Now what's insane about Notebook LM is that you can actually create a deep dive conversation between two different hosts."
+    },
+    {
+      "id": "seg-24",
+      "startMs": 120000,
+      "endMs": 122000,
+      "text": "Just like a podcast."
+    },
+    {
+      "id": "seg-25",
+      "startMs": 122000,
+      "endMs": 130000,
+      "text": "So if you're a good listener, but can't watch videos, or don't want to read a lot of text, this is an extremely good way to do this."
+    },
+    {
+      "id": "seg-26",
+      "startMs": 130000,
+      "endMs": 137000,
+      "text": "You could generate this conversation, and then listen to a 10 minute long podcast about the thing you're trying to study."
+    },
+    {
+      "id": "seg-27",
+      "startMs": 137000,
+      "endMs": 139000,
+      "text": "Which will make it easier."
+    },
+    {
+      "id": "seg-28",
+      "startMs": 139000,
+      "endMs": 146000,
+      "text": "And about studying, the best thing is to get information about the same thing from different types of sources."
+    },
+    {
+      "id": "seg-29",
+      "startMs": 146000,
+      "endMs": 150000,
+      "text": "So from reading, from watching, from listening."
+    },
+    {
+      "id": "seg-30",
+      "startMs": 150000,
+      "endMs": 153000,
+      "text": "Now, the best teacher is always doing."
+    },
+    {
+      "id": "seg-31",
+      "startMs": 153000,
+      "endMs": 159000,
+      "text": "But if you have a ton of information to get in, this is a great way to do it."
+    },
+    {
+      "id": "seg-32",
+      "startMs": 159000,
+      "endMs": 162000,
+      "text": "So now let's do 10 important Python concepts."
+    },
+    {
+      "id": "seg-33",
+      "startMs": 162000,
+      "endMs": 164000,
+      "text": "What we can do, Briefing Docs."
+    },
+    {
+      "id": "seg-34",
+      "startMs": 164000,
+      "endMs": 165000,
+      "text": "Click this button."
+    },
+    {
+      "id": "seg-35",
+      "startMs": 165000,
+      "endMs": 168000,
+      "text": "It will generate a note."
+    },
+    {
+      "id": "seg-36",
+      "startMs": 168000,
+      "endMs": 173000,
+      "text": "What this does, it generates a summary document of this whole video."
+    },
+    {
+      "id": "seg-37",
+      "startMs": 173000,
+      "endMs": 181000,
+      "text": "Okay, so here's a briefing document summarizing the key Python concepts covered in the provided video."
+    },
+    {
+      "id": "seg-38",
+      "startMs": 181000,
+      "endMs": 188000,
+      "text": "We got files, we got variables, we got data types, we got type annotations, we got constants, functions."
+    },
+    {
+      "id": "seg-39",
+      "startMs": 188000,
+      "endMs": 191000,
+      "text": "Classes, methods, dunder methods."
+    },
+    {
+      "id": "seg-40",
+      "startMs": 191000,
+      "endMs": 194000,
+      "text": "Actionable insights."
+    },
+    {
+      "id": "seg-41",
+      "startMs": 194000,
+      "endMs": 196000,
+      "text": "Blah, blah, blah, blah."
+    },
+    {
+      "id": "seg-42",
+      "startMs": 196000,
+      "endMs": 198000,
+      "text": "Tons of information."
+    },
+    {
+      "id": "seg-43",
+      "startMs": 198000,
+      "endMs": 200000,
+      "text": "What you can also do is a study guide."
+    },
+    {
+      "id": "seg-44",
+      "startMs": 200000,
+      "endMs": 207000,
+      "text": "And this will tie into the tool I'm going to show you last, which is Anki."
+    },
+    {
+      "id": "seg-45",
+      "startMs": 207000,
+      "endMs": 213000,
+      "text": "Now, with this one, you actually generate questions and answers."
+    },
+    {
+      "id": "seg-46",
+      "startMs": 213000,
+      "endMs": 216000,
+      "text": "So, what is the purpose of the .py extension when creating a file?"
+    },
+    {
+      "id": "seg-47",
+      "startMs": 216000,
+      "endMs": 218000,
+      "text": "And what program executes such a file?"
+    },
+    {
+      "id": "seg-48",
+      "startMs": 218000,
+      "endMs": 223000,
+      "text": "The .py extension designates a file as a Python file, which is then executed by the Python interpreter."
+    },
+    {
+      "id": "seg-49",
+      "startMs": 223000,
+      "endMs": 226000,
+      "text": "The interpreter reads and runs the code written in the file."
+    },
+    {
+      "id": "seg-50",
+      "startMs": 226000,
+      "endMs": 227000,
+      "text": "This is amazing."
+    },
+    {
+      "id": "seg-51",
+      "startMs": 227000,
+      "endMs": 231000,
+      "text": "You create these questions, and then with the Anki cards that I'm going to show you later,"
+    },
+    {
+      "id": "seg-52",
+      "startMs": 231000,
+      "endMs": 234000,
+      "text": "you can create flashcards and train yourself on this."
+    },
+    {
+      "id": "seg-53",
+      "startMs": 234000,
+      "endMs": 236000,
+      "text": "I mean, this is just insane."
+    },
+    {
+      "id": "seg-54",
+      "startMs": 236000,
+      "endMs": 240000,
+      "text": "Like, even a year ago, six months ago, we didn't have this."
+    },
+    {
+      "id": "seg-55",
+      "startMs": 240000,
+      "endMs": 242000,
+      "text": "Next, Gemini."
+    },
+    {
+      "id": "seg-56",
+      "startMs": 242000,
+      "endMs": 248000,
+      "text": "Gemini AI is also kind of insane."
+    },
+    {
+      "id": "seg-57",
+      "startMs": 248000,
+      "endMs": 252000,
+      "text": "Why I would use Gemini instead of ChatGPT and other things,"
+    },
+    {
+      "id": "seg-58",
+      "startMs": 252000,
+      "endMs": 258000,
+      "text": "it's not because the AI model itself is that much better, but it is free."
+    },
+    {
+      "id": "seg-59",
+      "startMs": 258000,
+      "endMs": 266000,
+      "text": "And you can do an infinite amount of prompts without having to buy a subscription."
+    },
+    {
+      "id": "seg-60",
+      "startMs": 266000,
+      "endMs": 271000,
+      "text": "So, with ChatGPT, for example, you can only use their best model with like ten prompts,"
+    },
+    {
+      "id": "seg-61",
+      "startMs": 271000,
+      "endMs": 273000,
+      "text": "and it's kind of annoying because it switches to chats."
+    },
+    {
+      "id": "seg-62",
+      "startMs": 273000,
+      "endMs": 275000,
+      "text": "Here, you can just continue to ask it."
+    },
+    {
+      "id": "seg-63",
+      "startMs": 275000,
+      "endMs": 277000,
+      "text": "And it's also extremely fast."
+    },
+    {
+      "id": "seg-64",
+      "startMs": 277000,
+      "endMs": 287000,
+      "text": "So, let's say, teach me the basics of JavaScript programming."
+    },
+    {
+      "id": "seg-65",
+      "startMs": 289000,
+      "endMs": 291000,
+      "text": "So, what is it?"
+    },
+    {
+      "id": "seg-66",
+      "startMs": 291000,
+      "endMs": 298000,
+      "text": "Variables, data types, operators, control flow, functions, the DOM, console, whatever."
+    },
+    {
+      "id": "seg-67",
+      "startMs": 298000,
+      "endMs": 302000,
+      "text": "I have programmed in JavaScript, so I'm just going to check these answers,"
+    },
+    {
+      "id": "seg-68",
+      "startMs": 302000,
+      "endMs": 304000,
+      "text": "that they are correct."
+    },
+    {
+      "id": "seg-69",
+      "startMs": 306000,
+      "endMs": 310000,
+      "text": "Yeah, this is a pretty good explanation."
+    },
+    {
+      "id": "seg-70",
+      "startMs": 310000,
+      "endMs": 314000,
+      "text": "So, if you want to learn web development, if you want to learn business,"
+    },
+    {
+      "id": "seg-71",
+      "startMs": 314000,
+      "endMs": 317000,
+      "text": "if you want to learn biology, whatever."
+    },
+    {
+      "id": "seg-72",
+      "startMs": 318000,
+      "endMs": 329000,
+      "text": "Teach me how rain is, teach me how, for example, cloud seeding works."
+    },
+    {
+      "id": "seg-73",
+      "startMs": 329000,
+      "endMs": 331000,
+      "text": "If you don't know what cloud seeding is,"
+    },
+    {
+      "id": "seg-74",
+      "startMs": 331000,
+      "endMs": 337000,
+      "text": "it's a weather modification technique that aims to increase precipitation,"
+    },
+    {
+      "id": "seg-75",
+      "startMs": 337000,
+      "endMs": 341000,
+      "text": "rain or snow, by introducing substances into clouds that serve as ice nuclei."
+    },
+    {
+      "id": "seg-76",
+      "startMs": 341000,
+      "endMs": 343000,
+      "text": "Here's a breakdown of the whole process."
+    },
+    {
+      "id": "seg-77",
+      "startMs": 343000,
+      "endMs": 344000,
+      "text": "So, we've got a whole process."
+    },
+    {
+      "id": "seg-78",
+      "startMs": 344000,
+      "endMs": 347000,
+      "text": "And as you see, this AI is very fast."
+    },
+    {
+      "id": "seg-79",
+      "startMs": 347000,
+      "endMs": 349000,
+      "text": "Now, let's go over to what I discussed previously."
+    },
+    {
+      "id": "seg-80",
+      "startMs": 349000,
+      "endMs": 351000,
+      "text": "Oh, shit, that's a notification."
+    },
+    {
+      "id": "seg-81",
+      "startMs": 351000,
+      "endMs": 353000,
+      "text": "That's my bad, guys."
+    },
+    {
+      "id": "seg-82",
+      "startMs": 353000,
+      "endMs": 357000,
+      "text": "What you're going to do now is go to the same document,"
+    },
+    {
+      "id": "seg-83",
+      "startMs": 357000,
+      "endMs": 359000,
+      "text": "or the same YouTube video you summarized before."
+    },
+    {
+      "id": "seg-84",
+      "startMs": 359000,
+      "endMs": 364000,
+      "text": "You're going to go into the quiz essay."
+    },
+    {
+      "id": "seg-85",
+      "startMs": 364000,
+      "endMs": 371000,
+      "text": "And now you're going to go to ankiweb.net."
+    },
+    {
+      "id": "seg-86",
+      "startMs": 372000,
+      "endMs": 376000,
+      "text": "And here, you can create an account, sign up."
+    },
+    {
+      "id": "seg-87",
+      "startMs": 376000,
+      "endMs": 379000,
+      "text": "I'm going to create an account and come back to you guys."
+    },
+    {
+      "id": "seg-88",
+      "startMs": 379000,
+      "endMs": 381000,
+      "text": "So, I logged in, and here are the different things I do."
+    },
+    {
+      "id": "seg-89",
+      "startMs": 381000,
+      "endMs": 389000,
+      "text": "So, let's say I want to do this deck about access control."
+    },
+    {
+      "id": "seg-90",
+      "startMs": 389000,
+      "endMs": 395000,
+      "text": "Let's say I want to do a buffer overflow, or authentication, or cryptography,"
+    },
+    {
+      "id": "seg-91",
+      "startMs": 395000,
+      "endMs": 399000,
+      "text": "data security, and whatever."
+    },
+    {
+      "id": "seg-92",
+      "startMs": 399000,
+      "endMs": 400000,
+      "text": "This is a free tool."
+    },
+    {
+      "id": "seg-93",
+      "startMs": 400000,
+      "endMs": 401000,
+      "text": "It's so amazing."
+    },
+    {
+      "id": "seg-94",
+      "startMs": 401000,
+      "endMs": 405000,
+      "text": "What you can do is you can download Anki web,"
+    },
+    {
+      "id": "seg-95",
+      "startMs": 405000,
+      "endMs": 408000,
+      "text": "Anki, the actual application,"
+    },
+    {
+      "id": "seg-96",
+      "startMs": 408000,
+      "endMs": 410000,
+      "text": "and you can sync that with the web version for free."
+    },
+    {
+      "id": "seg-97",
+      "startMs": 410000,
+      "endMs": 413000,
+      "text": "And then you can use it on your mobile phone or other devices."
+    },
+    {
+      "id": "seg-98",
+      "startMs": 413000,
+      "endMs": 414000,
+      "text": "So, it's really good."
+    },
+    {
+      "id": "seg-99",
+      "startMs": 414000,
+      "endMs": 417000,
+      "text": "Now, how you use this is,"
+    },
+    {
+      "id": "seg-100",
+      "startMs": 417000,
+      "endMs": 422000,
+      "text": "I'm just going to download it and show it for you guys."
+    },
+    {
+      "id": "seg-101",
+      "startMs": 422000,
+      "endMs": 425000,
+      "text": "So, what you do is you create the deck,"
+    },
+    {
+      "id": "seg-102",
+      "startMs": 425000,
+      "endMs": 426000,
+      "text": "and then you add cards into the deck."
+    },
+    {
+      "id": "seg-103",
+      "startMs": 426000,
+      "endMs": 429000,
+      "text": "And it's just like a normal flashcard application."
+    },
+    {
+      "id": "seg-104",
+      "startMs": 429000,
+      "endMs": 430000,
+      "text": "Well, what's so great?"
+    },
+    {
+      "id": "seg-105",
+      "startMs": 430000,
+      "endMs": 434000,
+      "text": "Now, you can tie this in together with Notebook LM"
+    },
+    {
+      "id": "seg-106",
+      "startMs": 434000,
+      "endMs": 436000,
+      "text": "to create your custom decks for each video."
+    },
+    {
+      "id": "seg-107",
+      "startMs": 436000,
+      "endMs": 440000,
+      "text": "So, let's say you have 10 hours of course materials, 10 different videos."
+    },
+    {
+      "id": "seg-108",
+      "startMs": 440000,
+      "endMs": 442000,
+      "text": "You create a deck for each video, or deck for five videos,"
+    },
+    {
+      "id": "seg-109",
+      "startMs": 442000,
+      "endMs": 444000,
+      "text": "or things that are similar to each other,"
+    },
+    {
+      "id": "seg-110",
+      "startMs": 444000,
+      "endMs": 446000,
+      "text": "or have some type of connection."
+    },
+    {
+      "id": "seg-111",
+      "startMs": 446000,
+      "endMs": 448000,
+      "text": "And you just practice this every single time."
+    },
+    {
+      "id": "seg-112",
+      "startMs": 448000,
+      "endMs": 452000,
+      "text": "Now, when it comes to tests,"
+    },
+    {
+      "id": "seg-113",
+      "startMs": 452000,
+      "endMs": 455000,
+      "text": "I think flashcards are probably the best way to train this,"
+    },
+    {
+      "id": "seg-114",
+      "startMs": 455000,
+      "endMs": 458000,
+      "text": "because then you're actually going to know the information really well."
+    },
+    {
+      "id": "seg-115",
+      "startMs": 458000,
+      "endMs": 461000,
+      "text": "And don't just memorize everything."
+    },
+    {
+      "id": "seg-116",
+      "startMs": 461000,
+      "endMs": 463000,
+      "text": "Memorize is the first step."
+    },
+    {
+      "id": "seg-117",
+      "startMs": 463000,
+      "endMs": 465000,
+      "text": "So, memorize everything."
+    },
+    {
+      "id": "seg-118",
+      "startMs": 465000,
+      "endMs": 468000,
+      "text": "But then you also have to think about your answers as well."
+    },
+    {
+      "id": "seg-119",
+      "startMs": 468000,
+      "endMs": 472000,
+      "text": "Why are things how they are?"
+    },
+    {
+      "id": "seg-120",
+      "startMs": 472000,
+      "endMs": 475000,
+      "text": "And try to understand everything."
+    },
+    {
+      "id": "seg-121",
+      "startMs": 475000,
+      "endMs": 479000,
+      "text": "And if you have trouble understanding a topic"
+    },
+    {
+      "id": "seg-122",
+      "startMs": 479000,
+      "endMs": 481000,
+      "text": "that gets summarized in Notebook LM,"
+    },
+    {
+      "id": "seg-123",
+      "startMs": 481000,
+      "endMs": 483000,
+      "text": "you just go over to Gemini, ask it,"
+    },
+    {
+      "id": "seg-124",
+      "startMs": 483000,
+      "endMs": 485000,
+      "text": "what is this about?"
+    },
+    {
+      "id": "seg-125",
+      "startMs": 485000,
+      "endMs": 487000,
+      "text": "How can I get better at this?"
+    },
+    {
+      "id": "seg-126",
+      "startMs": 487000,
+      "endMs": 489000,
+      "text": "It's not that difficult, guys."
+    },
+    {
+      "id": "seg-127",
+      "startMs": 489000,
+      "endMs": 492000,
+      "text": "All these tools at your fingertips,"
+    },
+    {
+      "id": "seg-128",
+      "startMs": 492000,
+      "endMs": 494000,
+      "text": "and you can't even get better grades?"
+    },
+    {
+      "id": "seg-129",
+      "startMs": 494000,
+      "endMs": 496000,
+      "text": "It's insane."
+    },
+    {
+      "id": "seg-130",
+      "startMs": 496000,
+      "endMs": 498000,
+      "text": "And, for example, if you run a business,"
+    },
+    {
+      "id": "seg-131",
+      "startMs": 498000,
+      "endMs": 504000,
+      "text": "why wouldn't you use this to make your workflow so much more effective?"
+    },
+    {
+      "id": "seg-132",
+      "startMs": 504000,
+      "endMs": 506000,
+      "text": "Let's say you have to expand,"
+    },
+    {
+      "id": "seg-133",
+      "startMs": 506000,
+      "endMs": 511000,
+      "text": "and instead of paying for a consulting service,"
+    },
+    {
+      "id": "seg-134",
+      "startMs": 511000,
+      "endMs": 517000,
+      "text": "you can just ask a chatbot on how to do something,"
+    },
+    {
+      "id": "seg-135",
+      "startMs": 517000,
+      "endMs": 521000,
+      "text": "or you can take a long lecture or a course on how to do something,"
+    },
+    {
+      "id": "seg-136",
+      "startMs": 521000,
+      "endMs": 524000,
+      "text": "put it inside this Notebook LM,"
+    },
+    {
+      "id": "seg-137",
+      "startMs": 524000,
+      "endMs": 528000,
+      "text": "summarize it, and give you the details that you need to know."
+    },
+    {
+      "id": "seg-138",
+      "startMs": 528000,
+      "endMs": 531000,
+      "text": "This is really cool."
+    },
+    {
+      "id": "seg-139",
+      "startMs": 531000,
+      "endMs": 533000,
+      "text": "You can also create a timeline"
+    },
+    {
+      "id": "seg-140",
+      "startMs": 534000,
+      "endMs": 542000,
+      "text": "to see what things are happening at which time in the video."
+    },
+    {
+      "id": "seg-141",
+      "startMs": 542000,
+      "endMs": 545000,
+      "text": "This is going to show you exactly what happened"
+    },
+    {
+      "id": "seg-142",
+      "startMs": 545000,
+      "endMs": 548000,
+      "text": "in the beginning and in the end, basically."
+    },
+    {
+      "id": "seg-143",
+      "startMs": 548000,
+      "endMs": 551000,
+      "text": "I hope you guys enjoyed this video."
+    },
+    {
+      "id": "seg-144",
+      "startMs": 551000,
+      "endMs": 555000,
+      "text": "If you didn't know, I have a YouTube community."
+    },
+    {
+      "id": "seg-145",
+      "startMs": 555000,
+      "endMs": 557000,
+      "text": "It's just a private group."
+    },
+    {
+      "id": "seg-146",
+      "startMs": 557000,
+      "endMs": 560000,
+      "text": "10 people can join, and I want to keep it low-key,"
+    },
+    {
+      "id": "seg-147",
+      "startMs": 560000,
+      "endMs": 562000,
+      "text": "so don't share it with your friends."
+    },
+    {
+      "id": "seg-148",
+      "startMs": 562000,
+      "endMs": 565000,
+      "text": "I'm going to drop the link down below in the description if you want to join."
+    },
+    {
+      "id": "seg-149",
+      "startMs": 565000,
+      "endMs": 568000,
+      "text": "Have a lovely day, guys."
+    }
+  ],
+  "languageDetected": "english"
+}

@@ -8,7 +8,7 @@ export class KotoLiftDB extends Dexie {
   constructor() {
     super("KotoLiftDB");
     this.version(1).stores({
-      cards: "id, createdAt, *tags",
+      cards: "id, createdAt, *tags, sourceUrl",
       reviewStates:
         "id, cardId, promptLang, answerLang, nextReviewAt, [cardId+promptLang+answerLang]",
     });

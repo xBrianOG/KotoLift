@@ -3,23 +3,51 @@ import type { Card } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function createCard(
+  sourceText: string,
+  enText: string,
+  esText: string,
+  tags: string[],
+  notes?: string,
+  sourceLang?: string,
+  sourceUrl?: string,
+  startMs?: number,
+  endMs?: number,
+  jaText?: string
+): Promise<Card> {
+  const lang = sourceLang || 'ja';
+  
+  const card: Card = {
+    id: uuidv4(),
+    sourceText,
+    sourceLang: lang,
+    translations: {
+      en: enText || undefined,
+      es: esText || undefined,
+      ja: jaText || undefined,
+    },
+    jaText: lang === 'ja' ? sourceText : (jaText || ''),
+    enText: lang === 'en' ? sourceText : enText,
+    esText: lang === 'es' ? sourceText : esText,
+    tags,
+    notes,
+    sourceUrl,
+    startMs,
+    endMs,
+    createdAt: Date.now()
+  };
+  await db.cards.add(card);
+  return card;
+}
+
+// Legacy overload for backward compatibility
+export async function createCardLegacy(
   jaText: string,
   enText: string,
   esText: string,
   tags: string[],
   notes?: string
 ): Promise<Card> {
-  const card: Card = {
-    id: uuidv4(),
-    jaText,
-    enText,
-    esText,
-    tags,
-    notes,
-    createdAt: Date.now()
-  };
-  await db.cards.add(card);
-  return card;
+  return createCard(jaText, enText, esText, tags, notes, 'ja');
 }
 
 export async function updateCard(
@@ -49,9 +77,10 @@ export async function searchCards(
   if (query) {
     const lowerQuery = query.toLowerCase();
     cards = cards.filter(card =>
-      card.jaText.toLowerCase().includes(lowerQuery) ||
-      card.enText.toLowerCase().includes(lowerQuery) ||
-      card.esText.toLowerCase().includes(lowerQuery) ||
+      (card.sourceText?.toLowerCase().includes(lowerQuery)) ||
+      (card.jaText?.toLowerCase().includes(lowerQuery)) ||
+      (card.enText?.toLowerCase().includes(lowerQuery)) ||
+      (card.esText?.toLowerCase().includes(lowerQuery)) ||
       (card.notes?.toLowerCase().includes(lowerQuery) ?? false)
     );
   }

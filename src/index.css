@@ -48,6 +48,8 @@ html, body, #root {
   height: 100%;
   min-height: 100dvh;
   min-height: -webkit-fill-available;
+  touch-action: manipulation;
+  overflow: hidden;
 }
 
 body {
@@ -58,6 +60,8 @@ body {
   line-height: 1.4;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  overscroll-behavior: none;
 }
 
 button {

@@ -1,17 +1,41 @@
 /* React is only needed for JSX transform; no explicit import is required in modern tooling */
 import { useState, useEffect } from 'react'
+import { getLearningSettings, setNativeLang, setLearningMode, setPreferWhisper, type NativeLanguage, type LearningMode } from '../services/settings'
 
 export function SettingsScreen({ onBack, onSignOut }: { onBack?: () => void; onSignOut?: () => void } = {}) {
   const [quizSize, setQuizSize] = useState(10)
+  const [nativeLang, setNativeLangState] = useState<NativeLanguage>('en')
+  const [learningMode, setLearningModeState] = useState<LearningMode>('mixed')
+  const [preferWhisper, setPreferWhisperState] = useState(false)
   
   useEffect(() => {
     const saved = localStorage.getItem('settings.quizSize')
     if (saved) setQuizSize(parseInt(saved, 10))
+    
+    const settings = getLearningSettings()
+    setNativeLangState(settings.nativeLang)
+    setLearningModeState(settings.learningMode)
+    setPreferWhisperState(settings.preferWhisper)
   }, [])
   
   const handleQuizSizeChange = (size: number) => {
     setQuizSize(size)
     localStorage.setItem('settings.quizSize', String(size))
+  }
+  
+  const handleNativeLangChange = (lang: NativeLanguage) => {
+    setNativeLangState(lang)
+    setNativeLang(lang)
+  }
+  
+  const handleLearningModeChange = (mode: LearningMode) => {
+    setLearningModeState(mode)
+    setLearningMode(mode)
+  }
+  
+  const handlePreferWhisperChange = (prefer: boolean) => {
+    setPreferWhisperState(prefer)
+    setPreferWhisper(prefer)
   }
   
   return (
@@ -70,6 +94,66 @@ export function SettingsScreen({ onBack, onSignOut }: { onBack?: () => void; onS
                 </button>
               ))}
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Learning Section */}
+      <div className="settings-section">
+        <div className="settings-section-title">Learning</div>
+        <div className="settings-group">
+          <div className="settings-row">
+            <span className="settings-row-label">My Language</span>
+            <select
+              value={nativeLang}
+              onChange={(e) => handleNativeLangChange(e.target.value as NativeLanguage)}
+              style={{
+                border: 'none',
+                background: 'transparent',
+                color: 'var(--text-secondary)',
+                fontSize: 'var(--font-base)',
+                textAlign: 'right'
+              }}
+            >
+              <option value="en">English</option>
+              <option value="es">Spanish</option>
+              <option value="ja">Japanese</option>
+            </select>
+          </div>
+          <div className="settings-row">
+            <span className="settings-row-label">Learning Mode</span>
+            <select
+              value={learningMode}
+              onChange={(e) => handleLearningModeChange(e.target.value as LearningMode)}
+              style={{
+                border: 'none',
+                background: 'transparent',
+                color: 'var(--text-secondary)',
+                fontSize: 'var(--font-base)',
+                textAlign: 'right'
+              }}
+            >
+              <option value="passive">Source → Native</option>
+              <option value="active">Native → Source</option>
+              <option value="mixed">Mixed</option>
+            </select>
+          </div>
+          <div className="settings-row">
+            <span className="settings-row-label">Video Transcription</span>
+            <select
+              value={preferWhisper ? 'whisper' : 'captions'}
+              onChange={(e) => handlePreferWhisperChange(e.target.value === 'whisper')}
+              style={{
+                border: 'none',
+                background: 'transparent',
+                color: 'var(--text-secondary)',
+                fontSize: 'var(--font-base)',
+                textAlign: 'right'
+              }}
+            >
+              <option value="captions">Prefer YouTube Captions</option>
+              <option value="whisper">Always use Whisper</option>
+            </select>
           </div>
         </div>
       </div>

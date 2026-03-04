@@ -12,6 +12,7 @@ export interface VideoSegment {
 export interface VideoAnalysisResult {
   title: string;
   segments: VideoSegment[];
+  languageDetected?: string;
   minutesUsed?: number;
 }
 
@@ -23,6 +24,7 @@ export interface ApiError {
 export async function analyzeVideo(
   url: string,
   lang?: string,
+  preferWhisper?: boolean,
 ): Promise<VideoAnalysisResult> {
   const headers: HeadersInit = {
     "Content-Type": "application/json",
@@ -32,7 +34,7 @@ export async function analyzeVideo(
   const response = await fetch(`${API_BASE}/api/video/analyze`, {
     method: "POST",
     headers,
-    body: JSON.stringify({ url, lang }),
+    body: JSON.stringify({ url, lang, preferWhisper }),
   });
 
   if (response.status === 401) {
@@ -78,4 +80,37 @@ export class AuthError extends Error {
     super(message);
     this.name = "AuthError";
   }
+}
+
+export type SupportedLang = 'en' | 'ja' | 'es';
+
+export async function translateText(
+  text: string,
+  sourceLang: SupportedLang,
+  targetLang: SupportedLang
+): Promise<string> {
+  if (sourceLang === targetLang) {
+    return text;
+  }
+
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+    ...getAuthHeaders(),
+  };
+
+  const response = await fetch(`${API_BASE}/api/video/translate`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ text, sourceLang, targetLang }),
+  });
+
+  if (!response.ok) {
+    const error: ApiError = await response
+      .json()
+      .catch(() => ({ error: "Translation failed" }));
+    throw new Error(error.error || "Translation failed");
+  }
+
+  const data = await response.json();
+  return data.translation || "";
 }

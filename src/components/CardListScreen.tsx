@@ -80,52 +80,71 @@ export function CardListScreen({ onExplain }: { onExplain?: (card: any) => void 
           <p>No cards found</p>
         </div>
       ) : (
-        cards.map(card => (
-          <div key={card.id} className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div>
-                <span className="lang-badge">JA</span>
-                <p style={{ marginTop: 8 }}>{card.jaText}</p>
+        cards.map(card => {
+          const langLabel = card.sourceLang?.toUpperCase() || 'JA';
+          
+          // Get source text based on sourceLang
+          let sourceText = '';
+          if (card.sourceText) {
+            sourceText = card.sourceText;
+          } else if (card.sourceLang === 'ja' || !card.sourceLang) {
+            sourceText = card.jaText || '';
+          } else if (card.sourceLang === 'en') {
+            sourceText = card.enText || '';
+          } else if (card.sourceLang === 'es') {
+            sourceText = card.esText || '';
+          }
+          
+          const enText = card.translations?.en || card.enText || '';
+          const esText = card.translations?.es || card.esText || '';
+          
+          // Show translations that aren't the source language
+          const showEn = enText && card.sourceLang !== 'en';
+          const showEs = esText && card.sourceLang !== 'es';
+          
+          return (
+            <div key={card.id} className="card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <span className="lang-badge">{langLabel}</span>
+                  <p style={{ marginTop: 8 }}>{sourceText}</p>
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button 
+                    onClick={() => setEditingCard(card)}
+                    style={{ background: 'none', color: 'var(--text-secondary)', padding: 4 }}
+                  >
+                    ✏️
+                  </button>
+                  <button 
+                    onClick={() => handleDelete(card.id)}
+                    style={{ background: 'none', color: 'var(--danger)', padding: 4 }}
+                  >
+                    🗑️
+                  </button>
+                </div>
               </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button 
-                  onClick={() => setEditingCard(card)}
-                  style={{ background: 'none', color: 'var(--text-secondary)', padding: 4 }}
-                >
-                  ✏️
-                </button>
-                <button 
-                  onClick={() => handleDelete(card.id)}
-                  style={{ background: 'none', color: 'var(--danger)', padding: 4 }}
-                >
-                  🗑️
-                </button>
-              </div>
-              {onExplain && (
-                <button
-                  onClick={() => onExplain(card)}
-                  style={{ width: '100%', marginTop: 6, padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-card)' }}
-                >
-                  Explain
-                </button>
+
+              {showEn && (
+                <p style={{ marginTop: 8, color: 'var(--text-secondary)' }}>
+                  <span className="lang-badge" style={{ fontSize: '0.6rem' }}>EN</span> {enText}
+                </p>
               )}
-              
+              {showEs && (
+                <p style={{ marginTop: 4, color: 'var(--text-secondary)' }}>
+                  <span className="lang-badge" style={{ fontSize: '0.6rem' }}>ES</span> {esText}
+                </p>
+              )}
+              {card.tags.length > 0 && (
+                <div style={{ marginTop: 12 }}>
+                  {card.tags.map(tag => (
+                    <span key={tag} className="tag">{tag}</span>
+                  ))}
+                </div>
+              )}
             </div>
-            <p style={{ marginTop: 8, color: 'var(--text-secondary)' }}>
-              <span className="lang-badge" style={{ fontSize: '0.6rem' }}>EN</span> {card.enText}
-            </p>
-            <p style={{ marginTop: 4, color: 'var(--text-secondary)' }}>
-              <span className="lang-badge" style={{ fontSize: '0.6rem' }}>ES</span> {card.esText}
-            </p>
-            {card.tags.length > 0 && (
-              <div style={{ marginTop: 12 }}>
-                {card.tags.map(tag => (
-                  <span key={tag} className="tag">{tag}</span>
-                ))}
-              </div>
-            )}
-          </div>
-        ))
+          );
+        })
       )}
 
       {editingCard && (

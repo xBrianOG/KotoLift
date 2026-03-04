@@ -1,0 +1,102 @@
+{
+  "title": "Generate Flashcards in NotebookLM (NotebookLM)",
+  "segments": [
+    {
+      "id": "seg-1",
+      "startMs": 0,
+      "endMs": 12480,
+      "text": "Hola, ahora te mostraré cómo generar cartas flash en Notebook LM."
+    },
+    {
+      "id": "seg-2",
+      "startMs": 12480,
+      "endMs": 17460,
+      "text": "Abre un archivo de Notebook LM."
+    },
+    {
+      "id": "seg-3",
+      "startMs": 17460,
+      "endMs": 21880,
+      "text": "En la parte derecha deberías ver la sección de estudio."
+    },
+    {
+      "id": "seg-4",
+      "startMs": 21880,
+      "endMs": 28600,
+      "text": "Si eres un propietario o editor del archivo, deberías ver varias opciones que puedes usar."
+    },
+    {
+      "id": "seg-5",
+      "startMs": 28600,
+      "endMs": 36400,
+      "text": "Una de ellas es la opción de cartas flash, así que si haces clic en ella, generará cartas"
+    },
+    {
+      "id": "seg-6",
+      "startMs": 36400,
+      "endMs": 40920,
+      "text": "flash en tu Notebook LM de acuerdo."
+    },
+    {
+      "id": "seg-7",
+      "startMs": 40920,
+      "endMs": 46840,
+      "text": "Puedes hacer clic en el icono de lápiz para customizar los settings, como menos cartas"
+    },
+    {
+      "id": "seg-8",
+      "startMs": 46840,
+      "endMs": 52480,
+      "text": "o más, o nivel de dificultad."
+    },
+    {
+      "id": "seg-9",
+      "startMs": 52480,
+      "endMs": 57760,
+      "text": "También puedes hacer clic en el botón de generar para usar los settings de acuerdo"
+    },
+    {
+      "id": "seg-10",
+      "startMs": 57760,
+      "endMs": 62000,
+      "text": "para generar cartas flash nuevas."
+    },
+    {
+      "id": "seg-11",
+      "startMs": 62000,
+      "endMs": 68000,
+      "text": "Este es un ejemplo de las cartas flash relacionadas con este archivo de Notebook LM, así que"
+    },
+    {
+      "id": "seg-12",
+      "startMs": 68000,
+      "endMs": 76120,
+      "text": "puedes hacer clic en el siguiente botón o el botón anterior para ver la carta flash anterior."
+    },
+    {
+      "id": "seg-13",
+      "startMs": 76120,
+      "endMs": 84560,
+      "text": "Y puedes hacer clic en la opción de ver la respuesta aquí para ver la respuesta."
+    },
+    {
+      "id": "seg-14",
+      "startMs": 84560,
+      "endMs": 89680,
+      "text": "Y puedes hacer clic en el botón de explicación para explicar la carta flash y si apareces"
+    },
+    {
+      "id": "seg-15",
+      "startMs": 89680,
+      "endMs": 98520,
+      "text": "en el chat."
+    },
+    {
+      "id": "seg-16",
+      "startMs": 98520,
+      "endMs": 99040,
+      "text": "Gracias"
+    }
+  ],
+  "languageDetected": "spanish"
+}

@@ -1,0 +1,516 @@
+{
+  "title": "Week in the Life On-call as a Software Engineer in NYC",
+  "segments": [
+    {
+      "id": "seg-1",
+      "startMs": 0,
+      "endMs": 18160,
+      "text": "Alright, yep, sounds good, alright, see you guys."
+    },
+    {
+      "id": "seg-2",
+      "startMs": 18160,
+      "endMs": 21800,
+      "text": "Currently 3.23 and my on-call shift starts now."
+    },
+    {
+      "id": "seg-3",
+      "startMs": 21800,
+      "endMs": 26120,
+      "text": "Not only am I on-call this week but it's also a very very busy week because there's a lot"
+    },
+    {
+      "id": "seg-4",
+      "startMs": 26120,
+      "endMs": 30640,
+      "text": "of things that our team wants to finish before the new year and so it's all good, it's all"
+    },
+    {
+      "id": "seg-5",
+      "startMs": 30640,
+      "endMs": 33320,
+      "text": "for growth."
+    },
+    {
+      "id": "seg-6",
+      "startMs": 33320,
+      "endMs": 36920,
+      "text": "So for those of you who don't know, what is an on-call shift for software engineers?"
+    },
+    {
+      "id": "seg-7",
+      "startMs": 36920,
+      "endMs": 40480,
+      "text": "Imagine your normal workday ends but you're still depressed and your team relies on if"
+    },
+    {
+      "id": "seg-8",
+      "startMs": 40480,
+      "endMs": 41480,
+      "text": "something breaks."
+    },
+    {
+      "id": "seg-9",
+      "startMs": 41480,
+      "endMs": 45340,
+      "text": "During your on-call shift, you keep your phone close because any issue that affects users"
+    },
+    {
+      "id": "seg-10",
+      "startMs": 45340,
+      "endMs": 50720,
+      "text": "or breaks any systems can trigger an alert that sounds like this."
+    },
+    {
+      "id": "seg-11",
+      "startMs": 50720,
+      "endMs": 54880,
+      "text": "When that alert hits, you jump in fast, figure out what's wrong and either fix it yourself"
+    },
+    {
+      "id": "seg-12",
+      "startMs": 54880,
+      "endMs": 55880,
+      "text": "or loop in the right team."
+    },
+    {
+      "id": "seg-13",
+      "startMs": 56140,
+      "endMs": 58760,
+      "text": "It's basically being the emergency responder for your systems."
+    },
+    {
+      "id": "seg-14",
+      "startMs": 58760,
+      "endMs": 62880,
+      "text": "It is stressful but I'd say you learn a lot because you see how your product actually"
+    },
+    {
+      "id": "seg-15",
+      "startMs": 62880,
+      "endMs": 64880,
+      "text": "behaves under real pressure."
+    },
+    {
+      "id": "seg-16",
+      "startMs": 76880,
+      "endMs": 83520,
+      "text": "Honestly, it's really sad that it gets so dark this early, it's like 4.40pm and it's"
+    },
+    {
+      "id": "seg-17",
+      "startMs": 83520,
+      "endMs": 85520,
+      "text": "like basically dark outside."
+    },
+    {
+      "id": "seg-18",
+      "startMs": 113520,
+      "endMs": 127160,
+      "text": "Alright, so it's like 6.30am, I was going to go to the gym but I just got paged, great"
+    },
+    {
+      "id": "seg-19",
+      "startMs": 127160,
+      "endMs": 128160,
+      "text": "timing right?"
+    },
+    {
+      "id": "seg-20",
+      "startMs": 128160,
+      "endMs": 132520,
+      "text": "And so I'm going to go back, I've walked like 10 minutes already."
+    },
+    {
+      "id": "seg-21",
+      "startMs": 132520,
+      "endMs": 136520,
+      "text": "I guess this counts as a nice morning walk and I'll go work out later tonight."
+    },
+    {
+      "id": "seg-22",
+      "startMs": 143520,
+      "endMs": 172520,
+      "text": "It's currently 7.33pm, I've reached out to everyone that I could."
+    },
+    {
+      "id": "seg-23",
+      "startMs": 173520,
+      "endMs": 178520,
+      "text": "So I don't think there's much I can do here but I'm really tired now."
+    },
+    {
+      "id": "seg-24",
+      "startMs": 178520,
+      "endMs": 183520,
+      "text": "I really hope they respond quickly, maybe I'll take a quick nap right now."
+    },
+    {
+      "id": "seg-25",
+      "startMs": 195520,
+      "endMs": 201520,
+      "text": "Alright, so the incident was resolved, everything's good now, I'm gonna go back to sleep."
+    },
+    {
+      "id": "seg-26",
+      "startMs": 202520,
+      "endMs": 203520,
+      "text": "Good night."
+    },
+    {
+      "id": "seg-27",
+      "startMs": 233520,
+      "endMs": 251520,
+      "text": "So it is currently 5.51pm and I was about to go cook and do my laundry and then head"
+    },
+    {
+      "id": "seg-28",
+      "startMs": 251520,
+      "endMs": 254520,
+      "text": "to the gym but lo and behold, I get another alert."
+    },
+    {
+      "id": "seg-29",
+      "startMs": 254520,
+      "endMs": 259520,
+      "text": "I'm gonna check it, if it's not a big deal I'll just leave it and then I'll give it another"
+    },
+    {
+      "id": "seg-30",
+      "startMs": 259520,
+      "endMs": 264520,
+      "text": "like I would say 15-20 minutes and let's see if I can find the root cause."
+    },
+    {
+      "id": "seg-31",
+      "startMs": 275520,
+      "endMs": 279520,
+      "text": "Alright, I'm gonna head to the gym now, hopefully I don't get paged again."
+    },
+    {
+      "id": "seg-32",
+      "startMs": 280520,
+      "endMs": 291520,
+      "text": "It's 1.12am."
+    },
+    {
+      "id": "seg-33",
+      "startMs": 291520,
+      "endMs": 299520,
+      "text": "Some days I just end up working until midnight and I have a presentation tomorrow coming"
+    },
+    {
+      "id": "seg-34",
+      "startMs": 299520,
+      "endMs": 302520,
+      "text": "up so hopefully it'll go smoothly."
+    },
+    {
+      "id": "seg-35",
+      "startMs": 302520,
+      "endMs": 304520,
+      "text": "Yeah, we'll see."
+    },
+    {
+      "id": "seg-36",
+      "startMs": 309520,
+      "endMs": 310520,
+      "text": "Alright."
+    },
+    {
+      "id": "seg-37",
+      "startMs": 311520,
+      "endMs": 312520,
+      "text": "Good night."
+    },
+    {
+      "id": "seg-38",
+      "startMs": 312520,
+      "endMs": 340520,
+      "text": "I'm going back home."
+    },
+    {
+      "id": "seg-39",
+      "startMs": 341520,
+      "endMs": 345520,
+      "text": "Boy, isn't that feeling when you feel like you're completely cooked?"
+    },
+    {
+      "id": "seg-40",
+      "startMs": 345520,
+      "endMs": 353520,
+      "text": "There's no point in worrying or being sad about something cause it won't change anything."
+    },
+    {
+      "id": "seg-41",
+      "startMs": 353520,
+      "endMs": 358520,
+      "text": "That's when you know you're really cooked, you just accept everything and that's how I feel."
+    },
+    {
+      "id": "seg-42",
+      "startMs": 360520,
+      "endMs": 362520,
+      "text": "Let's go through the steps of configuring it."
+    },
+    {
+      "id": "seg-43",
+      "startMs": 362520,
+      "endMs": 366520,
+      "text": "It's fairly straightforward and not too different from..."
+    },
+    {
+      "id": "seg-44",
+      "startMs": 370520,
+      "endMs": 386520,
+      "text": "Alright, I'm gonna go run an errand but since I'm on call I have to bring my laptop and"
+    },
+    {
+      "id": "seg-45",
+      "startMs": 386520,
+      "endMs": 390520,
+      "text": "my charger, you know, just in case something urgent happens."
+    },
+    {
+      "id": "seg-46",
+      "startMs": 391520,
+      "endMs": 399520,
+      "text": "9.29am."
+    },
+    {
+      "id": "seg-47",
+      "startMs": 399520,
+      "endMs": 403520,
+      "text": "Of course, I was pulled into another incident."
+    },
+    {
+      "id": "seg-48",
+      "startMs": 403520,
+      "endMs": 407520,
+      "text": "I'm gonna try to solve that as soon as possible right now."
+    },
+    {
+      "id": "seg-49",
+      "startMs": 407520,
+      "endMs": 411520,
+      "text": "I also just woke up."
+    },
+    {
+      "id": "seg-50",
+      "startMs": 411520,
+      "endMs": 414520,
+      "text": "It's now 9.46am."
+    },
+    {
+      "id": "seg-51",
+      "startMs": 414520,
+      "endMs": 419520,
+      "text": "I just made the PR for the fix so it should be solved."
+    },
+    {
+      "id": "seg-52",
+      "startMs": 420520,
+      "endMs": 421520,
+      "text": "Update."
+    },
+    {
+      "id": "seg-53",
+      "startMs": 421520,
+      "endMs": 423520,
+      "text": "I'm deploying my fix."
+    },
+    {
+      "id": "seg-54",
+      "startMs": 423520,
+      "endMs": 427520,
+      "text": "It usually takes a long time to deploy so I'm just gonna chill out."
+    },
+    {
+      "id": "seg-55",
+      "startMs": 427520,
+      "endMs": 430520,
+      "text": "Hopefully, I'll fix it."
+    },
+    {
+      "id": "seg-56",
+      "startMs": 430520,
+      "endMs": 432520,
+      "text": "I'm gonna eat first."
+    },
+    {
+      "id": "seg-57",
+      "startMs": 442520,
+      "endMs": 443520,
+      "text": "Yeah, that makes sense."
+    },
+    {
+      "id": "seg-58",
+      "startMs": 443520,
+      "endMs": 445520,
+      "text": "So you said it was..."
+    },
+    {
+      "id": "seg-59",
+      "startMs": 445520,
+      "endMs": 447520,
+      "text": "Another update."
+    },
+    {
+      "id": "seg-60",
+      "startMs": 447520,
+      "endMs": 454520,
+      "text": "It's now 5.46pm on a Friday and I have just a few more things to get done."
+    },
+    {
+      "id": "seg-61",
+      "startMs": 454520,
+      "endMs": 460520,
+      "text": "The CI is failing and it was probably most likely a flaky test but I can't really merge"
+    },
+    {
+      "id": "seg-62",
+      "startMs": 460520,
+      "endMs": 463520,
+      "text": "my PR until that's solved so I'm just waiting."
+    },
+    {
+      "id": "seg-63",
+      "startMs": 463520,
+      "endMs": 464520,
+      "text": "I'm hungry."
+    },
+    {
+      "id": "seg-64",
+      "startMs": 464520,
+      "endMs": 465520,
+      "text": "I'm really hungry."
+    },
+    {
+      "id": "seg-65",
+      "startMs": 465520,
+      "endMs": 469520,
+      "text": "Too lazy to cook but I think I'll have to cook today because I have a lot of stuff in"
+    },
+    {
+      "id": "seg-66",
+      "startMs": 469520,
+      "endMs": 470520,
+      "text": "my fridge so..."
+    },
+    {
+      "id": "seg-67",
+      "startMs": 477520,
+      "endMs": 483520,
+      "text": "Alright, quick update."
+    },
+    {
+      "id": "seg-68",
+      "startMs": 483520,
+      "endMs": 491520,
+      "text": "I was about to cook but my PR was approved and finally, I can merge my final PR of the"
+    },
+    {
+      "id": "seg-69",
+      "startMs": 491520,
+      "endMs": 492520,
+      "text": "week."
+    },
+    {
+      "id": "seg-70",
+      "startMs": 507520,
+      "endMs": 522520,
+      "text": "Alright, a bunch of our pages are erroring out."
+    },
+    {
+      "id": "seg-71",
+      "startMs": 522520,
+      "endMs": 528520,
+      "text": "Alright, I think the issue is resolved but I think I'm just gonna stay around a bit to"
+    },
+    {
+      "id": "seg-72",
+      "startMs": 528520,
+      "endMs": 530520,
+      "text": "check if everything's fine."
+    },
+    {
+      "id": "seg-73",
+      "startMs": 530520,
+      "endMs": 532520,
+      "text": "I'm also gonna write the on-call log."
+    },
+    {
+      "id": "seg-74",
+      "startMs": 532520,
+      "endMs": 533520,
+      "text": "Alright, I think we're all good."
+    },
+    {
+      "id": "seg-75",
+      "startMs": 533520,
+      "endMs": 535520,
+      "text": "I can go back to my normal life now."
+    },
+    {
+      "id": "seg-76",
+      "startMs": 535520,
+      "endMs": 541520,
+      "text": "Alright, so I'm going out with some friends tonight but of course, I'm gonna bring my"
+    },
+    {
+      "id": "seg-77",
+      "startMs": 541520,
+      "endMs": 542520,
+      "text": "laptop."
+    },
+    {
+      "id": "seg-78",
+      "startMs": 542520,
+      "endMs": 544520,
+      "text": "I'm gonna lunge this big bag around."
+    },
+    {
+      "id": "seg-79",
+      "startMs": 544520,
+      "endMs": 549520,
+      "text": "The chances of something happening I think is kind of high so wish me luck."
+    },
+    {
+      "id": "seg-80",
+      "startMs": 549520,
+      "endMs": 550520,
+      "text": "Here I go."
+    },
+    {
+      "id": "seg-81",
+      "startMs": 566520,
+      "endMs": 581520,
+      "text": "It's officially been one week."
+    },
+    {
+      "id": "seg-82",
+      "startMs": 581520,
+      "endMs": 587520,
+      "text": "It is Monday, December 8th, 3 o'clock."
+    },
+    {
+      "id": "seg-83",
+      "startMs": 587520,
+      "endMs": 589520,
+      "text": "I am not on-call anymore."
+    },
+    {
+      "id": "seg-84",
+      "startMs": 589520,
+      "endMs": 591520,
+      "text": "Yeah, this was my week on-call."
+    },
+    {
+      "id": "seg-85",
+      "startMs": 591520,
+      "endMs": 593520,
+      "text": "I hope you guys enjoy it."
+    }
+  ],
+  "languageDetected": "english"
+}

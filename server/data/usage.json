@@ -4,5 +4,11 @@
     "month": "2026-02",
     "minutesUsed": 37,
     "updatedAt": 1772319539962
+  },
+  "dev-user:2026-03": {
+    "userId": "dev-user",
+    "month": "2026-03",
+    "minutesUsed": 211,
+    "updatedAt": 1772579677447
   }
 }
