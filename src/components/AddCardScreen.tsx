@@ -55,43 +55,43 @@ export function AddCardScreen({ onSave, onNavigateToVideoImport }: AddCardScreen
   };
 
   return (
-    <div>
-      <form onSubmit={handleSubmit}>
+    <div className="screen animate-fade-in" style={{ paddingBottom: '120px' }}>
+      <form onSubmit={handleSubmit} className="flex-col gap-lg">
         <div className="card">
-          <label style={{ display: 'block', marginBottom: 8 }}>
-            <span className="lang-badge">JA</span> Japanese
+          <label className="font-semibold text-sm mb-xs block">
+            <span className="lang-badge mr-sm" style={{ padding: '2px 6px', marginRight: 8 }}>JA</span> Japanese
           </label>
           <textarea
             value={jaText}
             onChange={(e) => setJaText(e.target.value)}
             placeholder="日本語の文"
             rows={2}
-            style={{ width: '100%', marginBottom: 16 }}
+            className="mb-lg"
           />
 
-          <label style={{ display: 'block', marginBottom: 8 }}>
-            <span className="lang-badge">EN</span> English
+          <label className="font-semibold text-sm mb-xs block">
+            <span className="lang-badge mr-sm" style={{ padding: '2px 6px', marginRight: 8 }}>EN</span> English
           </label>
           <textarea
             value={enText}
             onChange={(e) => setEnText(e.target.value)}
             placeholder="English sentence"
             rows={2}
-            style={{ width: '100%', marginBottom: 16 }}
+            className="mb-lg"
           />
 
-          <label style={{ display: 'block', marginBottom: 8 }}>
-            <span className="lang-badge">ES</span> Spanish
+          <label className="font-semibold text-sm mb-xs block">
+            <span className="lang-badge mr-sm" style={{ padding: '2px 6px', marginRight: 8 }}>ES</span> Spanish
           </label>
           <textarea
             value={esText}
             onChange={(e) => setEsText(e.target.value)}
             placeholder="Oración en español"
             rows={2}
-            style={{ width: '100%', marginBottom: 16 }}
+            className="mb-lg"
           />
 
-          <label style={{ display: 'block', marginBottom: 8 }}>
+          <label className="font-semibold text-sm mb-xs block">
             Tags (comma separated)
           </label>
           <input
@@ -99,10 +99,10 @@ export function AddCardScreen({ onSave, onNavigateToVideoImport }: AddCardScreen
             value={tags}
             onChange={(e) => setTags(e.target.value)}
             placeholder="greeting, formal, business"
-            style={{ width: '100%', marginBottom: 16 }}
+            className="mb-lg"
           />
 
-          <label style={{ display: 'block', marginBottom: 8 }}>
+          <label className="font-semibold text-sm mb-xs block">
             Notes (optional)
           </label>
           <textarea
@@ -110,14 +110,12 @@ export function AddCardScreen({ onSave, onNavigateToVideoImport }: AddCardScreen
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Additional notes..."
             rows={2}
-            style={{ width: '100%' }}
           />
         </div>
 
         <button 
           type="submit" 
-          className="btn btn-primary" 
-          style={{ width: '100%' }}
+          className="btn btn-primary btn-full animate-pulse delay-200"
           disabled={saving}
         >
           {saving ? 'Saving...' : 'Save Card'}
@@ -127,17 +125,7 @@ export function AddCardScreen({ onSave, onNavigateToVideoImport }: AddCardScreen
           <button 
             type="button"
             onClick={onNavigateToVideoImport}
-            style={{ 
-              width: '100%', 
-              marginTop: 'var(--space-md)',
-              padding: 'var(--space-md)',
-              background: 'transparent',
-              border: '1px solid var(--border)',
-              borderRadius: 8,
-              color: 'var(--text-secondary)',
-              fontSize: 'var(--font-sm)',
-              cursor: 'pointer'
-            }}
+            className="btn btn-secondary btn-full"
           >
             🎬 Import from video
           </button>

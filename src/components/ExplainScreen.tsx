@@ -145,25 +145,23 @@ export function ExplainScreen({ initialSentence }: { initialSentence?: string } 
     await ensureReviewStates(card);
 
     alert("Card added successfully!");
-  };
-
   return (
-    <div className="explain-page" style={{ paddingBottom: 'calc(68px + env(safe-area-inset-bottom))' }}>
+    <div className="screen animate-fade-in" style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom))' }}>
       <form onSubmit={handleSubmit}>
-        <div className="card">
+        <div className="card mb-lg">
           <textarea
             value={sentence}
             onChange={(e) => setSentence(e.target.value)}
             placeholder="Enter a sentence to explain..."
             rows={4}
-            style={{ width: "100%", marginBottom: 16 }}
+            className="mb-lg"
             maxLength={500}
           />
 
           <select
             value={focus}
             onChange={(e) => setFocus(e.target.value as typeof focus)}
-            style={{ width: "100%", marginBottom: 16 }}
+            className="mb-lg"
           >
             <option value="english">Focus: English</option>
             <option value="spanish">Focus: Spanish</option>
@@ -172,8 +170,7 @@ export function ExplainScreen({ initialSentence }: { initialSentence?: string } 
 
           <button
             type="submit"
-            className="btn btn-primary"
-            style={{ width: "100%" }}
+            className="btn btn-primary btn-full animate-pulse delay-100"
             disabled={loading || !sentence.trim()}
           >
             {loading ? "Explaining..." : "Explain"}
@@ -182,94 +179,100 @@ export function ExplainScreen({ initialSentence }: { initialSentence?: string } 
       </form>
 
       {error && (
-        <div className="card" style={{ background: "var(--danger)" }}>
-          <p>{error}</p>
-          <p style={{ fontSize: "0.875rem", marginTop: 8 }}>
+        <div className="card mb-lg" style={{ background: "var(--danger)", color: 'white', borderColor: 'var(--danger-hover)' }}>
+          <p className="font-semibold">{error}</p>
+          <p className="text-sm mt-sm" style={{ opacity: 0.9 }}>
             Make sure you're online and the API is configured.
           </p>
         </div>
       )}
 
       {result?.suggested_flashcard && (
-        <div className="explain-bottom-bar" style={{ position: 'fixed', left: 0, right: 0, bottom: 0, padding: '8px', paddingBottom: 'calc(8px + env(safe-area-inset-bottom))', zIndex: 60, background: 'white' }}>
-          <button className="btn btn-success" onClick={handleAddAsCard} style={{ width: '100%' }}>
+        <div className="review-bottom-bar animate-slide-down">
+          <button className="btn btn-success btn-full" onClick={handleAddAsCard}>
             Add as Card
           </button>
         </div>
       )}
 
       {result && (
-        <div>
+        <div className="animate-slide-down delay-200">
           <Accordion title="Translations">
-            <p><span className="lang-badge">JA</span> {result.translations.ja}</p>
-            <p><span className="lang-badge">EN</span> {result.translations.en}</p>
-            <p><span className="lang-badge">ES</span> {result.translations.es}</p>
+            <p className="mb-sm"><span className="lang-badge border-none mr-sm">JA</span> {result.translations?.ja}</p>
+            <p className="mb-sm"><span className="lang-badge border-none mr-sm">EN</span> {result.translations?.en}</p>
+            <p><span className="lang-badge border-none mr-sm">ES</span> {result.translations?.es}</p>
           </Accordion>
 
           {result.naturalness && (
             <Accordion title="Naturalness">
-              <p>Score: {result.naturalness.score_1_to_5}/5</p>
-              <p>{result.naturalness.comment}</p>
+              <p className="font-semibold mb-xs text-primary">Score: {result.naturalness.score_1_to_5}/5</p>
+              <p className="text-secondary">{result.naturalness.comment}</p>
             </Accordion>
           )}
 
           <Accordion title="Grammar Points">
-            {result.grammar_points.length > 0 && (
-              result.grammar_points.map((point, i) => (
-                <div key={i} style={{ marginBottom: 12 }}>
-                  <p style={{ fontWeight: 600 }}>{point.title}</p>
-                  <p style={{ color: "var(--text-secondary)" }}>{point.explanation}</p>
-                  <p style={{ fontStyle: "italic", color: "var(--accent)" }}>
-                    "{point.example}"
-                  </p>
-                </div>
-              ))
+            {result.grammar_points?.length > 0 && (
+              <div className="flex-col gap-lg">
+                {result.grammar_points.map((point, i) => (
+                  <div key={i}>
+                    <p className="font-semibold text-primary mb-xs">{point.title}</p>
+                    <p className="text-secondary mb-xs">{point.explanation}</p>
+                    <p className="text-accent italic text-sm">
+                      "{point.example}"
+                    </p>
+                  </div>
+                ))}
+              </div>
             )}
           </Accordion>
 
           <Accordion title="Vocabulary">
-            {result.vocabulary.length > 0 && (
-              result.vocabulary.map((vocab, i) => (
-                <div key={i} style={{ marginBottom: 8 }}>
-                  <span style={{ fontWeight: 600 }}>{vocab.term}</span>
-                  <span style={{ color: "var(--text-secondary)" }}> - {vocab.meaning}</span>
-                  {vocab.notes && <p style={{ fontSize: "0.875rem" }}>{vocab.notes}</p>}
-                </div>
-              ))
+            {result.vocabulary?.length > 0 && (
+              <div className="flex-col gap-md">
+                {result.vocabulary.map((vocab, i) => (
+                  <div key={i}>
+                    <span className="font-semibold text-primary">{vocab.term}</span>
+                    <span className="text-secondary"> - {vocab.meaning}</span>
+                    {vocab.notes && <p className="text-sm mt-xs text-tertiary">{vocab.notes}</p>}
+                  </div>
+                ))}
+              </div>
             )}
           </Accordion>
 
           <Accordion title="Alternatives">
-            {result.alternatives.map((alt, i) => (
-              <div key={i} style={{ marginBottom: 12 }}>
-                <span className="lang-badge" style={{ fontSize: "0.6rem" }}>{alt.tone}</span>
-                <p><span className="lang-badge" style={{ fontSize: "0.6rem" }}>JA</span> {alt.ja}</p>
-                <p><span className="lang-badge" style={{ fontSize: "0.6rem" }}>EN</span> {alt.en}</p>
-                <p><span className="lang-badge" style={{ fontSize: "0.6rem" }}>ES</span> {alt.es}</p>
-              </div>
-            ))}
+            <div className="flex-col gap-lg">
+              {result.alternatives?.map((alt, i) => (
+                <div key={i}>
+                  <span className="lang-badge text-xs mb-sm">{alt.tone}</span>
+                  <p className="mb-xs"><span className="lang-badge text-xs mr-sm border-none bg-surface">JA</span> {alt.ja}</p>
+                  <p className="mb-xs"><span className="lang-badge text-xs mr-sm border-none bg-surface">EN</span> {alt.en}</p>
+                  <p><span className="lang-badge text-xs mr-sm border-none bg-surface">ES</span> {alt.es}</p>
+                </div>
+              ))}
+            </div>
           </Accordion>
 
           <Accordion title="Mistakes">
-            {result.mistakes.length > 0 ? (
-              <ul>
+            {result.mistakes?.length > 0 ? (
+              <ul className="text-secondary pl-lg">
                 {result.mistakes.map((mistake, i) => (
-                  <li key={i}>{mistake}</li>
+                  <li key={i} className="mb-xs">{mistake}</li>
                 ))}
               </ul>
             ) : null}
           </Accordion>
 
           {result.suggested_flashcard && (
-            <div className="card" style={{ border: "2px solid var(--accent)" }}>
-              <h3>Suggested Flashcard</h3>
-              <p><span className="lang-badge">JA</span> {result.suggested_flashcard.ja}</p>
-              <p><span className="lang-badge">EN</span> {result.suggested_flashcard.en}</p>
-              <p><span className="lang-badge">ES</span> {result.suggested_flashcard.es}</p>
-              {result.suggested_flashcard.tags.length > 0 && (
-                <div style={{ marginTop: 8 }}>
+            <div className="card mt-xl" style={{ border: "2px solid var(--accent)", background: 'var(--accent-light)' }}>
+              <h3 className="font-bold text-lg mb-md text-accent-hover">Suggested Flashcard</h3>
+              <p className="mb-sm"><span className="lang-badge mr-sm">JA</span> {result.suggested_flashcard.ja}</p>
+              <p className="mb-sm"><span className="lang-badge mr-sm">EN</span> {result.suggested_flashcard.en}</p>
+              <p className="mb-sm"><span className="lang-badge mr-sm">ES</span> {result.suggested_flashcard.es}</p>
+              {result.suggested_flashcard.tags?.length > 0 && (
+                <div className="mt-md flex-center gap-xs flex-wrap" style={{ justifyContent: 'flex-start' }}>
                   {result.suggested_flashcard.tags.map((tag) => (
-                    <span key={tag} className="tag">{tag}</span>
+                    <span key={tag} className="tag text-xs" style={{ margin: 0 }}>{tag}</span>
                   ))}
                 </div>
               )}
@@ -281,4 +284,5 @@ export function ExplainScreen({ initialSentence }: { initialSentence?: string } 
       
     </div>
   );
+}
 }

@@ -110,12 +110,12 @@ export const ReviewScreen: React.FC<{ onExplain?: (card: Card) => void; onNaviga
   if (completed) {
     const stars = Math.min(5, Math.max(1, Math.floor(score / 2) + 1));
     return (
-      <div className="container" style={{ padding: 16, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div className="card" style={{ padding: 28, textAlign: 'center' }}>
-          <h2 style={{ margin: 0, fontSize: '2rem' }}>Nice!</h2>
-          <div style={{ marginTop: 8 }}><Stars count={stars} /></div>
-          <p style={{ marginTop: 12 }}>You completed today's lesson.</p>
-          <button className="primaryButton" onClick={onNavigateHome ?? (() => {})} style={{ marginTop: 16 }}>
+      <div className="container flex-center animate-fade-in" style={{ minHeight: '100vh' }}>
+        <div className="card text-center" style={{ width: '100%', padding: 'var(--space-2xl)' }}>
+          <h2 className="text-3xl font-bold mb-xs">Nice!</h2>
+          <div className="mb-md"><Stars count={stars} /></div>
+          <p className="text-secondary mb-xl">You completed today's lesson.</p>
+          <button className="btn btn-primary btn-full" onClick={onNavigateHome ?? (() => {})}>
             Back to Home
           </button>
         </div>
@@ -124,17 +124,16 @@ export const ReviewScreen: React.FC<{ onExplain?: (card: Card) => void; onNaviga
   }
 
   if (loading) {
-    return <div className="empty-state">Loading...</div>;
+    return <div className="empty-state animate-fade-in"><div className="empty-state-icon">⏳</div><div>Loading...</div></div>;
   }
 
   if (!currentCard) {
     return (
-      <div>
-        <div style={{ marginBottom: 24 }}>
+      <div className="screen animate-fade-in">
+        <div className="mb-xl">
           <select 
             value={direction} 
             onChange={(e) => setDirection(e.target.value as ReviewDirection)}
-            style={{ width: '100%', marginBottom: 16 }}
           >
             {DIRECTIONS.map(d => (
               <option key={d.value} value={d.value}>{d.label}</option>
@@ -142,8 +141,9 @@ export const ReviewScreen: React.FC<{ onExplain?: (card: Card) => void; onNaviga
           </select>
         </div>
         <div className="empty-state">
-          <p>No cards due for review!</p>
-          <p style={{ marginTop: 8, fontSize: '0.875rem' }}>
+          <div className="empty-state-icon">🎉</div>
+          <p className="text-lg font-medium text-primary">No cards due for review!</p>
+          <p className="text-secondary">
             Add some cards or come back later.
           </p>
         </div>
@@ -156,67 +156,67 @@ export const ReviewScreen: React.FC<{ onExplain?: (card: Card) => void; onNaviga
 
   // Top area: direction selector and quick progress
   return (
-    <div className="container" style={{ paddingBottom: 140 }}>
+    <div className="screen animate-fade-in" style={{ paddingBottom: 160 }}>
       {/* Progress bar at top of lesson */}
       {cards.length > 0 && (
-        <div style={{ marginBottom: 12 }}>
+        <div className="mb-md">
           <ProgressBar current={currentIndex + 1} total={cards.length} />
         </div>
       )}
-      <div style={{ marginBottom: 24 }}>
+      <div className="flex-between mb-xl">
         <select 
           value={direction} 
           onChange={(e) => setDirection(e.target.value as ReviewDirection)}
-          style={{ width: '100%', marginBottom: 16 }}
+          style={{ width: 'auto', padding: 'var(--space-sm) var(--space-md)' }}
         >
           {DIRECTIONS.map(d => (
             <option key={d.value} value={d.value}>{d.label}</option>
           ))}
         </select>
-        <div className="progress" style={{ marginTop: 6 }}>
+        <div className="progress">
           {cards.length - currentIndex} left today
         </div>
       </div>
 
       <div
-        className="card"
+        className="card card-clickable animate-slide-down"
         onClick={() => setShowAnswer(!showAnswer)}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
-        style={{ touchAction: 'pan-y' }}
+        style={{ touchAction: 'pan-y', display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '300px', justifyContent: 'center' }}
       >
-        <span className="lang-badge">{dir.from}</span>
-        <p style={{ fontSize: 20, lineHeight: 1.6, marginTop: 16, textAlign: 'center' }}>
+        <span className="lang-badge mb-md align-self-start">{dir.from}</span>
+        <p className="text-2xl font-medium text-center mb-xl" style={{ lineHeight: 1.4, wordBreak: 'break-word', width: '100%' }}>
           {promptText}
         </p>
         
         {showAnswer && (
-          <>
-            <hr style={{ margin: '24px 0', borderColor: 'var(--border)' }} />
-            <span className="lang-badge">{dir.to}</span>
-            <p style={{ fontSize: 20, lineHeight: 1.6, marginTop: 16, textAlign: 'center' }}>
+          <div className="animate-slide-down flex-col w-full" style={{ width: '100%', alignItems: 'center' }}>
+            <hr style={{ margin: 'var(--space-lg) 0', borderColor: 'var(--border-light)', width: '100%' }} />
+            <span className="lang-badge mb-md">{dir.to}</span>
+            <p className="text-xl text-center mb-lg text-secondary" style={{ lineHeight: 1.5, wordBreak: 'break-word', width: '100%' }}>
               {answerText}
             </p>
             {currentCard.card.tags.length > 0 && (
-              <div style={{ marginTop: 16 }}>
+              <div className="mb-md flex-center flex-wrap">
                 {currentCard.card.tags.map(tag => (
                   <span key={tag} className="tag">{tag}</span>
                 ))}
               </div>
             )}
-          </>
+          </div>
         )}
         
         {!showAnswer && (
-          <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginTop: 24 }}>
+          <p className="text-tertiary text-sm mt-xl animate-pulse">
             Tap to reveal answer
           </p>
         )}
-        {onExplain && currentCard && (
+        {onExplain && currentCard && showAnswer && (
           <button
-            onClick={() => onExplain(currentCard.card)}
-            style={{ width: '100%', marginTop: 8, borderRadius: 8, padding: '12px 16px', background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+            onClick={(e) => { e.stopPropagation(); onExplain(currentCard.card); }}
+            className="btn btn-secondary btn-full mt-lg animate-fade-in"
           >
             Explain
           </button>
@@ -224,17 +224,19 @@ export const ReviewScreen: React.FC<{ onExplain?: (card: Card) => void; onNaviga
       </div>
 
       {/* Sticky bottom bar with actions */}
-      <div className="review-bottom-bar" aria-label="review-actions">
-        <button className="btn btn-danger btn-full" onClick={() => handleRate('again')}>
-          Again
-        </button>
-        <button className="btn btn-warning btn-full" onClick={() => handleRate('good')}>
-          Good
-        </button>
-        <button className="btn btn-success btn-full" onClick={() => handleRate('easy')}>
-          Easy
-        </button>
-      </div>
+      {showAnswer && (
+        <div className="review-bottom-bar animate-slide-down" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)' }}>
+          <button className="btn btn-danger btn-full" onClick={(e) => { e.stopPropagation(); handleRate('again'); }}>
+            Again
+          </button>
+          <button className="btn btn-warning btn-full" onClick={(e) => { e.stopPropagation(); handleRate('good'); }}>
+            Good
+          </button>
+          <button className="btn btn-success btn-full" onClick={(e) => { e.stopPropagation(); handleRate('easy'); }}>
+            Easy
+          </button>
+        </div>
+      )}
     </div>
   );
 }

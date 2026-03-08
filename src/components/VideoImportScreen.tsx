@@ -135,29 +135,24 @@ export function VideoImportScreen({ onComplete, onCancel, onViewTranscript, onOp
   };
 
   return (
-    <div className="screen" style={{ 
-      padding: 'var(--space-xl)',
-      paddingTop: 'calc(env(safe-area-inset-top) + var(--space-xl))'
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', marginBottom: 'var(--space-xl)' }}>
+    <div className="screen animate-fade-in" style={{ paddingBottom: '120px' }}>
+      <div className="flex-center mb-xl" style={{ justifyContent: 'flex-start' }}>
         <button 
           onClick={onCancel}
+          className="btn-subtle"
           style={{ 
             padding: 'var(--space-sm) var(--space-md)', 
-            border: 'none', 
-            background: 'transparent',
-            color: 'var(--accent)',
-            fontWeight: 600,
-            fontSize: 'var(--font-base)'
+            marginRight: 'var(--space-sm)',
+            borderRadius: 'var(--radius-round)'
           }}
         >
           ← Back
         </button>
-        <h2 style={{ fontSize: 'var(--font-lg)', fontWeight: 600 }}>Import from Video</h2>
+        <h2 className="text-2xl font-bold">Import from Video</h2>
       </div>
 
-      <div style={{ marginBottom: 'var(--space-lg)' }}>
-        <label style={{ display: 'block', marginBottom: 'var(--space-sm)', fontSize: 'var(--font-sm)', color: 'var(--text-secondary)' }}>
+      <div className="mb-lg">
+        <label className="block mb-xs text-sm font-semibold text-secondary">
           Video URL
         </label>
         <input
@@ -165,19 +160,17 @@ export function VideoImportScreen({ onComplete, onCancel, onViewTranscript, onOp
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           placeholder="https://www.youtube.com/watch?v=..."
-          style={{ width: '100%' }}
           disabled={loading}
         />
       </div>
 
-      <div style={{ marginBottom: 'var(--space-lg)' }}>
-        <label style={{ display: 'block', marginBottom: 'var(--space-sm)', fontSize: 'var(--font-sm)', color: 'var(--text-secondary)' }}>
+      <div className="mb-lg">
+        <label className="block mb-xs text-sm font-semibold text-secondary">
           Language
         </label>
         <select
           value={lang}
           onChange={(e) => setLang(e.target.value)}
-          style={{ width: '100%' }}
           disabled={loading}
         >
           <option value="en">English</option>
@@ -187,23 +180,15 @@ export function VideoImportScreen({ onComplete, onCancel, onViewTranscript, onOp
       </div>
 
       <button 
-        className="primaryButton"
+        className="btn btn-primary btn-full mb-lg animate-pulse delay-100"
         onClick={handleAnalyze}
         disabled={loading || !url.trim()}
-        style={{ width: '100%', marginBottom: 'var(--space-lg)' }}
       >
         {loading ? 'Analyzing...' : 'Analyze'}
       </button>
 
       {error && (
-        <div style={{ 
-          padding: 'var(--space-md)', 
-          background: 'var(--error-bg, #fef2f2)', 
-          borderRadius: 8,
-          color: 'var(--error)',
-          marginBottom: 'var(--space-lg)',
-          fontSize: 'var(--font-sm)'
-        }}>
+        <div className="card mb-lg" style={{ background: 'var(--error-bg, #fef2f2)', color: 'var(--error)', borderColor: 'var(--error)' }}>
           {error}
         </div>
       )}
@@ -211,18 +196,7 @@ export function VideoImportScreen({ onComplete, onCancel, onViewTranscript, onOp
       {segments.length > 0 && onViewTranscript && (
         <button 
           onClick={handleViewTranscript}
-          style={{ 
-            width: '100%',
-            marginBottom: 'var(--space-md)',
-            padding: 'var(--space-md)',
-            background: 'var(--accent)',
-            color: 'white',
-            border: 'none',
-            borderRadius: 8,
-            fontSize: 'var(--font-base)',
-            fontWeight: 500,
-            cursor: 'pointer'
-          }}
+          className="btn btn-secondary btn-full mb-md"
         >
           📖 View Full Transcript
         </button>
@@ -231,90 +205,57 @@ export function VideoImportScreen({ onComplete, onCancel, onViewTranscript, onOp
       {segments.length > 0 && onOpenPlayer && (
         <button 
           onClick={handleOpenPlayer}
-          style={{ 
-            width: '100%',
-            marginBottom: 'var(--space-md)',
-            padding: 'var(--space-md)',
-            background: 'var(--accent)',
-            color: 'white',
-            border: 'none',
-            borderRadius: 8,
-            fontSize: 'var(--font-base)',
-            fontWeight: 500,
-            cursor: 'pointer'
-          }}
+          className="btn btn-secondary btn-full mb-md"
         >
           ▶️ Open Video Player
         </button>
       )}
 
       {segments.length > 0 && (
-        <>
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center',
-            marginBottom: 'var(--space-md)' 
-          }}>
-            <span style={{ fontSize: 'var(--font-sm)', color: 'var(--text-secondary)' }}>
+        <div className="animate-slide-down delay-200">
+          <div className="flex-between mb-md">
+            <span className="text-sm font-medium text-secondary">
               {selected.size} of {segments.length} selected
             </span>
             <button 
               onClick={toggleAll}
-              style={{ 
-                background: 'none', 
-                border: 'none', 
-                color: 'var(--accent)',
-                fontSize: 'var(--font-sm)',
-                cursor: 'pointer'
-              }}
+              className="text-sm font-semibold text-accent cursor-pointer bg-transparent border-none"
             >
               {selected.size === segments.length ? 'Deselect all' : 'Select all'}
             </button>
           </div>
 
-          <div style={{ 
-            maxHeight: '40vh', 
-            overflowY: 'auto',
-            border: '1px solid var(--border)',
-            borderRadius: 8,
-            marginBottom: 'var(--space-lg)'
-          }}>
-            {segments.map((seg) => (
-              <label
-                key={seg.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: 'var(--space-sm)',
-                  padding: 'var(--space-md)',
-                  borderBottom: '1px solid var(--border)',
-                  cursor: 'pointer',
-                  background: selected.has(seg.id) ? 'var(--selected-bg, #f0f9ff)' : 'transparent'
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={selected.has(seg.id)}
-                  onChange={() => toggleSegment(seg.id)}
-                  style={{ marginTop: 4 }}
-                />
-                <span style={{ fontSize: 'var(--font-sm)', lineHeight: 1.5 }}>
-                  {seg.text}
-                </span>
-              </label>
-            ))}
+          <div className="card p-0 overflow-hidden mb-lg" style={{ maxHeight: '40vh', overflowY: 'auto' }}>
+            <div className="flex-col divide-y divide-border">
+              {segments.map((seg) => (
+                <label
+                  key={seg.id}
+                  className={`flex items-start gap-sm p-md cursor-pointer transition-fast ${selected.has(seg.id) ? 'bg-accent-light' : 'hover:bg-surface'}`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selected.has(seg.id)}
+                    onChange={() => toggleSegment(seg.id)}
+                    style={{ marginTop: 4 }}
+                  />
+                  <span className="text-sm leading-relaxed">
+                    {seg.text}
+                  </span>
+                </label>
+              ))}
+            </div>
           </div>
 
-          <button
-            className="primaryButton"
-            onClick={handleCreateCards}
-            disabled={saving || selected.size === 0}
-            style={{ width: '100%' }}
-          >
-            {saving ? 'Creating cards...' : `Create ${selected.size} card${selected.size !== 1 ? 's' : ''}`}
-          </button>
-        </>
+          <div className="review-bottom-bar animate-slide-down">
+            <button
+              className="btn btn-success btn-full"
+              onClick={handleCreateCards}
+              disabled={saving || selected.size === 0}
+            >
+              {saving ? 'Creating cards...' : `Create ${selected.size} card${selected.size !== 1 ? 's' : ''}`}
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

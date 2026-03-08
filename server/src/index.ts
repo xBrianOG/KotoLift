@@ -18,7 +18,7 @@ app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
-app.listen(PORT, () => {
+app.listen(Number(PORT), '0.0.0.0', () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
   console.log(`📹 Video analysis: POST /api/video/analyze`);
   console.log(`🔐 Auth: POST /auth/apple`);
@@ -27,7 +27,7 @@ app.listen(PORT, () => {
 
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
+    origin: "*",
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   }),

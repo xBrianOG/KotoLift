@@ -45,18 +45,18 @@ export function CardListScreen({ onExplain }: { onExplain?: (card: any) => void 
   };
 
   return (
-    <div>
-      <div style={{ marginBottom: 16 }}>
+    <div className="screen animate-fade-in" style={{ paddingBottom: '120px' }}>
+      <div className="mb-md">
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search cards..."
-          style={{ width: '100%', marginBottom: 12 }}
+          className="mb-md"
         />
         
         {tags.length > 0 && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          <div className="flex-center flex-wrap gap-xs" style={{ justifyContent: 'flex-start' }}>
             {tags.map(tag => (
               <button
                 key={tag}
@@ -64,8 +64,9 @@ export function CardListScreen({ onExplain }: { onExplain?: (card: any) => void 
                 onClick={() => toggleTag(tag)}
                 style={{ 
                   cursor: 'pointer',
-                  background: selectedTags.includes(tag) ? 'var(--accent)' : 'var(--border)',
-                  border: 'none'
+                  background: selectedTags.includes(tag) ? 'var(--text)' : 'var(--surface)',
+                  color: selectedTags.includes(tag) ? 'white' : 'var(--text-secondary)',
+                  borderColor: selectedTags.includes(tag) ? 'var(--text)' : 'var(--border)'
                 }}
               >
                 {tag}
@@ -77,74 +78,97 @@ export function CardListScreen({ onExplain }: { onExplain?: (card: any) => void 
 
       {cards.length === 0 ? (
         <div className="empty-state">
-          <p>No cards found</p>
+          <div className="empty-state-icon">📭</div>
+          <p className="font-medium">No cards found</p>
         </div>
       ) : (
-        cards.map(card => {
-          const langLabel = card.sourceLang?.toUpperCase() || 'JA';
-          
-          // Get source text based on sourceLang
-          let sourceText = '';
-          if (card.sourceText) {
-            sourceText = card.sourceText;
-          } else if (card.sourceLang === 'ja' || !card.sourceLang) {
-            sourceText = card.jaText || '';
-          } else if (card.sourceLang === 'en') {
-            sourceText = card.enText || '';
-          } else if (card.sourceLang === 'es') {
-            sourceText = card.esText || '';
-          }
-          
-          const enText = card.translations?.en || card.enText || '';
-          const esText = card.translations?.es || card.esText || '';
-          
-          // Show translations that aren't the source language
-          const showEn = enText && card.sourceLang !== 'en';
-          const showEs = esText && card.sourceLang !== 'es';
-          
-          return (
-            <div key={card.id} className="card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div>
-                  <span className="lang-badge">{langLabel}</span>
-                  <p style={{ marginTop: 8 }}>{sourceText}</p>
+        <div className="flex-col gap-sm">
+          {cards.map(card => {
+            const langLabel = card.sourceLang?.toUpperCase() || 'JA';
+            
+            // Get source text based on sourceLang
+            let sourceText = '';
+            if (card.sourceText) {
+              sourceText = card.sourceText;
+            } else if (card.sourceLang === 'ja' || !card.sourceLang) {
+              sourceText = card.jaText || '';
+            } else if (card.sourceLang === 'en') {
+              sourceText = card.enText || '';
+            } else if (card.sourceLang === 'es') {
+              sourceText = card.esText || '';
+            }
+            
+            const enText = card.translations?.en || card.enText || '';
+            const esText = card.translations?.es || card.esText || '';
+            
+            // Show translations that aren't the source language
+            const showEn = enText && card.sourceLang !== 'en';
+            const showEs = esText && card.sourceLang !== 'es';
+            
+            return (
+              <div key={card.id} className="card card-clickable" style={{ padding: 'var(--space-md) var(--space-lg)' }}>
+                <div className="flex-between" style={{ alignItems: 'flex-start' }}>
+                  <div>
+                    <span className="lang-badge" style={{ padding: '2px 6px' }}>{langLabel}</span>
+                    <p className="font-medium mt-sm text-lg">{sourceText}</p>
+                  </div>
+                  <div className="flex-center gap-xs">
+                    {onExplain && (
+                      <button 
+                        onClick={() => onExplain(card)}
+                        className="btn-subtle"
+                        style={{ padding: '6px', borderRadius: 'var(--radius-sm)' }}
+                        title="Explain"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 16, height: 16 }}>
+                          <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </button>
+                    )}
+                    <button 
+                      onClick={() => setEditingCard(card)}
+                      className="btn-subtle"
+                      style={{ padding: '6px', borderRadius: 'var(--radius-sm)' }}
+                      title="Edit"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 16, height: 16 }}>
+                        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(card.id)}
+                      className="btn-subtle"
+                      style={{ padding: '6px', borderRadius: 'var(--radius-sm)', color: 'var(--danger)' }}
+                      title="Delete"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 16, height: 16 }}>
+                        <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button 
-                    onClick={() => setEditingCard(card)}
-                    style={{ background: 'none', color: 'var(--text-secondary)', padding: 4 }}
-                  >
-                    ✏️
-                  </button>
-                  <button 
-                    onClick={() => handleDelete(card.id)}
-                    style={{ background: 'none', color: 'var(--danger)', padding: 4 }}
-                  >
-                    🗑️
-                  </button>
-                </div>
-              </div>
 
-              {showEn && (
-                <p style={{ marginTop: 8, color: 'var(--text-secondary)' }}>
-                  <span className="lang-badge" style={{ fontSize: '0.6rem' }}>EN</span> {enText}
-                </p>
-              )}
-              {showEs && (
-                <p style={{ marginTop: 4, color: 'var(--text-secondary)' }}>
-                  <span className="lang-badge" style={{ fontSize: '0.6rem' }}>ES</span> {esText}
-                </p>
-              )}
-              {card.tags.length > 0 && (
-                <div style={{ marginTop: 12 }}>
-                  {card.tags.map(tag => (
-                    <span key={tag} className="tag">{tag}</span>
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        })
+                {showEn && (
+                  <p className="text-secondary text-base mt-sm">
+                    <span className="lang-badge" style={{ fontSize: '10px', marginRight: 6, padding: '2px 4px' }}>EN</span> {enText}
+                  </p>
+                )}
+                {showEs && (
+                  <p className="text-secondary text-base mt-xs">
+                    <span className="lang-badge" style={{ fontSize: '10px', marginRight: 6, padding: '2px 4px' }}>ES</span> {esText}
+                  </p>
+                )}
+                {card.tags.length > 0 && (
+                  <div className="mt-md flex-center flex-wrap" style={{ justifyContent: 'flex-start' }}>
+                    {card.tags.map(tag => (
+                      <span key={tag} className="tag" style={{ margin: '0 6px 6px 0', padding: '2px 8px' }}>{tag}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       )}
 
       {editingCard && (

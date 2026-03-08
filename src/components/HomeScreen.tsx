@@ -15,44 +15,48 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
     setStreak(stats.streak);
     setStars(stats.stars);
   }, []);
+  
   return (
-    <div className="screen" style={{ padding: 'var(--space-xl)' }}>
+    <div className="screen animate-fade-in">
       {/* Header */}
-      <div style={{ marginBottom: 'var(--space-xl)' }}>
-        <h1 style={{ fontSize: 'var(--font-3xl)', fontWeight: 700, marginBottom: 4, letterSpacing: -0.5 }}>Today</h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-base)' }}>Ready to practice?</p>
+      <div className="mb-xl">
+        <h1 className="text-3xl font-bold mb-xs">Today</h1>
+        <p className="text-secondary text-base">Ready to practice?</p>
       </div>
       
-      {/* Stats chips - smaller and refined */}
-      <div style={{ display: 'flex', gap: 'var(--space-sm)', marginBottom: 'var(--space-xl)' }}>
-        <span className="chip" style={{ fontSize: 'var(--font-xs)', padding: '4px 10px' }}>🔥 {streak} days</span>
-        <span className="chip" style={{ fontSize: 'var(--font-xs)', padding: '4px 10px' }}>⭐ {stars}</span>
+      {/* Stats chips */}
+      <div className="flex-center gap-sm mb-xl" style={{ justifyContent: 'flex-start' }}>
+        <span className="chip">🔥 {streak} days</span>
+        <span className="chip">⭐ {stars}</span>
       </div>
       
-      {/* Main CTA Card - elevated */}
-      <div className="card card--elevated" style={{ padding: 'var(--space-xl)', marginBottom: 'var(--space-lg)', textAlign: 'center', cursor: 'pointer' }} onClick={() => onNavigate('review')}>
-        <h2 style={{ fontSize: 'var(--font-xl)', fontWeight: 600, marginBottom: 'var(--space-xs)' }}>Daily Quiz</h2>
-        <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--space-lg)', fontSize: 'var(--font-sm)' }}>5 questions • ~2 min</p>
-        <button className="primaryButton" onClick={(e) => { e.stopPropagation(); onNavigate('review') }}>
+      {/* Main CTA Card */}
+      <div 
+        className="card card--elevated card-clickable mb-lg text-center" 
+        onClick={() => onNavigate('review')}
+      >
+        <h2 className="text-xl font-semibold mb-sm text-primary">Daily Quiz</h2>
+        <p className="text-secondary text-sm mb-xl">5 questions • ~2 min</p>
+        <button className="btn btn-primary btn-full animate-pulse delay-200" onClick={(e) => { e.stopPropagation(); onNavigate('review') }}>
           Start Quiz
         </button>
       </div>
       
-      {/* Secondary Actions - clean cards without extra borders */}
+      {/* Secondary Actions */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--space-md)' }}>
-        <div className="card" style={{ padding: 'var(--space-lg)', textAlign: 'center', cursor: 'pointer', border: 'none' }} onClick={() => onNavigate('cards')}>
-          <div style={{ fontSize: 24, marginBottom: 4 }}>📚</div>
-          <div style={{ fontWeight: 600, fontSize: 'var(--font-sm)' }}>My Cards</div>
+        <div className="card card-clickable text-center" style={{ padding: 'var(--space-lg)' }} onClick={() => onNavigate('cards')}>
+          <div className="mb-xs" style={{ fontSize: 28 }}>📚</div>
+          <div className="font-semibold text-sm text-primary">My Cards</div>
         </div>
         
-        <div className="card" style={{ padding: 'var(--space-lg)', textAlign: 'center', cursor: 'pointer', border: 'none' }} onClick={() => onNavigate('add')}>
-          <div style={{ fontSize: 24, marginBottom: 4 }}>➕</div>
-          <div style={{ fontWeight: 600, fontSize: 'var(--font-sm)' }}>Add New</div>
+        <div className="card card-clickable text-center" style={{ padding: 'var(--space-lg)' }} onClick={() => onNavigate('add')}>
+          <div className="mb-xs" style={{ fontSize: 28 }}>➕</div>
+          <div className="font-semibold text-sm text-primary">Add New</div>
         </div>
 
-        <div className="card" style={{ padding: 'var(--space-lg)', textAlign: 'center', cursor: 'pointer', border: 'none' }} onClick={() => onNavigate('videoImport')}>
-          <div style={{ fontSize: 24, marginBottom: 4 }}>🎬</div>
-          <div style={{ fontWeight: 600, fontSize: 'var(--font-sm)' }}>Import</div>
+        <div className="card card-clickable text-center" style={{ padding: 'var(--space-lg)' }} onClick={() => onNavigate('videoImport')}>
+          <div className="mb-xs" style={{ fontSize: 28 }}>🎬</div>
+          <div className="font-semibold text-sm text-primary">Import</div>
         </div>
       </div>
     </div>

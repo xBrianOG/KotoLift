@@ -26,27 +26,33 @@ export function AppShell({ current, onNavigate, children }: AppShellProps) {
   
   return (
     <div style={{ minHeight: '100dvh', background: 'var(--bg)' }}>
-      <header style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'space-between', 
-        padding: '12px 20px', 
-        borderBottom: '0.5px solid var(--border)', 
-        background: 'var(--surface)',
+      <header className="flex-between" style={{ 
+        padding: 'var(--space-md) var(--space-xl)', 
+        borderBottom: '1px solid var(--border-light)', 
+        background: 'rgba(255,255,255,0.9)',
+        backdropFilter: 'blur(16px)',
         position: 'sticky',
         top: 0,
         zIndex: 50
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontWeight: 600, fontSize: 'var(--font-lg)' }}>Koto Lift</span>
+        <div className="flex-center gap-sm">
+          <span className="font-bold text-lg text-primary" style={{ letterSpacing: '-0.3px' }}>KotoLift</span>
         </div>
         {isMainTab && (
           <button 
             aria-label="Settings" 
             onClick={() => onNavigate('settings')} 
-            style={{ border: 'none', background: 'transparent', padding: 8 }}
+            style={{ 
+              border: 'none', 
+              background: 'var(--bg)', 
+              padding: '8px', 
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="1.5" style={{ width: 22, height: 22 }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--text)" strokeWidth="1.5" style={{ width: 22, height: 22 }}>
               <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
               <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
@@ -54,7 +60,7 @@ export function AppShell({ current, onNavigate, children }: AppShellProps) {
         )}
       </header>
       
-      <main style={{ flex: 1, paddingBottom: 'calc(60px + env(safe-area-inset-bottom))' }}>
+      <main style={{ flex: 1, paddingBottom: 'calc(80px + env(safe-area-inset-bottom))' }}>
         {children}
       </main>
       

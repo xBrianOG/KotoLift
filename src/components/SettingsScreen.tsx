@@ -39,56 +39,45 @@ export function SettingsScreen({ onBack, onSignOut }: { onBack?: () => void; onS
   }
   
   return (
-    <div className="screen" style={{ padding: 'var(--space-xl)' }}>
+    <div className="screen animate-fade-in" style={{ paddingBottom: '120px' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', marginBottom: 'var(--space-xl)' }}>
+      <div className="flex-center mb-xl" style={{ justifyContent: 'flex-start' }}>
         {onBack && (
           <button 
             onClick={onBack} 
+            className="btn-subtle"
             style={{ 
               padding: 'var(--space-sm) var(--space-md)', 
-              border: 'none', 
-              background: 'transparent',
-              color: 'var(--accent)',
-              fontWeight: 600,
-              fontSize: 'var(--font-base)'
+              marginRight: 'var(--space-sm)',
+              borderRadius: 'var(--radius-round)'
             }}
           >
             ← Back
           </button>
         )}
-        <h1 style={{ fontSize: 'var(--font-xl)', fontWeight: 700 }}>Settings</h1>
+        <h1 className="text-2xl font-bold">Settings</h1>
       </div>
 
       {/* Reminders Section */}
-      <div className="settings-section">
-        <div className="settings-section-title">Reminders</div>
-        <div className="settings-group">
-          <NotificationSettingsRow />
+      <div className="card mb-xl p-0 overflow-hidden">
+        <div className="px-md py-sm bg-surface font-semibold text-sm text-secondary border-b border-border">Reminders</div>
+        <div className="flex-col divide-y divide-border">
+          <NotificationSettingsRow onSignOut={onSignOut} />
         </div>
       </div>
 
       {/* Quiz Section */}
-      <div className="settings-section">
-        <div className="settings-section-title">Quiz</div>
-        <div className="settings-group">
-          <div className="settings-row">
-            <span className="settings-row-label">Questions per session</span>
-            <div className="settings-row-value">
+      <div className="card mb-xl p-0 overflow-hidden">
+        <div className="px-md py-sm bg-surface font-semibold text-sm text-secondary border-b border-border">Quiz</div>
+        <div className="flex-col divide-y divide-border">
+          <div className="flex-between p-md">
+            <span className="font-medium">Questions per session</span>
+            <div className="flex-center gap-xs">
               {[5, 10, 15].map(size => (
                 <button
                   key={size}
                   onClick={() => handleQuizSizeChange(size)}
-                  style={{
-                    padding: '6px 12px',
-                    borderRadius: 'var(--radius-sm)',
-                    border: 'none',
-                    background: quizSize === size ? 'var(--accent)' : 'var(--bg)',
-                    color: quizSize === size ? 'white' : 'var(--text)',
-                    fontSize: 'var(--font-sm)',
-                    fontWeight: 600,
-                    marginLeft: 4
-                  }}
+                  className={`px-sm py-xs rounded-full text-sm font-semibold transition-fast ${quizSize === size ? 'bg-accent text-white' : 'bg-surface text-secondary hover:bg-border'}`}
                 >
                   {size}
                 </button>
@@ -99,57 +88,39 @@ export function SettingsScreen({ onBack, onSignOut }: { onBack?: () => void; onS
       </div>
 
       {/* Learning Section */}
-      <div className="settings-section">
-        <div className="settings-section-title">Learning</div>
-        <div className="settings-group">
-          <div className="settings-row">
-            <span className="settings-row-label">My Language</span>
+      <div className="card mb-xl p-0 overflow-hidden">
+        <div className="px-md py-sm bg-surface font-semibold text-sm text-secondary border-b border-border">Learning</div>
+        <div className="flex-col divide-y divide-border">
+          <div className="flex-between p-md">
+            <span className="font-medium">My Language</span>
             <select
               value={nativeLang}
               onChange={(e) => handleNativeLangChange(e.target.value as NativeLanguage)}
-              style={{
-                border: 'none',
-                background: 'transparent',
-                color: 'var(--text-secondary)',
-                fontSize: 'var(--font-base)',
-                textAlign: 'right'
-              }}
+              className="bg-transparent border-none text-secondary text-right font-medium cursor-pointer outline-none"
             >
               <option value="en">English</option>
               <option value="es">Spanish</option>
               <option value="ja">Japanese</option>
             </select>
           </div>
-          <div className="settings-row">
-            <span className="settings-row-label">Learning Mode</span>
+          <div className="flex-between p-md">
+            <span className="font-medium">Learning Mode</span>
             <select
               value={learningMode}
               onChange={(e) => handleLearningModeChange(e.target.value as LearningMode)}
-              style={{
-                border: 'none',
-                background: 'transparent',
-                color: 'var(--text-secondary)',
-                fontSize: 'var(--font-base)',
-                textAlign: 'right'
-              }}
+              className="bg-transparent border-none text-secondary text-right font-medium cursor-pointer outline-none"
             >
               <option value="passive">Source → Native</option>
               <option value="active">Native → Source</option>
               <option value="mixed">Mixed</option>
             </select>
           </div>
-          <div className="settings-row">
-            <span className="settings-row-label">Video Transcription</span>
+          <div className="flex-between p-md">
+            <span className="font-medium">Video Transcription</span>
             <select
               value={preferWhisper ? 'whisper' : 'captions'}
               onChange={(e) => handlePreferWhisperChange(e.target.value === 'whisper')}
-              style={{
-                border: 'none',
-                background: 'transparent',
-                color: 'var(--text-secondary)',
-                fontSize: 'var(--font-base)',
-                textAlign: 'right'
-              }}
+              className="bg-transparent border-none text-secondary text-right font-medium cursor-pointer outline-none"
             >
               <option value="captions">Prefer YouTube Captions</option>
               <option value="whisper">Always use Whisper</option>
@@ -159,16 +130,16 @@ export function SettingsScreen({ onBack, onSignOut }: { onBack?: () => void; onS
       </div>
 
       {/* Data Section */}
-      <div className="settings-section">
-        <div className="settings-section-title">Data</div>
-        <div className="settings-group">
-          <div className="settings-row" style={{ opacity: 0.5 }}>
-            <span className="settings-row-label">Export Cards</span>
-            <span className="settings-row-value">Coming soon</span>
+      <div className="card mb-xl p-0 overflow-hidden opacity-50">
+        <div className="px-md py-sm bg-surface font-semibold text-sm text-secondary border-b border-border">Data</div>
+        <div className="flex-col divide-y divide-border">
+          <div className="flex-between p-md">
+            <span className="font-medium">Export Cards</span>
+            <span className="text-tertiary text-sm">Coming soon</span>
           </div>
-          <div className="settings-row" style={{ opacity: 0.5 }}>
-            <span className="settings-row-label">Import Cards</span>
-            <span className="settings-row-value">Coming soon</span>
+          <div className="flex-between p-md">
+            <span className="font-medium">Import Cards</span>
+            <span className="text-tertiary text-sm">Coming soon</span>
           </div>
         </div>
       </div>
@@ -176,7 +147,7 @@ export function SettingsScreen({ onBack, onSignOut }: { onBack?: () => void; onS
   )
 }
 
-function NotificationSettingsRow() {
+function NotificationSettingsRow({ onSignOut }: { onSignOut?: () => void }) {
   const [enabled, setEnabled] = useState(true)
   const [time, setTime] = useState('19:00')
   
@@ -194,52 +165,32 @@ function NotificationSettingsRow() {
   
   return (
     <>
-      <div className="settings-row">
-        <span className="settings-row-label">Daily Reminder</span>
+      <div className="flex-between p-md bg-white">
+        <span className="font-medium">Daily Reminder</span>
         <button 
           onClick={() => setEnabled(!enabled)}
-          style={{
-            width: 50,
-            height: 30,
-            borderRadius: 15,
-            border: 'none',
-            background: enabled ? 'var(--accent)' : 'var(--border)',
-            position: 'relative',
-            cursor: 'pointer'
-          }}
+          className={`relative w-12 h-6 rounded-full transition-fast cursor-pointer border-none ${enabled ? 'bg-accent' : 'bg-border'}`}
         >
-          <span style={{
-            position: 'absolute',
-            top: 3,
-            left: enabled ? 23 : 3,
-            width: 24,
-            height: 24,
-            borderRadius: 12,
-            background: 'white',
-            transition: 'left 0.2s'
-          }} />
+          <span 
+            className="absolute top-[2px] w-[20px] h-[20px] rounded-full bg-white transition-fast shadow-sm"
+            style={{ left: enabled ? '26px' : '2px' }}
+          />
         </button>
       </div>
       {enabled && (
-        <div className="settings-row">
-          <span className="settings-row-label">Reminder Time</span>
+        <div className="flex-between p-md bg-white border-t border-border animate-slide-down">
+          <span className="font-medium text-secondary">Reminder Time</span>
           <input 
             type="time" 
             value={time} 
             onChange={(e) => setTime(e.target.value)}
-            style={{ 
-              border: 'none', 
-              background: 'transparent', 
-              color: 'var(--text-secondary)',
-              fontSize: 'var(--font-base)',
-              textAlign: 'right'
-            }} 
+            className="bg-transparent border-none text-secondary font-medium cursor-pointer outline-none text-right"
           />
         </div>
       )}
 
       {/* Sign Out */}
-      <div style={{ marginTop: 'var(--space-3xl)' }}>
+      <div className="mt-xl">
         <button 
           onClick={() => {
             if (onSignOut) {
@@ -250,15 +201,8 @@ function NotificationSettingsRow() {
               window.location.reload();
             }
           }}
-          style={{ 
-            width: '100%',
-            padding: 'var(--space-md)',
-            background: 'transparent',
-            border: '1px solid var(--border)',
-            borderRadius: 12,
-            color: 'var(--text-secondary)',
-            fontSize: 'var(--font-base)'
-          }}
+          className="btn btn-secondary btn-full text-danger"
+          style={{ borderColor: 'var(--danger-hover)', color: 'var(--danger)' }}
         >
           Sign Out
         </button>
