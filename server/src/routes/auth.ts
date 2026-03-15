@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { verifyAppleToken, createSessionToken, verifySessionToken } from '../services/auth.js';
+import { verifyAppleToken, createSessionToken, verifySessionToken, registerEmailUser, verifyEmailUser, createEmailSessionToken } from '../services/auth.js';
 
 const router = Router();
 
@@ -67,6 +67,83 @@ router.get('/me', (req, res) => {
       name: payload.name
     }
   });
+});
+
+const emailRegisterSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+  name: z.string().optional()
+});
+
+router.post('/register', async (req, res) => {
+  try {
+    const body = emailRegisterSchema.parse(req.body);
+    const { email, password, name } = body;
+
+    const user = await registerEmailUser(email, password, name);
+
+    const sessionToken = createEmailSessionToken(user);
+
+    res.json({
+      token: sessionToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name
+      }
+    });
+  } catch (err: any) {
+    console.error('Email register error:', err);
+
+    if (err.name === 'ZodError') {
+      return res.status(400).json({
+        error: 'Validation Error',
+        details: err.errors
+      });
+    }
+
+    res.status(401).json({
+      error: err.message || 'Registration failed'
+    });
+  }
+});
+
+const emailLoginSchema = z.object({
+  email: z.string().email(),
+  password: z.string()
+});
+
+router.post('/login', async (req, res) => {
+  try {
+    const body = emailLoginSchema.parse(req.body);
+    const { email, password } = body;
+
+    const user = await verifyEmailUser(email, password);
+
+    const sessionToken = createEmailSessionToken(user);
+
+    res.json({
+      token: sessionToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name
+      }
+    });
+  } catch (err: any) {
+    console.error('Email login error:', err);
+
+    if (err.name === 'ZodError') {
+      return res.status(400).json({
+        error: 'Validation Error',
+        details: err.errors
+      });
+    }
+
+    res.status(401).json({
+      error: err.message || 'Login failed'
+    });
+  }
 });
 
 export default router;

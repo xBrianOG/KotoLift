@@ -105,6 +105,52 @@ export async function signInWithApple(): Promise<AuthResult> {
   return authResult;
 }
 
+export async function signInWithEmail(email: string, password: string): Promise<AuthResult> {
+  if (DEV_AUTH) {
+    return devLogin();
+  }
+
+  const response = await fetch(`${API_BASE}/auth/login`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ email, password })
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Login failed' }));
+    throw new Error(error.error || 'Login failed');
+  }
+
+  const authResult: AuthResult = await response.json();
+  storeAuth(authResult);
+  return authResult;
+}
+
+export async function registerWithEmail(email: string, password: string, name?: string): Promise<AuthResult> {
+  if (DEV_AUTH) {
+    return devLogin();
+  }
+
+  const response = await fetch(`${API_BASE}/auth/register`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ email, password, name })
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Registration failed' }));
+    throw new Error(error.error || 'Registration failed');
+  }
+
+  const authResult: AuthResult = await response.json();
+  storeAuth(authResult);
+  return authResult;
+}
+
 export async function devLogin(): Promise<AuthResult> {
   const devToken = 'dev-token-' + Date.now();
   const devUser: User = {
