@@ -4,11 +4,8 @@ const USER_KEY = 'auth.user';
 const DEV_AUTH = import.meta.env.VITE_DEV_AUTH === 'true';
 const API_BASE = import.meta.env.VITE_API_BASE || '';
 
-// Force bypass auth for testing - always use dev login
-const FORCE_AUTH_BYPASS = true;
-
-if (DEV_AUTH || FORCE_AUTH_BYPASS) {
-  console.warn('⚠️ Running in DEV/BYPASS AUTH mode – Authentication bypassed for testing');
+if (DEV_AUTH) {
+  console.warn('⚠️ Running in DEV AUTH mode – Authentication bypassed for testing');
 }
 
 export interface User {
@@ -24,12 +21,11 @@ export interface AuthResult {
 }
 
 export function isDevMode(): boolean {
-  return DEV_AUTH || FORCE_AUTH_BYPASS;
+  return DEV_AUTH;
 }
 
 export function getStoredToken(): string | null {
-  // Bypass: always return a token for testing
-  if (FORCE_AUTH_BYPASS) {
+  if (DEV_AUTH) {
     return 'bypass-dev-token';
   }
   return localStorage.getItem(TOKEN_KEY);
@@ -48,8 +44,7 @@ export function getStoredUser(): User | null {
 }
 
 export function isLoggedIn(): boolean {
-  // Bypass: always return true for testing
-  if (FORCE_AUTH_BYPASS) {
+  if (DEV_AUTH) {
     return true;
   }
   return !!getStoredToken();
@@ -66,11 +61,6 @@ export function clearAuth(): void {
 }
 
 export async function signInWithApple(): Promise<AuthResult> {
-  // Bypass: always use dev login for testing
-  if (FORCE_AUTH_BYPASS) {
-    return devLogin();
-  }
-
   if (DEV_AUTH) {
     return devLogin();
   }

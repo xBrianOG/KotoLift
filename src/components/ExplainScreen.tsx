@@ -7,13 +7,13 @@ import { Accordion } from "./Accordion";
 const API_URL = import.meta.env.VITE_EXPLAIN_API_URL || "/api/explain";
 
 // Simple in-editor logger that only outputs in DEV mode
-const log = (...args: any[]) => {
+const log = (...args: unknown[]) => {
   if (import.meta.env.DEV) {
     // eslint-disable-next-line no-console
     console.log(...args);
   }
 };
-const logError = (...args: any[]) => {
+const logError = (...args: unknown[]) => {
   if (import.meta.env.DEV) {
     // eslint-disable-next-line no-console
     console.error(...args);
@@ -22,6 +22,12 @@ const logError = (...args: any[]) => {
 
 export function ExplainScreen({ initialSentence }: { initialSentence?: string } = {}) {
   const [sentence, setSentence] = useState<string>(initialSentence ?? "");
+  const [focus, setFocus] = useState<"english" | "spanish" | "both">("both");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<ExplainResponse | null>(null);
+  const [cardAdded, setCardAdded] = useState(false);
+
   useEffect(() => {
     if (initialSentence) setSentence(initialSentence);
     // If not prefilled via props, check for a stored explain payload from Cards/Review
@@ -35,10 +41,6 @@ export function ExplainScreen({ initialSentence }: { initialSentence?: string } 
       // ignore
     }
   }, [initialSentence]);
-  const [focus, setFocus] = useState<"english" | "spanish" | "both">("both");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<ExplainResponse | null>(null);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -47,6 +49,7 @@ export function ExplainScreen({ initialSentence }: { initialSentence?: string } 
     setLoading(true);
     setError(null);
     setResult(null);
+    setCardAdded(false);
 
     log("[ExplainScreen] Starting explain request");
     log("[ExplainScreen] API URL:", API_URL);
@@ -64,63 +67,24 @@ export function ExplainScreen({ initialSentence }: { initialSentence?: string } 
       });
 
       log("[ExplainScreen] Response status:", response.status);
-      log("[ExplainScreen] Response ok:", response.ok);
-      log(
-        "[ExplainScreen] Response headers:",
-        Object.fromEntries(response.headers.entries()),
-      );
 
       if (!response.ok) {
-        // Try to get detailed error from response
         let errorDetails = `HTTP ${response.status}: ${response.statusText}`;
         try {
           const errorData = await response.json();
-          console.error("[ExplainScreen] Error response data:", errorData);
-          if (errorData.error) {
-            errorDetails = errorData.error;
-          }
-          if (errorData.details) {
-            errorDetails += ` - ${errorData.details}`;
-          }
-        } catch (jsonError) {
-          console.error(
-            "[ExplainScreen] Could not parse error response as JSON:",
-            jsonError,
-          );
-          // Try to get text response
-          try {
-            const errorText = await response.text();
-            console.error("[ExplainScreen] Error response text:", errorText);
-          } catch (textError) {
-            console.error(
-              "[ExplainScreen] Could not read error response text:",
-              textError,
-            );
-          }
+          if (errorData.error) errorDetails = errorData.error;
+          if (errorData.details) errorDetails += ` - ${errorData.details}`;
+        } catch {
+          // ignore JSON parse errors
         }
         throw new Error(errorDetails);
       }
 
       const data = await response.json();
       log("[ExplainScreen] Success! Received data:", data);
-      log("[ExplainScreen] Data keys:", Object.keys(data));
-      // Normalize incoming payload to the ExplainResponse shape expected by the UI
       setResult(normalizeExplainResponse(data));
     } catch (err) {
       logError("[ExplainScreen] Error occurred:", err);
-      logError("[ExplainScreen] Error type:", typeof err);
-      logError(
-        "[ExplainScreen] Error name:",
-        err instanceof Error ? err.name : "unknown",
-      );
-      logError(
-        "[ExplainScreen] Error message:",
-        err instanceof Error ? err.message : String(err),
-      );
-      if (err instanceof Error && err.stack) {
-        logError("[ExplainScreen] Error stack:", err.stack);
-      }
-
       const errorMessage =
         err instanceof Error ? err.message : "Failed to get explanation";
       setError(errorMessage);
@@ -143,8 +107,9 @@ export function ExplainScreen({ initialSentence }: { initialSentence?: string } 
       result.suggested_flashcard.tags,
     );
     await ensureReviewStates(card);
+    setCardAdded(true);
+  };
 
-    alert("Card added successfully!");
   return (
     <div className="screen animate-fade-in" style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom))' }}>
       <form onSubmit={handleSubmit}>
@@ -189,8 +154,12 @@ export function ExplainScreen({ initialSentence }: { initialSentence?: string } 
 
       {result?.suggested_flashcard && (
         <div className="review-bottom-bar animate-slide-down">
-          <button className="btn btn-success btn-full" onClick={handleAddAsCard}>
-            Add as Card
+          <button
+            className={`btn btn-full ${cardAdded ? 'btn-secondary' : 'btn-success'}`}
+            onClick={handleAddAsCard}
+            disabled={cardAdded}
+          >
+            {cardAdded ? '✓ Card Added' : 'Add as Card'}
           </button>
         </div>
       )}
@@ -217,9 +186,7 @@ export function ExplainScreen({ initialSentence }: { initialSentence?: string } 
                   <div key={i}>
                     <p className="font-semibold text-primary mb-xs">{point.title}</p>
                     <p className="text-secondary mb-xs">{point.explanation}</p>
-                    <p className="text-accent italic text-sm">
-                      "{point.example}"
-                    </p>
+                    <p className="text-accent italic text-sm">"{point.example}"</p>
                   </div>
                 ))}
               </div>
@@ -260,7 +227,7 @@ export function ExplainScreen({ initialSentence }: { initialSentence?: string } 
                   <li key={i} className="mb-xs">{mistake}</li>
                 ))}
               </ul>
-            ) : null}
+            ) : <p className="text-secondary text-sm">No mistakes found!</p>}
           </Accordion>
 
           {result.suggested_flashcard && (
@@ -270,9 +237,9 @@ export function ExplainScreen({ initialSentence }: { initialSentence?: string } 
               <p className="mb-sm"><span className="lang-badge mr-sm">EN</span> {result.suggested_flashcard.en}</p>
               <p className="mb-sm"><span className="lang-badge mr-sm">ES</span> {result.suggested_flashcard.es}</p>
               {result.suggested_flashcard.tags?.length > 0 && (
-                <div className="mt-md flex-center gap-xs flex-wrap" style={{ justifyContent: 'flex-start' }}>
+                <div className="mt-md flex-start flex-wrap gap-xs">
                   {result.suggested_flashcard.tags.map((tag) => (
-                    <span key={tag} className="tag text-xs" style={{ margin: 0 }}>{tag}</span>
+                    <span key={tag} className="tag text-xs">{tag}</span>
                   ))}
                 </div>
               )}
@@ -280,9 +247,6 @@ export function ExplainScreen({ initialSentence }: { initialSentence?: string } 
           )}
         </div>
       )}
-
-      
     </div>
   );
-}
 }

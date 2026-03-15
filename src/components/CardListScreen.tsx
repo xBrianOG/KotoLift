@@ -1,39 +1,47 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getAllCards, deleteCard, searchCards, getAllTags } from '../services/cards';
+import { getAllCards, deleteCard, updateCard, searchCards, getAllTags } from '../services/cards';
 import type { Card } from '../types';
+import { getCardSourceText, getCardTranslation } from '../types';
 
-export function CardListScreen({ onExplain }: { onExplain?: (card: any) => void } = {}) {
+export function CardListScreen({ onExplain }: { onExplain?: (card: Card) => void } = {}) {
   const [cards, setCards] = useState<Card[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [editingCard, setEditingCard] = useState<Card | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Card | null>(null);
+
+  // Debounce search input by 300ms
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const loadCards = useCallback(async () => {
-    if (searchQuery || selectedTags.length > 0) {
-      const results = await searchCards(searchQuery, selectedTags);
+    if (debouncedQuery || selectedTags.length > 0) {
+      const results = await searchCards(debouncedQuery, selectedTags);
       setCards(results);
     } else {
       const allCards = await getAllCards();
       setCards(allCards);
     }
-  }, [searchQuery, selectedTags]);
+  }, [debouncedQuery, selectedTags]);
 
   useEffect(() => {
     loadCards();
     getAllTags().then(setTags);
   }, [loadCards]);
 
-  const handleDelete = async (id: string) => {
-    if (confirm('Delete this card?')) {
-      await deleteCard(id);
-      loadCards();
-    }
+  const handleDelete = async (card: Card) => {
+    await deleteCard(card.id);
+    setDeleteTarget(null);
+    loadCards();
   };
 
   const toggleTag = (tag: string) => {
-    setSelectedTags(prev => 
-      prev.includes(tag) 
+    setSelectedTags(prev =>
+      prev.includes(tag)
         ? prev.filter(t => t !== tag)
         : [...prev, tag]
     );
@@ -54,7 +62,7 @@ export function CardListScreen({ onExplain }: { onExplain?: (card: any) => void 
           placeholder="Search cards..."
           className="mb-md"
         />
-        
+
         {tags.length > 0 && (
           <div className="flex-center flex-wrap gap-xs" style={{ justifyContent: 'flex-start' }}>
             {tags.map(tag => (
@@ -62,7 +70,7 @@ export function CardListScreen({ onExplain }: { onExplain?: (card: any) => void 
                 key={tag}
                 className={`tag ${selectedTags.includes(tag) ? 'active' : ''}`}
                 onClick={() => toggleTag(tag)}
-                style={{ 
+                style={{
                   cursor: 'pointer',
                   background: selectedTags.includes(tag) ? 'var(--text)' : 'var(--surface)',
                   color: selectedTags.includes(tag) ? 'white' : 'var(--text-secondary)',
@@ -84,27 +92,13 @@ export function CardListScreen({ onExplain }: { onExplain?: (card: any) => void 
       ) : (
         <div className="flex-col gap-sm">
           {cards.map(card => {
-            const langLabel = card.sourceLang?.toUpperCase() || 'JA';
-            
-            // Get source text based on sourceLang
-            let sourceText = '';
-            if (card.sourceText) {
-              sourceText = card.sourceText;
-            } else if (card.sourceLang === 'ja' || !card.sourceLang) {
-              sourceText = card.jaText || '';
-            } else if (card.sourceLang === 'en') {
-              sourceText = card.enText || '';
-            } else if (card.sourceLang === 'es') {
-              sourceText = card.esText || '';
-            }
-            
-            const enText = card.translations?.en || card.enText || '';
-            const esText = card.translations?.es || card.esText || '';
-            
-            // Show translations that aren't the source language
+            const langLabel = (card.sourceLang || 'ja').toUpperCase();
+            const sourceText = getCardSourceText(card);
+            const enText = getCardTranslation(card, 'en') || '';
+            const esText = getCardTranslation(card, 'es') || '';
             const showEn = enText && card.sourceLang !== 'en';
             const showEs = esText && card.sourceLang !== 'es';
-            
+
             return (
               <div key={card.id} className="card card-clickable" style={{ padding: 'var(--space-md) var(--space-lg)' }}>
                 <div className="flex-between" style={{ alignItems: 'flex-start' }}>
@@ -114,7 +108,7 @@ export function CardListScreen({ onExplain }: { onExplain?: (card: any) => void 
                   </div>
                   <div className="flex-center gap-xs">
                     {onExplain && (
-                      <button 
+                      <button
                         onClick={() => onExplain(card)}
                         className="btn-subtle"
                         style={{ padding: '6px', borderRadius: 'var(--radius-sm)' }}
@@ -125,7 +119,7 @@ export function CardListScreen({ onExplain }: { onExplain?: (card: any) => void 
                         </svg>
                       </button>
                     )}
-                    <button 
+                    <button
                       onClick={() => setEditingCard(card)}
                       className="btn-subtle"
                       style={{ padding: '6px', borderRadius: 'var(--radius-sm)' }}
@@ -135,8 +129,8 @@ export function CardListScreen({ onExplain }: { onExplain?: (card: any) => void 
                         <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
                       </svg>
                     </button>
-                    <button 
-                      onClick={() => handleDelete(card.id)}
+                    <button
+                      onClick={() => setDeleteTarget(card)}
                       className="btn-subtle"
                       style={{ padding: '6px', borderRadius: 'var(--radius-sm)', color: 'var(--danger)' }}
                       title="Delete"
@@ -172,11 +166,38 @@ export function CardListScreen({ onExplain }: { onExplain?: (card: any) => void 
       )}
 
       {editingCard && (
-        <EditCardModal 
-          card={editingCard} 
+        <EditCardModal
+          card={editingCard}
           onSave={handleEditSave}
           onClose={() => setEditingCard(null)}
         />
+      )}
+
+      {/* Custom delete confirmation dialog */}
+      {deleteTarget && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, zIndex: 100 }}>
+          <div className="card animate-slide-down" style={{ width: '100%', maxWidth: 340, textAlign: 'center' }}>
+            <div style={{ fontSize: 32, marginBottom: 12 }}>🗑️</div>
+            <h3 className="font-bold text-lg mb-sm">Delete this card?</h3>
+            <p className="text-secondary text-sm mb-xl">"{getCardSourceText(deleteTarget)}"</p>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setDeleteTarget(null)}
+                style={{ flex: 1 }}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn"
+                onClick={() => handleDelete(deleteTarget)}
+                style={{ flex: 1, background: 'var(--danger)', color: 'white', border: 'none' }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -189,71 +210,98 @@ interface EditCardModalProps {
 }
 
 function EditCardModal({ card, onSave, onClose }: EditCardModalProps) {
-  const [jaText, setJaText] = useState(card.jaText);
-  const [enText, setEnText] = useState(card.enText);
-  const [esText, setEsText] = useState(card.esText);
+  const sourceLang = card.sourceLang || 'ja';
+
+  // Initialize from flexible model, falling back to legacy fields
+  const [sourceText, setSourceText] = useState(getCardSourceText(card));
+  const [enText, setEnText] = useState(getCardTranslation(card, 'en') || '');
+  const [esText, setEsText] = useState(getCardTranslation(card, 'es') || '');
+  const [jaText, setJaText] = useState(getCardTranslation(card, 'ja') || '');
   const [tags, setTags] = useState(card.tags.join(', '));
   const [notes, setNotes] = useState(card.notes || '');
 
   const handleSave = async () => {
-    const { updateCard } = await import('../services/cards');
+    const translationsUpdate: Record<string, string | undefined> = {};
+    if (sourceLang !== 'en') translationsUpdate.en = enText || undefined;
+    if (sourceLang !== 'es') translationsUpdate.es = esText || undefined;
+    if (sourceLang !== 'ja') translationsUpdate.ja = jaText || undefined;
+
     await updateCard(card.id, {
-      jaText,
-      enText,
-      esText,
+      sourceText,
+      translations: { ...card.translations, ...translationsUpdate },
+      // Keep legacy fields in sync for backward compatibility
+      jaText: sourceLang === 'ja' ? sourceText : (jaText || undefined),
+      enText: sourceLang === 'en' ? sourceText : (enText || undefined),
+      esText: sourceLang === 'es' ? sourceText : (esText || undefined),
       tags: tags.split(',').map(t => t.trim()).filter(t => t),
       notes: notes || undefined
     });
     onSave();
   };
 
+  const fieldLabel = (lang: string) => lang.toUpperCase();
+
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      background: 'rgba(0,0,0,0.8)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 16,
-      zIndex: 100
-    }}>
-      <div className="card" style={{ width: '100%', maxWidth: 500, maxHeight: '90vh', overflow: 'auto' }}>
-        <h2 style={{ marginBottom: 16 }}>Edit Card</h2>
-        
-        <label style={{ display: 'block', marginBottom: 8 }}>JA</label>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, zIndex: 100 }}>
+      <div className="card animate-slide-down" style={{ width: '100%', maxWidth: 500, maxHeight: '90vh', overflow: 'auto' }}>
+        <h2 className="font-bold text-xl mb-lg">Edit Card</h2>
+
+        <label className="block mb-xs text-sm font-semibold text-secondary">
+          {fieldLabel(sourceLang)} (Source)
+        </label>
         <textarea
-          value={jaText}
-          onChange={(e) => setJaText(e.target.value)}
+          value={sourceText}
+          onChange={(e) => setSourceText(e.target.value)}
           rows={2}
           style={{ width: '100%', marginBottom: 12 }}
         />
 
-        <label style={{ display: 'block', marginBottom: 8 }}>EN</label>
-        <textarea
-          value={enText}
-          onChange={(e) => setEnText(e.target.value)}
-          rows={2}
-          style={{ width: '100%', marginBottom: 12 }}
-        />
+        {sourceLang !== 'en' && (
+          <>
+            <label className="block mb-xs text-sm font-semibold text-secondary">EN</label>
+            <textarea
+              value={enText}
+              onChange={(e) => setEnText(e.target.value)}
+              rows={2}
+              style={{ width: '100%', marginBottom: 12 }}
+            />
+          </>
+        )}
 
-        <label style={{ display: 'block', marginBottom: 8 }}>ES</label>
-        <textarea
-          value={esText}
-          onChange={(e) => setEsText(e.target.value)}
-          rows={2}
-          style={{ width: '100%', marginBottom: 12 }}
-        />
+        {sourceLang !== 'es' && (
+          <>
+            <label className="block mb-xs text-sm font-semibold text-secondary">ES</label>
+            <textarea
+              value={esText}
+              onChange={(e) => setEsText(e.target.value)}
+              rows={2}
+              style={{ width: '100%', marginBottom: 12 }}
+            />
+          </>
+        )}
 
-        <label style={{ display: 'block', marginBottom: 8 }}>Tags</label>
+        {sourceLang !== 'ja' && (
+          <>
+            <label className="block mb-xs text-sm font-semibold text-secondary">JA</label>
+            <textarea
+              value={jaText}
+              onChange={(e) => setJaText(e.target.value)}
+              rows={2}
+              style={{ width: '100%', marginBottom: 12 }}
+            />
+          </>
+        )}
+
+        <label className="block mb-xs text-sm font-semibold text-secondary">Tags</label>
         <input
           type="text"
           value={tags}
           onChange={(e) => setTags(e.target.value)}
+          placeholder="grammar, n5, verbs…"
           style={{ width: '100%', marginBottom: 12 }}
         />
 
-        <label style={{ display: 'block', marginBottom: 8 }}>Notes</label>
+        <label className="block mb-xs text-sm font-semibold text-secondary">Notes</label>
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}

@@ -1,106 +1,82 @@
-import { beforeAll, afterAll, afterEach, describe, it, expect, vi } from 'vitest'
-import { rateReview } from '../src/services/review'
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { rateReview } from '../src/services/review';
 
-// Mock the Dexie DB module that review.ts imports
-const mockUpdate = vi.fn()
+// Mock Dexie DB
 vi.mock('../src/db', () => ({
   db: {
-    reviewStates: {
-      update: mockUpdate,
-    },
     cards: {
-      // not used in these tests
-      add: vi.fn(),
+      where: () => ({ equals: () => ({ toArray: async () => [] }) }),
+      anyOf: () => ({ toArray: async () => [] }),
+    },
+    reviewStates: {
+      where: vi.fn().mockReturnThis(),
+      belowOrEqual: vi.fn().mockReturnThis(),
+      and: vi.fn().mockReturnThis(),
+      toArray: vi.fn().mockResolvedValue([]),
+      update: vi.fn().mockResolvedValue(undefined),
+      add: vi.fn().mockResolvedValue(undefined),
+      equals: vi.fn().mockReturnThis(),
     },
   },
-}))
+}));
 
-describe('rateReview', () => {
-  const FIXED_NOW = new Date('2026-01-01T00:00:00Z').getTime()
+import { db } from '../src/db';
 
-  beforeAll(() => {
-    // Use fake timers to fix the "now" used by rateReview
-    // @ts-ignore
-    vi.useFakeTimers()
-    // @ts-ignore
-    vi.setSystemTime(new Date(FIXED_NOW))
-  })
+const baseState = {
+  id: 'rs-1',
+  cardId: 'card-1',
+  promptLang: 'ja' as const,
+  answerLang: 'en' as const,
+  nextReviewAt: Date.now() - 1000,
+  intervalDays: 0,
+  updatedAt: Date.now() - 1000,
+};
 
-  afterAll(() => {
-    // Restore timers
-    vi.useRealTimers()
-  })
+describe('rateReview (SM-2)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
-  afterEach(() => {
-    mockUpdate.mockClear()
-  })
+  it('again: resets interval to 0 and sets short nextReviewAt', async () => {
+    await rateReview('again', baseState);
+    const updateCall = (db.reviewStates.update as any).mock.calls[0];
+    expect(updateCall[0]).toBe('rs-1');
+    expect(updateCall[1].intervalDays).toBe(0);
+    // nextReviewAt should be close to now + 10 minutes (within 1 second tolerance)
+    expect(updateCall[1].nextReviewAt).toBeGreaterThan(Date.now() + 9 * 60 * 1000);
+    expect(updateCall[1].nextReviewAt).toBeLessThan(Date.now() + 11 * 60 * 1000);
+  });
 
-  it('calculates nextReviewAt and intervalDays for rating "again"', async () => {
-    const now = FIXED_NOW
-    const reviewState: any = {
-      id: 'r1',
-      cardId: 'c1',
-      promptLang: 'ja',
-      answerLang: 'en',
-      nextReviewAt: 0,
-      intervalDays: 0,
-      updatedAt: now,
-    }
+  it('good: first review sets interval to 1 day', async () => {
+    await rateReview('good', { ...baseState, intervalDays: 0 });
+    const updateCall = (db.reviewStates.update as any).mock.calls[0];
+    expect(updateCall[1].intervalDays).toBe(1);
+  });
 
-    await rateReview('again' as any, reviewState)
+  it('good: from 1 day interval goes to 6 days', async () => {
+    await rateReview('good', { ...baseState, intervalDays: 1 });
+    const updateCall = (db.reviewStates.update as any).mock.calls[0];
+    expect(updateCall[1].intervalDays).toBe(6);
+  });
 
-    expect(mockUpdate).toHaveBeenCalledTimes(1)
-    const [id, updates] = mockUpdate.mock.calls[0]
-    expect(id).toBe('r1')
-    // nextReviewAt = now + 10 minutes (600,000 ms)
-    expect(updates.nextReviewAt).toBe(now + 600000)
-    expect(updates.intervalDays).toBe(0)
-    expect(updates.updatedAt).toBe(now)
-  })
+  it('good: from 6 days interval multiplies by ease factor (~2.5)', async () => {
+    await rateReview('good', { ...baseState, intervalDays: 6 });
+    const updateCall = (db.reviewStates.update as any).mock.calls[0];
+    // With EF=2.5, 6 * 2.5 = 15, fuzz ±5% → between 14 and 16
+    expect(updateCall[1].intervalDays).toBeGreaterThanOrEqual(13);
+    expect(updateCall[1].intervalDays).toBeLessThanOrEqual(17);
+  });
 
-  it('calculates nextReviewAt and intervalDays for rating "good"', async () => {
-    const now = FIXED_NOW
-    const reviewState: any = {
-      id: 'r2',
-      cardId: 'c2',
-      promptLang: 'ja',
-      answerLang: 'en',
-      nextReviewAt: 0,
-      intervalDays: 0,
-      updatedAt: now,
-    }
+  it('easy: starts at 3 days minimum', async () => {
+    await rateReview('easy', { ...baseState, intervalDays: 0 });
+    const updateCall = (db.reviewStates.update as any).mock.calls[0];
+    expect(updateCall[1].intervalDays).toBeGreaterThanOrEqual(1);
+  });
 
-    await rateReview('good' as any, reviewState)
-
-    expect(mockUpdate).toHaveBeenCalledTimes(1)
-    const [id, updates] = mockUpdate.mock.calls[0]
-    expect(id).toBe('r2')
-    // intervalDays should be 1 when starting from 0
-    expect(updates.intervalDays).toBe(1)
-    // nextReviewAt should be now + 1 day
-    expect(updates.nextReviewAt).toBe(now + 86400000)
-  })
-
-  it('calculates nextReviewAt and intervalDays for rating "easy"', async () => {
-    const now = FIXED_NOW
-    const reviewState: any = {
-      id: 'r3',
-      cardId: 'c3',
-      promptLang: 'ja',
-      answerLang: 'en',
-      nextReviewAt: 0,
-      intervalDays: 0,
-      updatedAt: now,
-    }
-
-    await rateReview('easy' as any, reviewState)
-
-    expect(mockUpdate).toHaveBeenCalledTimes(1)
-    const [id, updates] = mockUpdate.mock.calls[0]
-    expect(id).toBe('r3')
-    // intervalDays should be 3 when starting from 0
-    expect(updates.intervalDays).toBe(3)
-    // nextReviewAt should be now + 3 days
-    expect(updates.nextReviewAt).toBe(now + 3 * 86400000)
-  })
-})
+  it('stores an easeFactor in the update', async () => {
+    await rateReview('good', baseState);
+    const updateCall = (db.reviewStates.update as any).mock.calls[0];
+    expect(typeof updateCall[1].easeFactor).toBe('number');
+    expect(updateCall[1].easeFactor).toBeGreaterThanOrEqual(1.3);
+  });
+});

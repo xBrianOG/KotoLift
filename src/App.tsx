@@ -12,6 +12,7 @@ import { VideoPlayerScreen } from "./components/VideoPlayerScreen";
 import { AppShell } from "./components/AppShell";
 import { LoginScreen } from "./components/LoginScreen";
 import { isLoggedIn, clearAuth, devLogin, isDevMode } from "./services/auth";
+import { initSettings } from "./services/settings";
 import type { TranscriptData } from "./components/TranscriptViewerScreen";
 import type { VideoPlayerData } from "./components/VideoPlayerScreen";
 import "./types";
@@ -19,19 +20,23 @@ import "./types";
 type Screen = "home" | "review" | "cards" | "add" | "explain" | "drill" | "settings" | "videoImport" | "transcript" | "videoPlayer";
 
 function App() {
-  const [screen, setScreen] = useState<Screen>("home");
+  const [history, setHistory] = useState<Screen[]>(["home"]);
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
   const [transcriptData, setTranscriptData] = useState<TranscriptData | null>(null);
   const [videoPlayerData, setVideoPlayerData] = useState<VideoPlayerData | null>(null);
 
+  const screen = history[history.length - 1];
+
   useEffect(() => {
-    // Auto-login in dev mode
+    // Prime Dexie settings cache on startup
+    initSettings().catch(console.error);
+    // Auth check
     if (isDevMode() && !isLoggedIn()) {
       devLogin().then(() => setAuthenticated(true)).catch(console.error);
     } else {
       setAuthenticated(isLoggedIn());
     }
-    
+
     const saved = localStorage.getItem('transcript.last');
     if (saved) {
       try {
@@ -42,7 +47,13 @@ function App() {
 
   const navigate = (to: string) => {
     const valid = ["home", "review", "drill", "cards", "add", "explain", "settings", "videoImport", "transcript", "videoPlayer"] as const;
-    if ((valid as any).includes(to)) setScreen(to as Screen);
+    if ((valid as readonly string[]).includes(to)) {
+      setHistory(h => [...h, to as Screen]);
+    }
+  };
+
+  const goBack = () => {
+    setHistory(h => (h.length > 1 ? h.slice(0, -1) : h));
   };
 
   const handleLogin = () => {
@@ -52,6 +63,7 @@ function App() {
   const handleLogout = () => {
     clearAuth();
     setAuthenticated(false);
+    setHistory(["home"]);
   };
 
   const handleViewTranscript = (data: TranscriptData) => {
@@ -63,10 +75,6 @@ function App() {
   const handleOpenPlayer = (data: VideoPlayerData) => {
     setVideoPlayerData(data);
     navigate('videoPlayer');
-  };
-
-  const handleAuthError = () => {
-    handleLogout();
   };
 
   if (authenticated === null) {
@@ -82,18 +90,17 @@ function App() {
   }
 
   return (
-    <AppShell current={screen} onNavigate={navigate}>
+    <AppShell current={screen} onNavigate={navigate} onBack={history.length > 1 ? goBack : undefined}>
       {screen === "home" && <HomeScreen onNavigate={navigate} />}
       {screen === "review" && (
         <ReviewScreen
           onExplain={(card) => {
-            // Persist some initial sentence for Explain detail flow
             if (card?.jaText) {
               localStorage.setItem("explain.initial", JSON.stringify({ sentence: card.jaText }));
             }
             navigate('explain')
           }}
-          onNavigateHome={() => navigate('home')}
+          onNavigateHome={() => setHistory(["home"])}
         />
       )}
       {screen === "drill" && <DrillScreen />}
@@ -110,10 +117,8 @@ function App() {
       {screen === "add" && <AddCardScreen onSave={() => navigate('cards')} onNavigateToVideoImport={() => navigate('videoImport')} />}
       {screen === "videoImport" && (
         <VideoImportScreen
-          onComplete={(count) => {
-            navigate('cards');
-          }}
-          onCancel={() => navigate('add')}
+          onComplete={() => { navigate('cards'); }}
+          onCancel={goBack}
           onViewTranscript={handleViewTranscript}
           onOpenPlayer={handleOpenPlayer}
         />
@@ -121,17 +126,17 @@ function App() {
       {screen === "transcript" && transcriptData && (
         <TranscriptViewerScreen
           data={transcriptData}
-          onBack={() => navigate('videoImport')}
+          onBack={goBack}
         />
       )}
       {screen === "videoPlayer" && videoPlayerData && (
         <VideoPlayerScreen
           data={videoPlayerData}
-          onBack={() => navigate('videoImport')}
+          onBack={goBack}
         />
       )}
       {screen === "explain" && <ExplainScreen />}
-      {screen === "settings" && <SettingsScreen onBack={() => navigate('home')} onSignOut={handleLogout} />}
+      {screen === "settings" && <SettingsScreen onBack={goBack} onSignOut={handleLogout} />}
     </AppShell>
   );
 }

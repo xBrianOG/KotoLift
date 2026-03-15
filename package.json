@@ -26,8 +26,7 @@
     "openai": "^4.104.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "uuid": "^11.1.0",
-    "ytdl-core": "^4.11.5"
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@capacitor/cli": "^6.0.0",

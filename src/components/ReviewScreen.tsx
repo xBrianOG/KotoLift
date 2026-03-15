@@ -4,6 +4,7 @@ import { addStars, updateStreak } from '../services/stats';
 import { ProgressBar } from './ProgressBar';
 import { Stars } from './Stars';
 import type { Card, ReviewState, Rating, Language, ReviewDirection } from '../types';
+import { getCardSourceText, getCardTranslation } from '../types';
 
 const DIRECTIONS: { value: ReviewDirection; label: string; from: Language; to: Language }[] = [
   { value: 'ja-en', label: 'JA→EN', from: 'ja', to: 'en' },
@@ -59,13 +60,14 @@ export const ReviewScreen: React.FC<{ onExplain?: (card: Card) => void; onNaviga
     await rateReview(rating, current);
     setShowAnswer(false);
     const delta = rating === 'easy' ? 2 : rating === 'good' ? 1 : 0;
-    setScore((s) => s + delta);
+    const newScore = score + delta;
+    setScore(newScore);
     if (currentIndex < cards.length - 1) {
       setCurrentIndex(currentIndex + 1);
     } else {
-      updateStreak();
-      const starsEarned = Math.floor(score / 2);
-      addStars(starsEarned);
+      await updateStreak();
+      const starsEarned = Math.floor(newScore / 2);
+      await addStars(starsEarned);
       setCompleted(true);
     }
   };
@@ -151,8 +153,8 @@ export const ReviewScreen: React.FC<{ onExplain?: (card: Card) => void; onNaviga
     );
   }
 
-  const promptText = currentCard.card[`${dir.from}Text` as keyof Card] as string;
-  const answerText = currentCard.card[`${dir.to}Text` as keyof Card] as string;
+  const promptText = getCardSourceText(currentCard.card) || getCardTranslation(currentCard.card, dir.from) || '';
+  const answerText = getCardTranslation(currentCard.card, dir.to) || getCardSourceText(currentCard.card) || '';
 
   // Top area: direction selector and quick progress
   return (

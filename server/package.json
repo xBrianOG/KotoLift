@@ -17,6 +17,7 @@
     "openai": "^6.25.0",
     "uuid": "^13.0.0",
     "youtube-transcript": "^1.2.1",
+    "ytdl-core": "^4.11.5",
     "zod": "^3.23.0"
   },
   "devDependencies": {

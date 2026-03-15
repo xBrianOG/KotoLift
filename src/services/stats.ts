@@ -1,42 +1,61 @@
-const STREAK_KEY = 'userStats.streak';
-const STREAK_DATE_KEY = 'userStats.streakDate';
-const STARS_KEY = 'userStats.stars';
-const LAST_SESSION_KEY = 'userStats.lastSession';
+import { db } from '../db';
+import type { StoredUserStats } from '../db';
 
-export interface UserStats {
-  streak: number;
-  stars: number;
-  lastSessionDate: string | null;
+const DEFAULT_STATS: StoredUserStats = {
+  id: 'singleton',
+  streak: 0,
+  stars: 0,
+  streakDate: null,
+  lastSessionDate: null,
+};
+
+export type { StoredUserStats as UserStats };
+
+/* ── helpers ── */
+
+async function readStats(): Promise<StoredUserStats> {
+  const stored = await db.userStats.get('singleton');
+  if (stored) return stored;
+  // Migrate from legacy localStorage if present
+  const legacy = migrateLegacyStats();
+  await db.userStats.put(legacy);
+  return legacy;
 }
 
-export function getStats(): UserStats {
-  const streak = parseInt(localStorage.getItem(STREAK_KEY) || '0', 10);
-  const stars = parseInt(localStorage.getItem(STARS_KEY) || '0', 10);
-  const lastSessionDate = localStorage.getItem(LAST_SESSION_KEY);
-  return { streak, stars, lastSessionDate };
+function migrateLegacyStats(): StoredUserStats {
+  const streak = parseInt(localStorage.getItem('userStats.streak') || '0', 10);
+  const stars  = parseInt(localStorage.getItem('userStats.stars')  || '0', 10);
+  const streakDate = localStorage.getItem('userStats.streakDate');
+  const lastSessionDate = localStorage.getItem('userStats.lastSession');
+  // Clean up old keys
+  ['userStats.streak','userStats.streakDate','userStats.stars','userStats.lastSession']
+    .forEach(k => localStorage.removeItem(k));
+  return { id: 'singleton', streak, stars, streakDate, lastSessionDate };
 }
 
-export function addStars(count: number): void {
-  const current = parseInt(localStorage.getItem(STARS_KEY) || '0', 10);
-  localStorage.setItem(STARS_KEY, String(current + count));
+/* ── public API ── */
+
+export async function getStats(): Promise<StoredUserStats> {
+  return readStats();
 }
 
-export function updateStreak(): void {
+export async function addStars(count: number): Promise<void> {
+  const stats = await readStats();
+  await db.userStats.put({ ...stats, stars: stats.stars + count });
+}
+
+export async function updateStreak(): Promise<void> {
+  const stats = await readStats();
   const today = new Date().toDateString();
-  const lastDate = localStorage.getItem(STREAK_DATE_KEY);
-  const currentStreak = parseInt(localStorage.getItem(STREAK_KEY) || '0', 10);
+  if (stats.streakDate === today) return;
 
-  if (lastDate === today) {
-    return;
-  }
+  const yesterday = new Date(Date.now() - 86_400_000).toDateString();
+  const newStreak = stats.streakDate === yesterday ? stats.streak + 1 : 1;
 
-  const yesterday = new Date(Date.now() - 86400000).toDateString();
-  
-  if (lastDate === yesterday) {
-    localStorage.setItem(STREAK_KEY, String(currentStreak + 1));
-  } else if (lastDate !== today) {
-    localStorage.setItem(STREAK_KEY, '1');
-  }
-  
-  localStorage.setItem(STREAK_DATE_KEY, today);
+  await db.userStats.put({
+    ...stats,
+    streak: newStreak,
+    streakDate: today,
+    lastSessionDate: today,
+  });
 }

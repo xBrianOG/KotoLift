@@ -285,7 +285,7 @@ export function TranscriptViewerScreen({ data, onBack }: TranscriptViewerScreenP
         </div>
       )}
 
-      <div style={{ flex: 1, overflowY: 'auto' }}>
+      <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
         {filteredSegments.map((seg) => {
           const isSaved = savedIds.has(seg.id);
           const isSaving = savingIds.has(seg.id);

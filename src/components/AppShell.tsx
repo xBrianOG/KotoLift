@@ -3,6 +3,7 @@ import React from 'react'
 type AppShellProps = {
   current: string
   onNavigate: (to: string) => void
+  onBack?: () => void
   children: React.ReactNode
 }
 
@@ -21,7 +22,7 @@ const TabIcon = ({ name, active }: { name: string; active: boolean }) => {
   return <span className="tab-icon" style={{ width: 24, height: 24, display: 'flex' }}>{renderIcon(name)}</span>
 }
 
-export function AppShell({ current, onNavigate, children }: AppShellProps) {
+export function AppShell({ current, onNavigate, onBack, children }: AppShellProps) {
   const isMainTab = ['home', 'review', 'drill', 'cards', 'add'].includes(current)
   
   return (
@@ -36,7 +37,18 @@ export function AppShell({ current, onNavigate, children }: AppShellProps) {
         zIndex: 50
       }}>
         <div className="flex-center gap-sm">
-          <span className="font-bold text-lg text-primary" style={{ letterSpacing: '-0.3px' }}>KotoLift</span>
+          {onBack && (
+            <button
+              aria-label="Back"
+              onClick={onBack}
+              style={{ border: 'none', background: 'transparent', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--text)" strokeWidth="2" style={{ width: 20, height: 20 }}>
+                <path d="M19 12H5M12 5l-7 7 7 7" />
+              </svg>
+            </button>
+          )}
+          <span className="font-bold text-lg text-primary" style={{ letterSpacing: '-0.3px' }}>住友勉強</span>
         </div>
         {isMainTab && (
           <button 

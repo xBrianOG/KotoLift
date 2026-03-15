@@ -8,6 +8,13 @@ import cors from "cors";
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// CORS must be FIRST - before any routes
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));
+
 app.use(express.json());
 
 app.use("/api/video", videoRouter);
@@ -24,13 +31,3 @@ app.listen(Number(PORT), '0.0.0.0', () => {
   console.log(`🔐 Auth: POST /auth/apple`);
   console.log(`📊 Usage: GET /api/usage/me`);
 });
-
-app.use(
-  cors({
-    origin: "*",
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  }),
-);
-
-app.options(/.*/, cors());

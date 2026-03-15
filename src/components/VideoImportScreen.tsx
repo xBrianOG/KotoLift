@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { analyzeVideo, VideoSegment, translateText, type SupportedLang } from '../services/api';
-import { createCard } from '../services/cards';
 import { ensureReviewStates } from '../services/review';
 import { getLearningSettings } from '../services/settings';
+import { v4 as uuidv4 } from 'uuid';
 
 interface VideoImportScreenProps {
   onComplete: (createdCount: number) => void;
@@ -86,46 +86,59 @@ export function VideoImportScreen({ onComplete, onCancel, onViewTranscript, onOp
 
     try {
       const selectedSegments = segments.filter(s => selected.has(s.id));
-      let createdCount = 0;
-
       const sourceLang = lang as SupportedLang;
-      const targetLangs: SupportedLang[] = sourceLang === 'en' 
-        ? ['es', 'ja'] 
-        : sourceLang === 'es' 
-          ? ['en', 'ja'] 
+      const targetLangs: SupportedLang[] = sourceLang === 'en'
+        ? ['es', 'ja']
+        : sourceLang === 'es'
+          ? ['en', 'ja']
           : ['en', 'es'];
 
-      for (const seg of selectedSegments) {
-        // Translate to other languages
-        const translations: Record<string, string> = {};
-        await Promise.all(
-          targetLangs.map(async (tlang) => {
-            try {
-              translations[tlang] = await translateText(seg.text, sourceLang, tlang);
-            } catch (e) {
-              console.error('Translation error:', e);
-              translations[tlang] = '(translation failed)';
-            }
-          })
-        );
+      // Batch all translations in parallel
+      const translatedSegments = await Promise.all(
+        selectedSegments.map(async (seg) => {
+          const translations: Record<string, string> = {};
+          await Promise.all(
+            targetLangs.map(async (tlang) => {
+              try {
+                translations[tlang] = await translateText(seg.text, sourceLang, tlang);
+              } catch (e) {
+                console.error('Translation error:', e);
+                translations[tlang] = '(translation failed)';
+              }
+            })
+          );
+          return { seg, translations };
+        })
+      );
 
-        const card = await createCard(
-          seg.text,
-          translations.en || '',
-          translations.es || '',
-          ['imported'],
-          `Imported from video`,
-          sourceLang,
-          undefined,
-          seg.startMs,
-          seg.endMs,
-          translations.ja || ''
-        );
-        await ensureReviewStates(card);
-        createdCount++;
-      }
+      // Build card objects
+      const now = Date.now();
+      const cards = translatedSegments.map(({ seg, translations }, i) => ({
+        id: uuidv4(),
+        sourceText: seg.text,
+        sourceLang,
+        translations: {
+          en: translations.en || undefined,
+          es: translations.es || undefined,
+          ja: translations.ja || undefined,
+        },
+        jaText: sourceLang === 'ja' ? seg.text : (translations.ja || ''),
+        enText: sourceLang === 'en' ? seg.text : (translations.en || ''),
+        esText: sourceLang === 'es' ? seg.text : (translations.es || ''),
+        tags: ['imported'],
+        notes: `Imported from video`,
+        sourceUrl: url,
+        startMs: seg.startMs,
+        endMs: seg.endMs,
+        createdAt: now + i,
+      }));
 
-      onComplete(createdCount);
+      // Bulk write cards, then set up review states
+      const { db } = await import('../db');
+      await db.cards.bulkAdd(cards);
+      await Promise.all(cards.map(card => ensureReviewStates(card as any)));
+
+      onComplete(cards.length);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to create cards';
       setError(message);

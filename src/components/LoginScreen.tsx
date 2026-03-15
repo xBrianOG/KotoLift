@@ -53,13 +53,13 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           marginBottom: 'var(--space-sm)',
           letterSpacing: -0.5 
         }}>
-          KotoLift
+          住友勉強
         </h1>
         <p style={{ 
           color: 'var(--text-secondary)', 
           fontSize: 'var(--font-base)' 
         }}>
-          Learn Japanese with calm focus
+          多言語フラッシュカードで学ぼう
         </p>
       </div>
 
