@@ -1,11 +1,9 @@
 {
   "functions": {
     "api/auth.ts": {
-      "runtime": "nodejs18.x",
       "maxDuration": 30
     },
     "api/video.ts": {
-      "runtime": "nodejs18.x",
       "maxDuration": 60
     }
   }

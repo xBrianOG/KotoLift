@@ -8,10 +8,10 @@ function extractVideoId(url: string): string | null {
 }
 
 export default async function handler(req: any, res: any) {
-  const path = (req.url || '/').split('?')[0];
+  const path = req.url || '/';
 
   // Analyze video
-  if (req.method === 'POST' && path === '/api/video/analyze') {
+  if (req.method === 'POST' && path.includes('/analyze')) {
     try {
       const { url, lang } = req.body || {};
       if (!url) return res.status(400).json({ error: 'URL is required' });
@@ -35,7 +35,7 @@ export default async function handler(req: any, res: any) {
   }
 
   // Translate
-  if (req.method === 'POST' && path === '/api/video/translate') {
+  if (req.method === 'POST' && path.includes('/translate')) {
     try {
       const { text, sourceLang, targetLang } = req.body || {};
       if (!text || !sourceLang || !targetLang) {
@@ -67,5 +67,5 @@ export default async function handler(req: any, res: any) {
     }
   }
 
-  return res.status(404).json({ error: 'Not found', path });
+  return res.status(404).json({ error: 'Not found' });
 }

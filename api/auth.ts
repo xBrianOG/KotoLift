@@ -41,15 +41,10 @@ function saveEmailUsers(users: Map<string, EmailUser>) {
 const emailUsersDb = loadEmailUsers();
 
 export default async function handler(req: any, res: any) {
-  const path = (req.url || '/').split('?')[0];
+  const path = (req.url || '/');
   
-  // Health check
-  if (req.method === 'GET' && path === '/api/auth') {
-    return res.status(200).json({ status: 'ok' });
-  }
-
-  // Register
-  if (req.method === 'POST' && path === '/api/auth/register') {
+  // Handle /api/auth/register
+  if (path.includes('/register')) {
     try {
       const { email, password, name } = req.body || {};
       if (!email || !password || password.length < 6) {
@@ -76,8 +71,8 @@ export default async function handler(req: any, res: any) {
     }
   }
 
-  // Login
-  if (req.method === 'POST' && path === '/api/auth/login') {
+  // Handle /api/auth/login
+  if (path.includes('/login')) {
     try {
       const { email, password } = req.body || {};
       if (!email || !password) {
@@ -98,5 +93,5 @@ export default async function handler(req: any, res: any) {
     }
   }
 
-  return res.status(404).json({ error: 'Not found', path });
+  return res.status(404).json({ error: 'Not found' });
 }
