@@ -49,12 +49,12 @@ export default async function handler(req: any, res: any) {
     return res.status(200).end();
   }
 
-  let path = req.url || '';
-  path = path.replace(/^\/api/, '') || path;
-  
-  if (req.method === 'POST' && path === '/auth/register') {
+  const path = req.url?.split('?')[0] || '/';
+  const body = req.body || {};
+
+  if (req.method === 'POST' && path === '/api/auth/register') {
     try {
-      const { email, password, name } = req.body;
+      const { email, password, name } = body;
 
       if (!email || !password || password.length < 6) {
         return res.status(400).json({ error: 'Invalid email or password (min 6 chars)' });
@@ -97,9 +97,9 @@ export default async function handler(req: any, res: any) {
     }
   }
 
-  if (req.method === 'POST' && path === '/auth/login') {
+  if (req.method === 'POST' && path === '/api/auth/login') {
     try {
-      const { email, password } = req.body;
+      const { email, password } = body;
 
       if (!email || !password) {
         return res.status(400).json({ error: 'Invalid email or password' });

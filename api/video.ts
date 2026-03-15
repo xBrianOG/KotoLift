@@ -1,5 +1,4 @@
 import { YoutubeTranscript } from 'youtube-transcript';
-import { v4 as uuidv4 } from 'uuid';
 
 const YOUTUBE_REGEX = /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
 
@@ -17,12 +16,12 @@ export default async function handler(req: any, res: any) {
     return res.status(200).end();
   }
 
-  let path = req.url || '';
-  path = path.replace(/^\/api/, '') || path;
+  const path = req.url?.split('?')[0] || '/';
+  const body = req.body || {};
 
-  if (req.method === 'POST' && path === '/video/analyze') {
+  if (req.method === 'POST' && path === '/api/video/analyze') {
     try {
-      const { url, lang } = req.body;
+      const { url, lang } = body;
 
       if (!url) {
         return res.status(400).json({ error: 'URL is required' });
@@ -65,9 +64,9 @@ export default async function handler(req: any, res: any) {
     }
   }
 
-  if (req.method === 'POST' && path === '/video/translate') {
+  if (req.method === 'POST' && path === '/api/video/translate') {
     try {
-      const { text, sourceLang, targetLang } = req.body;
+      const { text, sourceLang, targetLang } = body;
 
       if (!text || !sourceLang || !targetLang) {
         return res.status(400).json({ error: 'Missing required fields' });
