@@ -49,9 +49,10 @@ export default async function handler(req: any, res: any) {
     return res.status(200).end();
   }
 
-  const path = req.url || '';
+  let path = req.url || '';
+  path = path.replace(/^\/api/, '') || path;
   
-  if (req.method === 'POST' && path === '/api/auth/register') {
+  if (req.method === 'POST' && path === '/auth/register') {
     try {
       const { email, password, name } = req.body;
 
@@ -96,7 +97,7 @@ export default async function handler(req: any, res: any) {
     }
   }
 
-  if (req.method === 'POST' && path === '/api/auth/login') {
+  if (req.method === 'POST' && path === '/auth/login') {
     try {
       const { email, password } = req.body;
 

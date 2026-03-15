@@ -17,9 +17,10 @@ export default async function handler(req: any, res: any) {
     return res.status(200).end();
   }
 
-  const path = req.url || '';
+  let path = req.url || '';
+  path = path.replace(/^\/api/, '') || path;
 
-  if (req.method === 'POST' && path === '/api/video/analyze') {
+  if (req.method === 'POST' && path === '/video/analyze') {
     try {
       const { url, lang } = req.body;
 
@@ -64,7 +65,7 @@ export default async function handler(req: any, res: any) {
     }
   }
 
-  if (req.method === 'POST' && path === '/api/video/translate') {
+  if (req.method === 'POST' && path === '/video/translate') {
     try {
       const { text, sourceLang, targetLang } = req.body;
 
