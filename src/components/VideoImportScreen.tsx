@@ -238,7 +238,7 @@ export function VideoImportScreen({ onComplete, onCancel, onViewTranscript, onOp
             </button>
           </div>
 
-          <div className="card p-0 overflow-hidden mb-lg" style={{ maxHeight: '40vh', overflowY: 'auto' }}>
+          <div className="card p-0 overflow-hidden mb-lg" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
             <div className="flex-col divide-y divide-border">
               {segments.map((seg) => (
                 <label

@@ -1,0 +1,1416 @@
+{
+  "title": "Senior dev tries to get a junior job",
+  "segments": [
+    {
+      "id": "seg-1",
+      "startMs": 0,
+      "endMs": 3600,
+      "text": "How fast can a newcomer to programming land a job?"
+    },
+    {
+      "id": "seg-2",
+      "startMs": 3600,
+      "endMs": 4600,
+      "text": "I work as a senior,"
+    },
+    {
+      "id": "seg-3",
+      "startMs": 4600,
+      "endMs": 7880,
+      "text": "but I created a junior profile without experience"
+    },
+    {
+      "id": "seg-4",
+      "startMs": 7880,
+      "endMs": 10080,
+      "text": "and tried to apply for the roles."
+    },
+    {
+      "id": "seg-5",
+      "startMs": 10080,
+      "endMs": 12420,
+      "text": "And this is how many results I've got."
+    },
+    {
+      "id": "seg-6",
+      "startMs": 12420,
+      "endMs": 14000,
+      "text": "Meet Alex Sow."
+    },
+    {
+      "id": "seg-7",
+      "startMs": 14000,
+      "endMs": 15680,
+      "text": "He's a computer science graduate"
+    },
+    {
+      "id": "seg-8",
+      "startMs": 15680,
+      "endMs": 19320,
+      "text": "from Eindhoven University of Technology in Netherlands."
+    },
+    {
+      "id": "seg-9",
+      "startMs": 19320,
+      "endMs": 21200,
+      "text": "He relocated from Russia to Netherlands"
+    },
+    {
+      "id": "seg-10",
+      "startMs": 21200,
+      "endMs": 22820,
+      "text": "to study computer science,"
+    },
+    {
+      "id": "seg-11",
+      "startMs": 22820,
+      "endMs": 25320,
+      "text": "and now finally finished his baccalaureate degree"
+    },
+    {
+      "id": "seg-12",
+      "startMs": 25320,
+      "endMs": 27280,
+      "text": "and started to apply for jobs."
+    },
+    {
+      "id": "seg-13",
+      "startMs": 27280,
+      "endMs": 29680,
+      "text": "So how did Alex try to apply for jobs?"
+    },
+    {
+      "id": "seg-14",
+      "startMs": 29680,
+      "endMs": 32280,
+      "text": "Well, my original plan was to use public brand."
+    },
+    {
+      "id": "seg-15",
+      "startMs": 32280,
+      "endMs": 33560,
+      "text": "There are several reasons for that."
+    },
+    {
+      "id": "seg-16",
+      "startMs": 33560,
+      "endMs": 36040,
+      "text": "First, it is much less time consuming"
+    },
+    {
+      "id": "seg-17",
+      "startMs": 36040,
+      "endMs": 38040,
+      "text": "than cold spamming companies."
+    },
+    {
+      "id": "seg-18",
+      "startMs": 38040,
+      "endMs": 39280,
+      "text": "Just be active on LinkedIn"
+    },
+    {
+      "id": "seg-19",
+      "startMs": 39280,
+      "endMs": 42040,
+      "text": "and recruiters will come to your profile themselves."
+    },
+    {
+      "id": "seg-20",
+      "startMs": 42040,
+      "endMs": 44480,
+      "text": "So I created a dummy LinkedIn profile,"
+    },
+    {
+      "id": "seg-21",
+      "startMs": 44480,
+      "endMs": 46040,
+      "text": "I filled out the information,"
+    },
+    {
+      "id": "seg-22",
+      "startMs": 46040,
+      "endMs": 48400,
+      "text": "and I also added personal projects"
+    },
+    {
+      "id": "seg-23",
+      "startMs": 48400,
+      "endMs": 50400,
+      "text": "with the dummy links that are trackable."
+    },
+    {
+      "id": "seg-24",
+      "startMs": 50400,
+      "endMs": 52840,
+      "text": "So we will actually see how many people open it."
+    },
+    {
+      "id": "seg-25",
+      "startMs": 52840,
+      "endMs": 55420,
+      "text": "My first hypothesis is that nobody really cares"
+    },
+    {
+      "id": "seg-26",
+      "startMs": 55420,
+      "endMs": 57400,
+      "text": "about your GitHub portfolio as a junior."
+    },
+    {
+      "id": "seg-27",
+      "startMs": 57400,
+      "endMs": 59100,
+      "text": "Just when I was filling my profile"
+    },
+    {
+      "id": "seg-28",
+      "startMs": 59100,
+      "endMs": 61020,
+      "text": "and connecting to other people,"
+    },
+    {
+      "id": "seg-29",
+      "startMs": 61020,
+      "endMs": 63700,
+      "text": "my profile got banned for the first time."
+    },
+    {
+      "id": "seg-30",
+      "startMs": 63700,
+      "endMs": 66260,
+      "text": "So he appealed several times to LinkedIn,"
+    },
+    {
+      "id": "seg-31",
+      "startMs": 66260,
+      "endMs": 68420,
+      "text": "and after several weeks of waiting,"
+    },
+    {
+      "id": "seg-32",
+      "startMs": 68420,
+      "endMs": 70220,
+      "text": "his profile was restored."
+    },
+    {
+      "id": "seg-33",
+      "startMs": 70220,
+      "endMs": 72900,
+      "text": "So how did Alex invest in his public brand?"
+    },
+    {
+      "id": "seg-34",
+      "startMs": 72900,
+      "endMs": 74300,
+      "text": "He pretty much wrote many posts"
+    },
+    {
+      "id": "seg-35",
+      "startMs": 74300,
+      "endMs": 76240,
+      "text": "about Kotlin and Java development,"
+    },
+    {
+      "id": "seg-36",
+      "startMs": 76240,
+      "endMs": 78420,
+      "text": "because that's his main proficiency."
+    },
+    {
+      "id": "seg-37",
+      "startMs": 78420,
+      "endMs": 81100,
+      "text": "And of course, Alex commented other people posts,"
+    },
+    {
+      "id": "seg-38",
+      "startMs": 81100,
+      "endMs": 83100,
+      "text": "wishing them all the best and all the luck"
+    },
+    {
+      "id": "seg-39",
+      "startMs": 83100,
+      "endMs": 84700,
+      "text": "and engaging with the platform."
+    },
+    {
+      "id": "seg-40",
+      "startMs": 84700,
+      "endMs": 86300,
+      "text": "You might ask, why would Alex"
+    },
+    {
+      "id": "seg-41",
+      "startMs": 86300,
+      "endMs": 87980,
+      "text": "do all this unnecessary stuff?"
+    },
+    {
+      "id": "seg-42",
+      "startMs": 88020,
+      "endMs": 91660,
+      "text": "Well, on my senior profile, I do exactly those steps."
+    },
+    {
+      "id": "seg-43",
+      "startMs": 91660,
+      "endMs": 94020,
+      "text": "I comment people posts, I post myself,"
+    },
+    {
+      "id": "seg-44",
+      "startMs": 94020,
+      "endMs": 95940,
+      "text": "and that is just enough to get at least"
+    },
+    {
+      "id": "seg-45",
+      "startMs": 95940,
+      "endMs": 98060,
+      "text": "one recruiter contacting me daily."
+    },
+    {
+      "id": "seg-46",
+      "startMs": 98060,
+      "endMs": 100140,
+      "text": "And that's exactly why I hoped"
+    },
+    {
+      "id": "seg-47",
+      "startMs": 100140,
+      "endMs": 102020,
+      "text": "that for the junior level profile,"
+    },
+    {
+      "id": "seg-48",
+      "startMs": 102020,
+      "endMs": 104180,
+      "text": "it will be enough to have at least,"
+    },
+    {
+      "id": "seg-49",
+      "startMs": 104180,
+      "endMs": 106160,
+      "text": "let's say, one recruiter a week."
+    },
+    {
+      "id": "seg-50",
+      "startMs": 106160,
+      "endMs": 107000,
+      "text": "But guess what?"
+    },
+    {
+      "id": "seg-51",
+      "startMs": 107000,
+      "endMs": 109640,
+      "text": "I was wrong, and nobody ever contacted Alex."
+    },
+    {
+      "id": "seg-52",
+      "startMs": 109640,
+      "endMs": 111180,
+      "text": "It ended up even worse."
+    },
+    {
+      "id": "seg-53",
+      "startMs": 111180,
+      "endMs": 113100,
+      "text": "My account got banned again."
+    },
+    {
+      "id": "seg-54",
+      "startMs": 113100,
+      "endMs": 115220,
+      "text": "Alex was really discouraged at this moment,"
+    },
+    {
+      "id": "seg-55",
+      "startMs": 115220,
+      "endMs": 116580,
+      "text": "but he didn't give up,"
+    },
+    {
+      "id": "seg-56",
+      "startMs": 116580,
+      "endMs": 119580,
+      "text": "because he also had a plan to spam people on LinkedIn,"
+    },
+    {
+      "id": "seg-57",
+      "startMs": 119580,
+      "endMs": 121460,
+      "text": "asking to refer him, networking,"
+    },
+    {
+      "id": "seg-58",
+      "startMs": 121460,
+      "endMs": 123900,
+      "text": "and doing pretty much all those advices"
+    },
+    {
+      "id": "seg-59",
+      "startMs": 123900,
+      "endMs": 126180,
+      "text": "that popular bloggers advise to newcomers"
+    },
+    {
+      "id": "seg-60",
+      "startMs": 126180,
+      "endMs": 127140,
+      "text": "to get a first job."
+    },
+    {
+      "id": "seg-61",
+      "startMs": 127140,
+      "endMs": 128300,
+      "text": "So three more appeals,"
+    },
+    {
+      "id": "seg-62",
+      "startMs": 128300,
+      "endMs": 130580,
+      "text": "and Alex's account was restored again."
+    },
+    {
+      "id": "seg-63",
+      "startMs": 130580,
+      "endMs": 133260,
+      "text": "I have no idea what LinkedIn support smokes,"
+    },
+    {
+      "id": "seg-64",
+      "startMs": 133260,
+      "endMs": 134300,
+      "text": "but it must be strong,"
+    },
+    {
+      "id": "seg-65",
+      "startMs": 134300,
+      "endMs": 136340,
+      "text": "because I have no idea what's going on."
+    },
+    {
+      "id": "seg-66",
+      "startMs": 136340,
+      "endMs": 137700,
+      "text": "But before I started to apply,"
+    },
+    {
+      "id": "seg-67",
+      "startMs": 137700,
+      "endMs": 141700,
+      "text": "I was missing one last thing, CV or resume."
+    },
+    {
+      "id": "seg-68",
+      "startMs": 141700,
+      "endMs": 143220,
+      "text": "Alex had to create his CV."
+    },
+    {
+      "id": "seg-69",
+      "startMs": 143220,
+      "endMs": 146340,
+      "text": "Luckily here, smart bloggers again advised"
+    },
+    {
+      "id": "seg-70",
+      "startMs": 147100,
+      "endMs": 149500,
+      "text": "young Alex to just put there his personal projects."
+    },
+    {
+      "id": "seg-71",
+      "startMs": 149500,
+      "endMs": 152340,
+      "text": "So I just changed my work experience to personal projects."
+    },
+    {
+      "id": "seg-72",
+      "startMs": 152340,
+      "endMs": 155780,
+      "text": "And of course here, I also added those dummy checkable links."
+    },
+    {
+      "id": "seg-73",
+      "startMs": 155780,
+      "endMs": 158700,
+      "text": "So let's see if at least some recruiters will check out"
+    },
+    {
+      "id": "seg-74",
+      "startMs": 158700,
+      "endMs": 160340,
+      "text": "if I have portfolio or not."
+    },
+    {
+      "id": "seg-75",
+      "startMs": 160340,
+      "endMs": 161300,
+      "text": "When I was filling my CV,"
+    },
+    {
+      "id": "seg-76",
+      "startMs": 161300,
+      "endMs": 162860,
+      "text": "I actually realized that I don't have"
+    },
+    {
+      "id": "seg-77",
+      "startMs": 162860,
+      "endMs": 163940,
+      "text": "Netherlands phone number."
+    },
+    {
+      "id": "seg-78",
+      "startMs": 163940,
+      "endMs": 166700,
+      "text": "It will be weird if student applying in Netherlands"
+    },
+    {
+      "id": "seg-79",
+      "startMs": 166700,
+      "endMs": 168380,
+      "text": "for a job will have Czech number."
+    },
+    {
+      "id": "seg-80",
+      "startMs": 168380,
+      "endMs": 170660,
+      "text": "So I bought VOIP number."
+    },
+    {
+      "id": "seg-81",
+      "startMs": 170660,
+      "endMs": 173820,
+      "text": "It costed me $6, and this is a serious investment"
+    },
+    {
+      "id": "seg-82",
+      "startMs": 173820,
+      "endMs": 176380,
+      "text": "for a software developer from Czech Republic."
+    },
+    {
+      "id": "seg-83",
+      "startMs": 176380,
+      "endMs": 177860,
+      "text": "But that was nothing for Alex,"
+    },
+    {
+      "id": "seg-84",
+      "startMs": 177860,
+      "endMs": 179260,
+      "text": "because he really wanted a job."
+    },
+    {
+      "id": "seg-85",
+      "startMs": 179260,
+      "endMs": 181980,
+      "text": "After I paid them, the company name is VOIP VOIP,"
+    },
+    {
+      "id": "seg-86",
+      "startMs": 181980,
+      "endMs": 184260,
+      "text": "they actually asked me for confirmation,"
+    },
+    {
+      "id": "seg-87",
+      "startMs": 184260,
+      "endMs": 186940,
+      "text": "asking for proof that I live in Netherlands,"
+    },
+    {
+      "id": "seg-88",
+      "startMs": 186940,
+      "endMs": 189900,
+      "text": "which I didn't have, so I had to search for an alternative."
+    },
+    {
+      "id": "seg-89",
+      "startMs": 189900,
+      "endMs": 192380,
+      "text": "I spent five more euro getting a number"
+    },
+    {
+      "id": "seg-90",
+      "startMs": 192380,
+      "endMs": 194220,
+      "text": "from another company that actually works."
+    },
+    {
+      "id": "seg-91",
+      "startMs": 194220,
+      "endMs": 195460,
+      "text": "So don't repeat my mistake"
+    },
+    {
+      "id": "seg-92",
+      "startMs": 195460,
+      "endMs": 197900,
+      "text": "if you decide to get a virtual number,"
+    },
+    {
+      "id": "seg-93",
+      "startMs": 197900,
+      "endMs": 199220,
+      "text": "read the requirements carefully."
+    },
+    {
+      "id": "seg-94",
+      "startMs": 199220,
+      "endMs": 201140,
+      "text": "And here happened very strange thing."
+    },
+    {
+      "id": "seg-95",
+      "startMs": 201140,
+      "endMs": 203700,
+      "text": "When I was registering my phone number in WhatsApp,"
+    },
+    {
+      "id": "seg-96",
+      "startMs": 204580,
+      "endMs": 206140,
+      "text": "I actually had a profile there for this number."
+    },
+    {
+      "id": "seg-97",
+      "startMs": 206140,
+      "endMs": 208820,
+      "text": "And there was a pretty Japanese girl on my avatar."
+    },
+    {
+      "id": "seg-98",
+      "startMs": 208820,
+      "endMs": 210100,
+      "text": "I thought, well, this is strange."
+    },
+    {
+      "id": "seg-99",
+      "startMs": 210100,
+      "endMs": 211900,
+      "text": "I changed the photo to Alex photo."
+    },
+    {
+      "id": "seg-100",
+      "startMs": 211900,
+      "endMs": 212780,
+      "text": "I changed the name."
+    },
+    {
+      "id": "seg-101",
+      "startMs": 212780,
+      "endMs": 215460,
+      "text": "And then some people started to write me,"
+    },
+    {
+      "id": "seg-102",
+      "startMs": 215460,
+      "endMs": 218140,
+      "text": "asking, honey, I think something is wrong."
+    },
+    {
+      "id": "seg-103",
+      "startMs": 218140,
+      "endMs": 220020,
+      "text": "And I hope this Japanese girl didn't apply"
+    },
+    {
+      "id": "seg-104",
+      "startMs": 220020,
+      "endMs": 221180,
+      "text": "for the jobs in Netherlands,"
+    },
+    {
+      "id": "seg-105",
+      "startMs": 221180,
+      "endMs": 223660,
+      "text": "because otherwise I might be already blacklisted"
+    },
+    {
+      "id": "seg-106",
+      "startMs": 223660,
+      "endMs": 224780,
+      "text": "for all those companies."
+    },
+    {
+      "id": "seg-107",
+      "startMs": 224780,
+      "endMs": 227140,
+      "text": "Okay, so public brand didn't work."
+    },
+    {
+      "id": "seg-108",
+      "startMs": 227140,
+      "endMs": 228580,
+      "text": "I had my CV ready."
+    },
+    {
+      "id": "seg-109",
+      "startMs": 228580,
+      "endMs": 230140,
+      "text": "I had my number ready."
+    },
+    {
+      "id": "seg-110",
+      "startMs": 230140,
+      "endMs": 231900,
+      "text": "So it was time to apply on LinkedIn."
+    },
+    {
+      "id": "seg-111",
+      "startMs": 231940,
+      "endMs": 233740,
+      "text": "And that was the moment when I discovered"
+    },
+    {
+      "id": "seg-112",
+      "startMs": 233740,
+      "endMs": 236420,
+      "text": "that there are only 88 positions available"
+    },
+    {
+      "id": "seg-113",
+      "startMs": 236420,
+      "endMs": 237820,
+      "text": "in the whole country."
+    },
+    {
+      "id": "seg-114",
+      "startMs": 237820,
+      "endMs": 239340,
+      "text": "What are the chances to land a job"
+    },
+    {
+      "id": "seg-115",
+      "startMs": 239340,
+      "endMs": 240940,
+      "text": "if there are only 80 vacancies?"
+    },
+    {
+      "id": "seg-116",
+      "startMs": 240940,
+      "endMs": 244900,
+      "text": "Well, that only meant that Alex had to prepare very well."
+    },
+    {
+      "id": "seg-117",
+      "startMs": 244900,
+      "endMs": 247900,
+      "text": "Every tiny detail of imperfection would result"
+    },
+    {
+      "id": "seg-118",
+      "startMs": 247900,
+      "endMs": 250140,
+      "text": "in Alex being immediately rejected."
+    },
+    {
+      "id": "seg-119",
+      "startMs": 250140,
+      "endMs": 253260,
+      "text": "No tolerance for mistakes, no mediocrity."
+    },
+    {
+      "id": "seg-120",
+      "startMs": 253260,
+      "endMs": 255900,
+      "text": "I really needed the strong portfolio."
+    },
+    {
+      "id": "seg-121",
+      "startMs": 255900,
+      "endMs": 258820,
+      "text": "That was exactly the advice from smart bloggers"
+    },
+    {
+      "id": "seg-122",
+      "startMs": 258820,
+      "endMs": 261100,
+      "text": "have a lot of contributions on GitHub."
+    },
+    {
+      "id": "seg-123",
+      "startMs": 261100,
+      "endMs": 262540,
+      "text": "So that was a problem."
+    },
+    {
+      "id": "seg-124",
+      "startMs": 262540,
+      "endMs": 263580,
+      "text": "I don't have portfolio"
+    },
+    {
+      "id": "seg-125",
+      "startMs": 263580,
+      "endMs": 266620,
+      "text": "and Junior is expected to have good portfolio."
+    },
+    {
+      "id": "seg-126",
+      "startMs": 266620,
+      "endMs": 270140,
+      "text": "I didn't have time for all that bullshit creating portfolio"
+    },
+    {
+      "id": "seg-127",
+      "startMs": 270140,
+      "endMs": 273340,
+      "text": "and thinking how to present my projects."
+    },
+    {
+      "id": "seg-128",
+      "startMs": 273340,
+      "endMs": 275620,
+      "text": "So I just used artificial intelligence."
+    },
+    {
+      "id": "seg-129",
+      "startMs": 275620,
+      "endMs": 279380,
+      "text": "I found AI tool to generate GitHub portfolio"
+    },
+    {
+      "id": "seg-130",
+      "startMs": 279380,
+      "endMs": 280820,
+      "text": "with a good history."
+    },
+    {
+      "id": "seg-131",
+      "startMs": 280820,
+      "endMs": 282380,
+      "text": "And look how nicely it does that stuff."
+    },
+    {
+      "id": "seg-132",
+      "startMs": 282380,
+      "endMs": 283900,
+      "text": "It looks very professional, honestly,"
+    },
+    {
+      "id": "seg-133",
+      "startMs": 283900,
+      "endMs": 285740,
+      "text": "and that's exactly what Alex needed."
+    },
+    {
+      "id": "seg-134",
+      "startMs": 285740,
+      "endMs": 287700,
+      "text": "So now with the portfolio, I was fully packed"
+    },
+    {
+      "id": "seg-135",
+      "startMs": 287700,
+      "endMs": 289100,
+      "text": "and it was time to apply."
+    },
+    {
+      "id": "seg-136",
+      "startMs": 289100,
+      "endMs": 290900,
+      "text": "By the way, maybe you've been asking yourself,"
+    },
+    {
+      "id": "seg-137",
+      "startMs": 291140,
+      "endMs": 293180,
+      "text": "why would he apply exactly in Netherlands?"
+    },
+    {
+      "id": "seg-138",
+      "startMs": 293180,
+      "endMs": 294260,
+      "text": "There are two reasons for that."
+    },
+    {
+      "id": "seg-139",
+      "startMs": 294260,
+      "endMs": 297700,
+      "text": "First is because it is top two shortage of IT talent"
+    },
+    {
+      "id": "seg-140",
+      "startMs": 297700,
+      "endMs": 300540,
+      "text": "based by Python Recruitment Queen"
+    },
+    {
+      "id": "seg-141",
+      "startMs": 300540,
+      "endMs": 304020,
+      "text": "and also top five by Digital Defined."
+    },
+    {
+      "id": "seg-142",
+      "startMs": 304020,
+      "endMs": 306940,
+      "text": "But also meaning that if I can't land a job in Netherlands,"
+    },
+    {
+      "id": "seg-143",
+      "startMs": 306940,
+      "endMs": 309220,
+      "text": "it means that the situation for the newcomers"
+    },
+    {
+      "id": "seg-144",
+      "startMs": 309220,
+      "endMs": 311820,
+      "text": "in other countries is even worse."
+    },
+    {
+      "id": "seg-145",
+      "startMs": 311820,
+      "endMs": 313700,
+      "text": "And also, and the second reason is that Netherlands"
+    },
+    {
+      "id": "seg-146",
+      "startMs": 313700,
+      "endMs": 316540,
+      "text": "is a top three English speaking country in Europe."
+    },
+    {
+      "id": "seg-147",
+      "startMs": 316540,
+      "endMs": 318540,
+      "text": "And as you might guess, I don't speak Dutch."
+    },
+    {
+      "id": "seg-148",
+      "startMs": 318540,
+      "endMs": 320260,
+      "text": "Volgende stappen."
+    },
+    {
+      "id": "seg-149",
+      "startMs": 320260,
+      "endMs": 323460,
+      "text": "De weggever of wakturken dat werdt."
+    },
+    {
+      "id": "seg-150",
+      "startMs": 323460,
+      "endMs": 324340,
+      "text": "So that would be a problem"
+    },
+    {
+      "id": "seg-151",
+      "startMs": 324340,
+      "endMs": 326180,
+      "text": "if there are no vacancies in English."
+    },
+    {
+      "id": "seg-152",
+      "startMs": 326180,
+      "endMs": 329300,
+      "text": "So I started to apply for intern level positions"
+    },
+    {
+      "id": "seg-153",
+      "startMs": 329300,
+      "endMs": 330580,
+      "text": "in Netherlands from LinkedIn."
+    },
+    {
+      "id": "seg-154",
+      "startMs": 330580,
+      "endMs": 332540,
+      "text": "By the statistics, conversion rate"
+    },
+    {
+      "id": "seg-155",
+      "startMs": 332540,
+      "endMs": 335300,
+      "text": "of cold spamming companies is only 5%."
+    },
+    {
+      "id": "seg-156",
+      "startMs": 335300,
+      "endMs": 337180,
+      "text": "Meaning that if there are 80 companies,"
+    },
+    {
+      "id": "seg-157",
+      "startMs": 337180,
+      "endMs": 340780,
+      "text": "if I'm very lucky, I will only have four interview processes."
+    },
+    {
+      "id": "seg-158",
+      "startMs": 340780,
+      "endMs": 342900,
+      "text": "The problem is that half of those vacancies"
+    },
+    {
+      "id": "seg-159",
+      "startMs": 342900,
+      "endMs": 345140,
+      "text": "actually require some real work experience"
+    },
+    {
+      "id": "seg-160",
+      "startMs": 345140,
+      "endMs": 348100,
+      "text": "and other half also requires to know Dutch language."
+    },
+    {
+      "id": "seg-161",
+      "startMs": 348140,
+      "endMs": 349660,
+      "text": "Some of the positions were really strange."
+    },
+    {
+      "id": "seg-162",
+      "startMs": 349660,
+      "endMs": 352220,
+      "text": "They look like they are intern level,"
+    },
+    {
+      "id": "seg-163",
+      "startMs": 352220,
+      "endMs": 353660,
+      "text": "but when I click apply,"
+    },
+    {
+      "id": "seg-164",
+      "startMs": 353660,
+      "endMs": 356220,
+      "text": "it asks me how many real work experience I have."
+    },
+    {
+      "id": "seg-165",
+      "startMs": 356220,
+      "endMs": 357500,
+      "text": "And I really feel at this moment,"
+    },
+    {
+      "id": "seg-166",
+      "startMs": 357500,
+      "endMs": 360860,
+      "text": "if I select zero, I will be automatically rejected."
+    },
+    {
+      "id": "seg-167",
+      "startMs": 360860,
+      "endMs": 363460,
+      "text": "So Alex was thinking, what does he have to do?"
+    },
+    {
+      "id": "seg-168",
+      "startMs": 363460,
+      "endMs": 366100,
+      "text": "Is it really the time to lie to your future employer"
+    },
+    {
+      "id": "seg-169",
+      "startMs": 366100,
+      "endMs": 368820,
+      "text": "that you have some work experience just to pass the filters?"
+    },
+    {
+      "id": "seg-170",
+      "startMs": 368820,
+      "endMs": 371460,
+      "text": "Well, luckily, smart bloggers also had an answer to this."
+    },
+    {
+      "id": "seg-171",
+      "startMs": 371460,
+      "endMs": 373820,
+      "text": "Apply even if you don't meet the requirements."
+    },
+    {
+      "id": "seg-172",
+      "startMs": 373820,
+      "endMs": 374780,
+      "text": "This is really good advice,"
+    },
+    {
+      "id": "seg-173",
+      "startMs": 374780,
+      "endMs": 376540,
+      "text": "but that practically means you have to lie"
+    },
+    {
+      "id": "seg-174",
+      "startMs": 376540,
+      "endMs": 377580,
+      "text": "to pass the filters."
+    },
+    {
+      "id": "seg-175",
+      "startMs": 377580,
+      "endMs": 380380,
+      "text": "Well, if I have spent three years in university,"
+    },
+    {
+      "id": "seg-176",
+      "startMs": 380380,
+      "endMs": 383100,
+      "text": "can this be count as at least one year"
+    },
+    {
+      "id": "seg-177",
+      "startMs": 383100,
+      "endMs": 385340,
+      "text": "of real work experience, please?"
+    },
+    {
+      "id": "seg-178",
+      "startMs": 385340,
+      "endMs": 388140,
+      "text": "I think no, but let's see what our recruiters will say."
+    },
+    {
+      "id": "seg-179",
+      "startMs": 388140,
+      "endMs": 390420,
+      "text": "And they won't say anything because guess what happened"
+    },
+    {
+      "id": "seg-180",
+      "startMs": 390420,
+      "endMs": 391540,
+      "text": "when I started to apply?"
+    },
+    {
+      "id": "seg-181",
+      "startMs": 391540,
+      "endMs": 393020,
+      "text": "My account got banned again."
+    },
+    {
+      "id": "seg-182",
+      "startMs": 393020,
+      "endMs": 395740,
+      "text": "Now this time I cannot even send appeals anymore."
+    },
+    {
+      "id": "seg-183",
+      "startMs": 395740,
+      "endMs": 399500,
+      "text": "So it looks like I got into some VIP blacklist on LinkedIn."
+    },
+    {
+      "id": "seg-184",
+      "startMs": 399500,
+      "endMs": 401660,
+      "text": "Alex has to get his interview no matter what."
+    },
+    {
+      "id": "seg-185",
+      "startMs": 401660,
+      "endMs": 403860,
+      "text": "Alex spends so much time in university"
+    },
+    {
+      "id": "seg-186",
+      "startMs": 403860,
+      "endMs": 406780,
+      "text": "and he deserves to apply the knowledge he's got there."
+    },
+    {
+      "id": "seg-187",
+      "startMs": 406780,
+      "endMs": 407900,
+      "text": "He's a passionate newcomer"
+    },
+    {
+      "id": "seg-188",
+      "startMs": 407900,
+      "endMs": 410780,
+      "text": "and even LinkedIn corporate machine will not stop him."
+    },
+    {
+      "id": "seg-189",
+      "startMs": 410780,
+      "endMs": 412340,
+      "text": "So Alex googled alternatives"
+    },
+    {
+      "id": "seg-190",
+      "startMs": 412340,
+      "endMs": 416020,
+      "text": "and the first one indeed.com was his choice."
+    },
+    {
+      "id": "seg-191",
+      "startMs": 416020,
+      "endMs": 417380,
+      "text": "It was easy to register there."
+    },
+    {
+      "id": "seg-192",
+      "startMs": 417380,
+      "endMs": 418780,
+      "text": "They didn't ban Alex."
+    },
+    {
+      "id": "seg-193",
+      "startMs": 418780,
+      "endMs": 422540,
+      "text": "So for the three weeks, Alex was applying for the jobs."
+    },
+    {
+      "id": "seg-194",
+      "startMs": 422540,
+      "endMs": 426460,
+      "text": "And the most interesting part, what are the results?"
+    },
+    {
+      "id": "seg-195",
+      "startMs": 426460,
+      "endMs": 429620,
+      "text": "So in those three weeks, Alex sent 36 applications."
+    },
+    {
+      "id": "seg-196",
+      "startMs": 429620,
+      "endMs": 432100,
+      "text": "He got zero interview invites."
+    },
+    {
+      "id": "seg-197",
+      "startMs": 432100,
+      "endMs": 434660,
+      "text": "He had six rejection emails."
+    },
+    {
+      "id": "seg-198",
+      "startMs": 434660,
+      "endMs": 437620,
+      "text": "No one visited his GitHub profile on LinkedIn"
+    },
+    {
+      "id": "seg-199",
+      "startMs": 437620,
+      "endMs": 439100,
+      "text": "while it was active."
+    },
+    {
+      "id": "seg-200",
+      "startMs": 439100,
+      "endMs": 442820,
+      "text": "No one visited his GitHub profile from his resume."
+    },
+    {
+      "id": "seg-201",
+      "startMs": 442820,
+      "endMs": 445020,
+      "text": "Alex had proper portfolio."
+    },
+    {
+      "id": "seg-202",
+      "startMs": 445020,
+      "endMs": 447780,
+      "text": "He had a good CV that I know it works"
+    },
+    {
+      "id": "seg-203",
+      "startMs": 447780,
+      "endMs": 449220,
+      "text": "for senior level positions."
+    },
+    {
+      "id": "seg-204",
+      "startMs": 449220,
+      "endMs": 451660,
+      "text": "And he got zero interest from recruiters"
+    },
+    {
+      "id": "seg-205",
+      "startMs": 451660,
+      "endMs": 454780,
+      "text": "in a country with one of the top talent shortages,"
+    },
+    {
+      "id": "seg-206",
+      "startMs": 454780,
+      "endMs": 455620,
+      "text": "Netherlands."
+    },
+    {
+      "id": "seg-207",
+      "startMs": 455620,
+      "endMs": 457660,
+      "text": "If that is the statistics in Netherlands,"
+    },
+    {
+      "id": "seg-208",
+      "startMs": 457660,
+      "endMs": 461380,
+      "text": "I cannot imagine how miserable my newcomer feel"
+    },
+    {
+      "id": "seg-209",
+      "startMs": 461380,
+      "endMs": 464260,
+      "text": "in other country where the competition is even stronger."
+    },
+    {
+      "id": "seg-210",
+      "startMs": 464860,
+      "endMs": 466460,
+      "text": "I am working on a senior level position."
+    },
+    {
+      "id": "seg-211",
+      "startMs": 466460,
+      "endMs": 468780,
+      "text": "I practice interviews monthly"
+    },
+    {
+      "id": "seg-212",
+      "startMs": 468780,
+      "endMs": 471180,
+      "text": "and I never had such a terrible conversion."
+    },
+    {
+      "id": "seg-213",
+      "startMs": 471180,
+      "endMs": 475660,
+      "text": "So if you ever hear some teaching influencer programmer"
+    },
+    {
+      "id": "seg-214",
+      "startMs": 475660,
+      "endMs": 478820,
+      "text": "or just generally a person who is caring about IT,"
+    },
+    {
+      "id": "seg-215",
+      "startMs": 478820,
+      "endMs": 483540,
+      "text": "advising you to work harder or to build your portfolio,"
+    },
+    {
+      "id": "seg-216",
+      "startMs": 483540,
+      "endMs": 486180,
+      "text": "just ask them to remove all the years of experience"
+    },
+    {
+      "id": "seg-217",
+      "startMs": 486180,
+      "endMs": 487860,
+      "text": "they have in their CV"
+    },
+    {
+      "id": "seg-218",
+      "startMs": 487860,
+      "endMs": 490540,
+      "text": "and just try to apply their own advices."
+    },
+    {
+      "id": "seg-219",
+      "startMs": 490540,
+      "endMs": 492380,
+      "text": "You will probably hear something like,"
+    },
+    {
+      "id": "seg-220",
+      "startMs": 492380,
+      "endMs": 494020,
+      "text": "well, do I have nothing to do?"
+    },
+    {
+      "id": "seg-221",
+      "startMs": 494780,
+      "endMs": 495820,
+      "text": "Well, then maybe stop telling newcomers"
+    },
+    {
+      "id": "seg-222",
+      "startMs": 495820,
+      "endMs": 497380,
+      "text": "that they are not working hard."
+    },
+    {
+      "id": "seg-223",
+      "startMs": 497380,
+      "endMs": 498940,
+      "text": "They just have bad advices"
+    },
+    {
+      "id": "seg-224",
+      "startMs": 498940,
+      "endMs": 501380,
+      "text": "that do not apply to current job market."
+    },
+    {
+      "id": "seg-225",
+      "startMs": 501380,
+      "endMs": 503220,
+      "text": "I wanted to make this video just to prove"
+    },
+    {
+      "id": "seg-226",
+      "startMs": 503220,
+      "endMs": 505180,
+      "text": "that those advices do not work."
+    },
+    {
+      "id": "seg-227",
+      "startMs": 505180,
+      "endMs": 507660,
+      "text": "Again, zero conversions into interviews"
+    },
+    {
+      "id": "seg-228",
+      "startMs": 507660,
+      "endMs": 510300,
+      "text": "and no one ever opened my GitHub portfolio."
+    },
+    {
+      "id": "seg-229",
+      "startMs": 510300,
+      "endMs": 514180,
+      "text": "And by now you might ask, well, what helps them?"
+    },
+    {
+      "id": "seg-230",
+      "startMs": 514180,
+      "endMs": 516300,
+      "text": "You'll find that out in the next episode"
+    },
+    {
+      "id": "seg-231",
+      "startMs": 516300,
+      "endMs": 519580,
+      "text": "where I will finally get an interview invite."
+    },
+    {
+      "id": "seg-232",
+      "startMs": 519580,
+      "endMs": 522140,
+      "text": "And I will also try to pass the interview"
+    },
+    {
+      "id": "seg-233",
+      "startMs": 522140,
+      "endMs": 523820,
+      "text": "pretending to be a junior."
+    },
+    {
+      "id": "seg-234",
+      "startMs": 524620,
+      "endMs": 526700,
+      "text": "So follow not to miss it out."
+    },
+    {
+      "id": "seg-235",
+      "startMs": 526700,
+      "endMs": 527540,
+      "text": "Cheers."
+    }
+  ],
+  "languageDetected": "english"
+}
