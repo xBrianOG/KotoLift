@@ -130,7 +130,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
               textDecoration: 'underline'
             }}
           >
-            Or sign in with email
+            Or sign in with email / create account
           </button>
         </>
       ) : (
@@ -227,6 +227,26 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           >
             Back
           </button>
+          {showEmailForm === 'login' && (
+            <p style={{ marginTop: 'var(--space-md)', textAlign: 'center', fontSize: 'var(--font-sm)', color: 'var(--text-secondary)' }}>
+              Don't have an account?{' '}
+              <button
+                type="button"
+                onClick={() => { setShowEmailForm('register'); setError(null); }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--primary)',
+                  cursor: 'pointer',
+                  fontSize: 'var(--font-sm)',
+                  textDecoration: 'underline',
+                  padding: 0
+                }}
+              >
+                Sign up
+              </button>
+            </p>
+          )}
         </form>
       )}
 
