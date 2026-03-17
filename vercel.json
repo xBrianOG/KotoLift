@@ -6,7 +6,13 @@
     "api/auth/register/index.ts": {
       "maxDuration": 30
     },
-    "api/video.ts": {
+    "api/video/analyze.ts": {
+      "maxDuration": 60
+    },
+    "api/video/translate.ts": {
+      "maxDuration": 15
+    },
+    "api/explain.ts": {
       "maxDuration": 60
     }
   }
