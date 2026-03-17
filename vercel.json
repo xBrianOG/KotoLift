@@ -1,9 +1,6 @@
 {
   "functions": {
-    "api/auth/login/index.ts": {
-      "maxDuration": 30
-    },
-    "api/auth/register/index.ts": {
+    "api/auth.ts": {
       "maxDuration": 30
     },
     "api/video/analyze.ts": {
@@ -12,8 +9,17 @@
     "api/video/translate.ts": {
       "maxDuration": 15
     },
-    "api/explain.ts": {
+    "api/explain/index.ts": {
       "maxDuration": 60
+    },
+    "api/usage/me.ts": {
+      "maxDuration": 10
     }
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/api/auth/:path*",
+      "destination": "/api/auth.ts"
+    }
+  ]
 }
