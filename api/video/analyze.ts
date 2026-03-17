@@ -28,15 +28,33 @@ export default async function handler(req: any, res: any) {
     const videoId = extractVideoId(url);
     if (!videoId) return res.status(400).json({ error: 'Could not extract video ID' });
     
-    const transcripts = await YoutubeTranscript.fetchTranscript(videoId, { lang: lang || 'en' }).catch(err => {
-      console.error('[Video Analyze] fetchTranscript error:', err);
-      throw new Error(`YouTube Transcript failed: ${err.message}`);
-    });
+    console.log(`[Video Analyze] Starting analysis for ${videoId} with lang: ${lang || 'auto'}`);
+    
+    let transcripts;
+    try {
+      // Attempt 1: Requested language
+      transcripts = await YoutubeTranscript.fetchTranscript(videoId, { lang: lang || 'en' });
+      console.log(`[Video Analyze] Success with initial fetch (${lang || 'en'})`);
+    } catch (err: any) {
+      console.warn(`[Video Analyze] First attempt failed (${err.message}). Trying fallback...`);
+      try {
+        // Attempt 2: No language specified (YouTube default)
+        transcripts = await YoutubeTranscript.fetchTranscript(videoId);
+        console.log('[Video Analyze] Success with default fallback');
+      } catch (err2: any) {
+        console.error('[Video Analyze] Both attempts failed:', err2);
+        return res.status(400).json({ 
+          error: 'YouTube captions are unavailable or blocked in this environment.',
+          details: `Error 1: ${err.message} | Error 2: ${err2.message}`,
+          recommendation: 'Please use the desktop/local version of KotoLift to analyze this video using AI Whisper.'
+        });
+      }
+    }
 
     if (!transcripts || transcripts.length === 0) {
-      console.warn('[Video Analyze] No transcripts found for videoId:', videoId);
       return res.status(400).json({ 
-        error: 'YouTube captions are unavailable for this video. Please use the desktop version of KotoLift to generate a high-fidelity transcript using AI Whisper.' 
+        error: 'YouTube captions are unavailable for this video.',
+        recommendation: 'Try the desktop version for high-fidelity AI transcription.'
       });
     }
     
@@ -53,10 +71,10 @@ export default async function handler(req: any, res: any) {
       languageDetected: lang || 'en' 
     });
   } catch (err: any) {
-    console.error('[Video Analyze] Final catch error:', err);
+    console.error('[Video Analyze] Fatal crash:', err);
     return res.status(500).json({ 
-      error: err.message || 'Failed to analyze video',
-      details: err.stack 
+      error: 'Analysis crashed unexpectedly.',
+      details: err.message || String(err)
     });
   }
 }
