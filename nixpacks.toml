@@ -1,0 +1,10 @@
+[phases.setup]
+nixPkgs = ["...", "ffmpeg", "yt-dlp"]
+
+[phases.build]
+dependsOn = ["setup"]
+cmds = ["npm install", "npm run build", "cd server && npm install && npm run build"]
+
+[phases.start]
+dependsOn = ["build"]
+cmds = ["cd server && npm start"]
