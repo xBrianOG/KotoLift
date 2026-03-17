@@ -79,7 +79,7 @@ export async function signInWithApple(): Promise<AuthResult> {
     throw new Error('No identity token received from Apple');
   }
 
-  const response = await fetch(`${API_BASE}/auth/apple`, {
+  const response = await fetch(`${API_BASE}/api/auth/apple`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -110,7 +110,7 @@ export async function signInWithEmail(email: string, password: string): Promise<
     return devLogin();
   }
 
-  const response = await fetch(`${API_BASE}/auth/login`, {
+  const response = await fetch(`${API_BASE}/api/auth/login`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -133,7 +133,7 @@ export async function registerWithEmail(email: string, password: string, name?: 
     return devLogin();
   }
 
-  const response = await fetch(`${API_BASE}/auth/register`, {
+  const response = await fetch(`${API_BASE}/api/auth/register`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
