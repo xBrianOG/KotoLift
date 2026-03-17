@@ -1,5 +1,5 @@
-const CACHE_NAME = "koto-lift-v2";
-const STATIC_ASSETS = ["/", "/index.html", "/manifest.json"];
+const CACHE_NAME = "koto-lift-v3";
+const STATIC_ASSETS = ["/manifest.json"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -24,7 +24,10 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-  if (event.request.url.includes("/api/")) {
+  const url = new URL(event.request.url);
+
+  // Skip caching for API calls
+  if (url.pathname.startsWith("/api/")) {
     event.respondWith(
       fetch(event.request).catch(() => {
         return new Response(JSON.stringify({ error: "Offline" }), {
@@ -33,6 +36,12 @@ self.addEventListener("fetch", (event) => {
         });
       }),
     );
+    return;
+  }
+
+  // Skip caching for HTML files (entry point) to avoid stale asset hashes
+  if (event.request.mode === "navigate" || url.pathname.endsWith(".html") || url.pathname === "/") {
+    event.respondWith(fetch(event.request));
     return;
   }
 
