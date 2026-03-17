@@ -41,7 +41,7 @@ const distPath = path.join(__dirname, "../../dist");
 app.use(express.static(distPath));
 
 // SPA Fallback: Redirect all other requests to index.html
-app.get("(.*)", (req, res) => {
+app.get("/:path*", (req, res) => {
   if (req.path.startsWith("/api")) return;
   res.sendFile(path.join(distPath, "index.html"));
 });
