@@ -1,0 +1,24 @@
+{
+  "title": "Me at the zoo",
+  "segments": [
+    {
+      "id": "seg-1",
+      "startMs": 0,
+      "endMs": 7000,
+      "text": "Alright, so here we are in front of the elephants, and the cool thing about these guys is that"
+    },
+    {
+      "id": "seg-2",
+      "startMs": 7000,
+      "endMs": 17000,
+      "text": "they have really, really, really long fronts, and that's cool."
+    },
+    {
+      "id": "seg-3",
+      "startMs": 17000,
+      "endMs": 19000,
+      "text": "And that's pretty much all there is to say."
+    }
+  ],
+  "languageDetected": "english"
+}

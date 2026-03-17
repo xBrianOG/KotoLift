@@ -1,4 +1,4 @@
-const CACHE_NAME = "koto-lift-v1";
+const CACHE_NAME = "koto-lift-v2";
 const STATIC_ASSETS = ["/", "/index.html", "/manifest.json"];
 
 self.addEventListener("install", (event) => {
@@ -37,11 +37,8 @@ self.addEventListener("fetch", (event) => {
   }
 
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      if (response) {
-        return response;
-      }
-      return fetch(event.request).then((networkResponse) => {
+    fetch(event.request)
+      .then((networkResponse) => {
         if (networkResponse && networkResponse.status === 200) {
           const responseClone = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
@@ -49,7 +46,9 @@ self.addEventListener("fetch", (event) => {
           });
         }
         return networkResponse;
-      });
-    }),
+      })
+      .catch(() => {
+        return caches.match(event.request);
+      })
   );
 });

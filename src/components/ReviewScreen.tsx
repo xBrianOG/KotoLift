@@ -158,7 +158,7 @@ export const ReviewScreen: React.FC<{ onExplain?: (card: Card) => void; onNaviga
 
   // Top area: direction selector and quick progress
   return (
-    <div className="screen animate-fade-in" style={{ paddingBottom: 160 }}>
+    <div className="screen animate-fade-in" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
       {/* Progress bar at top of lesson */}
       {cards.length > 0 && (
         <div className="mb-md">
@@ -186,48 +186,74 @@ export const ReviewScreen: React.FC<{ onExplain?: (card: Card) => void; onNaviga
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
-        style={{ touchAction: 'pan-y', display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '300px', justifyContent: 'center' }}
+        style={{ 
+          touchAction: 'pan-y', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          flex: 1,
+          minHeight: 0,
+          overflowY: 'hidden'
+        }}
       >
-        <span className="lang-badge mb-md align-self-start">{dir.from}</span>
-        <p className="text-2xl font-medium text-center mb-xl" style={{ lineHeight: 1.4, wordBreak: 'break-word', width: '100%' }}>
-          {promptText}
-        </p>
-        
-        {showAnswer && (
-          <div className="animate-slide-down flex-col w-full" style={{ width: '100%', alignItems: 'center' }}>
-            <hr style={{ margin: 'var(--space-lg) 0', borderColor: 'var(--border-light)', width: '100%' }} />
-            <span className="lang-badge mb-md">{dir.to}</span>
-            <p className="text-xl text-center mb-lg text-secondary" style={{ lineHeight: 1.5, wordBreak: 'break-word', width: '100%' }}>
-              {answerText}
-            </p>
-            {currentCard.card.tags.length > 0 && (
-              <div className="mb-md flex-center flex-wrap">
-                {currentCard.card.tags.map(tag => (
-                  <span key={tag} className="tag">{tag}</span>
-                ))}
-              </div>
-            )}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', width: '100%', minHeight: 0, gap: 'var(--space-md)' }}>
+          {/* Prompt Section */}
+          <div style={{ 
+            flexShrink: 1, 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center', 
+            justifyContent: showAnswer ? 'flex-end' : 'center', 
+            minHeight: 0,
+            flex: showAnswer ? 1 : '1 1 auto'
+          }}>
+            <span className="lang-badge mb-md">{dir.from}</span>
+            <div style={{ overflowY: 'auto', width: '100%', display: 'flex', justifyContent: 'center' }}>
+              <p className="text-2xl font-medium text-center" style={{ lineHeight: 1.4, wordBreak: 'break-word', margin: 0 }}>
+                {promptText}
+              </p>
+            </div>
           </div>
-        )}
-        
-        {!showAnswer && (
-          <p className="text-tertiary text-sm mt-xl animate-pulse">
-            Tap to reveal answer
-          </p>
-        )}
+          
+          {/* Answer Section */}
+          {showAnswer && (
+            <div className="animate-slide-down flex-col w-full" style={{ flexShrink: 1, flex: 1, alignItems: 'center', minHeight: 0, overflowY: 'auto' }}>
+              <hr style={{ margin: '0 0 var(--space-md) 0', borderColor: 'var(--border-light)', width: '100%', flexShrink: 0 }} />
+              <span className="lang-badge mb-md" style={{ flexShrink: 0 }}>{dir.to}</span>
+              <p className="text-xl text-center mb-lg text-secondary" style={{ lineHeight: 1.5, wordBreak: 'break-word', width: '100%' }}>
+                {answerText}
+              </p>
+              {currentCard.card.tags.length > 0 && (
+                <div className="mb-md flex-center flex-wrap" style={{ flexShrink: 0 }}>
+                  {currentCard.card.tags.map(tag => (
+                    <span key={tag} className="tag">{tag}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          
+          {!showAnswer && (
+            <p className="text-tertiary text-sm animate-pulse text-center mt-auto" style={{ paddingBottom: 'var(--space-md)' }}>
+              Tap to reveal answer
+            </p>
+          )}
+        </div>
+
         {onExplain && currentCard && showAnswer && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onExplain(currentCard.card); }}
-            className="btn btn-secondary btn-full mt-lg animate-fade-in"
-          >
-            Explain
-          </button>
+          <div style={{ flexShrink: 0, width: '100%', marginTop: 'var(--space-sm)' }}>
+            <button
+              onClick={(e) => { e.stopPropagation(); onExplain(currentCard.card); }}
+              className="btn btn-secondary btn-full animate-fade-in"
+            >
+              Explain
+            </button>
+          </div>
         )}
       </div>
 
-      {/* Sticky bottom bar with actions */}
-      {showAnswer && (
-        <div className="review-bottom-bar animate-slide-down" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)' }}>
+      {/* Actions container pinned to bottom */}
+      {showAnswer ? (
+        <div className="animate-slide-down mt-md" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-md)', flexShrink: 0 }}>
           <button className="btn btn-danger btn-full" onClick={(e) => { e.stopPropagation(); handleRate('again'); }}>
             Again
           </button>
@@ -238,6 +264,8 @@ export const ReviewScreen: React.FC<{ onExplain?: (card: Card) => void; onNaviga
             Easy
           </button>
         </div>
+      ) : (
+        <div style={{ minHeight: '52px', marginTop: 'var(--space-md)' }} /> /* Placeholder for buttons to prevent layout jump */
       )}
     </div>
   );

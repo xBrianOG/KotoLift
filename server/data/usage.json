@@ -8,7 +8,19 @@
   "dev-user:2026-03": {
     "userId": "dev-user",
     "month": "2026-03",
-    "minutesUsed": 245,
-    "updatedAt": 1773569139094
+    "minutesUsed": 310,
+    "updatedAt": 1773751909603
+  },
+  "email-1773750629499:2026-03": {
+    "userId": "email-1773750629499",
+    "month": "2026-03",
+    "minutesUsed": 72,
+    "updatedAt": 1773750811659
+  },
+  "email-1773753219479:2026-03": {
+    "userId": "email-1773753219479",
+    "month": "2026-03",
+    "minutesUsed": 85,
+    "updatedAt": 1773754964305
   }
 }

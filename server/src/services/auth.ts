@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import jwksRsa from 'jwks-rsa';
-import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import bcrypt from 'bcrypt';
 
 const APPLE_JWKS_URI = 'https://appleid.apple.com/auth/keys';
@@ -58,7 +58,7 @@ function saveUsers(users: Map<string, AppleUser>) {
   try {
     const dir = './data';
     if (!existsSync(dir)) {
-      require('fs').mkdirSync(dir, { recursive: true });
+      mkdirSync(dir, { recursive: true });
     }
     writeFileSync(USERS_FILE, JSON.stringify(Object.fromEntries(users), null, 2));
   } catch (e) {
@@ -82,7 +82,7 @@ function saveEmailUsers(users: Map<string, EmailUser>) {
   try {
     const dir = './data';
     if (!existsSync(dir)) {
-      require('fs').mkdirSync(dir, { recursive: true });
+      mkdirSync(dir, { recursive: true });
     }
     writeFileSync(EMAIL_USERS_FILE, JSON.stringify(Object.fromEntries(users), null, 2));
   } catch (e) {

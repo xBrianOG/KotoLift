@@ -1,0 +1,15 @@
+{
+  "r.d.jesus08@hotmail.com": {
+    "id": "email-1773750629499",
+    "email": "r.d.jesus08@hotmail.com",
+    "passwordHash": "$2b$10$Ja2EssMqszRC7lhOYR/hcu/fLHuPxLGvKyzHN0BCSNCItwzoYtMXi",
+    "createdAt": 1773750629499
+  },
+  "the-sniper08@hotmail.com": {
+    "id": "email-1773753219479",
+    "email": "the-sniper08@hotmail.com",
+    "passwordHash": "$2b$10$j8qyNUYQ07y90CQLmVSpyOlkxtD.SpDFVkfr0LCioox3LF26nqgJy",
+    "name": "brian",
+    "createdAt": 1773753219479
+  }
+}

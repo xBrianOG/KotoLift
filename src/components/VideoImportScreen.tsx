@@ -238,30 +238,85 @@ export function VideoImportScreen({ onComplete, onCancel, onViewTranscript, onOp
             </button>
           </div>
 
-          <div className="card p-0 overflow-hidden mb-lg" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
-            <div className="flex-col divide-y divide-border">
+          <div className="card p-0 overflow-hidden mb-lg" style={{ maxHeight: '40vh', overflowY: 'auto', flexShrink: 0 }}>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
               {segments.map((seg) => (
-                <label
+                <div
                   key={seg.id}
-                  className={`flex items-start gap-sm p-md cursor-pointer transition-fast ${selected.has(seg.id) ? 'bg-accent-light' : 'hover:bg-surface'}`}
+                  onClick={() => toggleSegment(seg.id)}
+                  ref={(el) => {
+                    if (el && seg.id === segments[0]?.id) {
+                      // @ts-ignore
+                      window.debug_layout_info = window.debug_layout_info || [];
+                      const cb = el.querySelector('input[type="checkbox"]');
+                      if (cb) {
+                        const style = window.getComputedStyle(cb);
+                        const cstyle = window.getComputedStyle(el);
+                        // @ts-ignore
+                        window.debug_layout_info.push({
+                           html: el.outerHTML,
+                           containerDisplay: cstyle.display,
+                           containerDirection: cstyle.flexDirection,
+                           checkboxDisplay: style.display,
+                           checkboxMargin: style.margin,
+                           checkboxWidth: style.width
+                        });
+                      }
+                    }
+                  }}
+                  className={`cursor-pointer transition-normal ${selected.has(seg.id) ? 'bg-accent-light' : 'hover:bg-surface'}`}
+                  style={{
+                    position: 'relative',
+                    padding: '16px',
+                    paddingRight: '64px', // Space for the absolute checkbox
+                    borderBottom: '1px solid var(--border-light)',
+                    width: '100%',
+                    minHeight: '64px'
+                  }}
                 >
-                  <input
-                    type="checkbox"
-                    checked={selected.has(seg.id)}
-                    onChange={() => toggleSegment(seg.id)}
-                    style={{ marginTop: 4 }}
-                  />
-                  <span className="text-sm leading-relaxed">
+                  <span style={{ 
+                    display: 'block', 
+                    color: selected.has(seg.id) ? 'var(--text)' : 'var(--text-secondary)', 
+                    fontSize: '16px', 
+                    lineHeight: '1.625' 
+                  }}>
                     {seg.text}
                   </span>
-                </label>
+                  
+                  <div style={{
+                    position: 'absolute',
+                    right: '16px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <input
+                      type="checkbox"
+                      checked={selected.has(seg.id)}
+                      readOnly
+                      style={{ 
+                        width: '24px', 
+                        height: '24px', 
+                        margin: 0,
+                        cursor: 'pointer', 
+                        accentColor: 'var(--primary)',
+                        borderRadius: '6px',
+                        border: '2px solid var(--border)',
+                        pointerEvents: 'none'
+                      }}
+                    />
+                  </div>
+                </div>
               ))}
             </div>
           </div>
 
-          <div className="review-bottom-bar animate-slide-down">
+          <div style={{ padding: 'var(--space-md) 0' }} className="animate-slide-down">
             <button
-              className="btn btn-success btn-full"
+              className="btn btn-primary btn-full"
+              style={{ padding: '16px', fontSize: '18px', borderRadius: '12px' }}
               onClick={handleCreateCards}
               disabled={saving || selected.size === 0}
             >

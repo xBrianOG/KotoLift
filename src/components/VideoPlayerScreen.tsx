@@ -188,17 +188,12 @@ export function VideoPlayerScreen({ data, onBack }: VideoPlayerScreenProps) {
       paddingTop: 'calc(env(safe-area-inset-top) + var(--space-xl))',
       minHeight: '100%'
     }}>
-      {/* Header - Sticky at top */}
+      {/* Header */}
       <div style={{ 
         display: 'flex', 
         alignItems: 'center', 
         gap: 'var(--space-md)', 
-        marginBottom: 'var(--space-md)', 
-        position: 'sticky',
-        top: 0,
-        zIndex: 20,
-        background: 'var(--bg-primary)',
-        paddingTop: 'var(--space-sm)'
+        marginBottom: 'var(--space-md)'
       }}>
         <button 
           onClick={onBack}
@@ -218,8 +213,8 @@ export function VideoPlayerScreen({ data, onBack }: VideoPlayerScreenProps) {
         </h2>
       </div>
 
-      {/* Video Player - Sticky below header */}
-      <div style={{ position: 'sticky', top: 60, zIndex: 15, background: 'var(--bg-primary)', paddingTop: 'var(--space-sm)' }}>
+      {/* Video Player */}
+      <div style={{ marginBottom: 'var(--space-md)' }}>
         <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0 }}>
           <iframe
             ref={iframeRef}
@@ -232,12 +227,9 @@ export function VideoPlayerScreen({ data, onBack }: VideoPlayerScreenProps) {
         </div>
       </div>
 
-      {/* Current Segment Info - Sticky below video */}
+      {/* Current Segment Info */}
       {currentSegment && (
         <div style={{ 
-          position: 'sticky',
-          top: 280,
-          zIndex: 10,
           padding: 'var(--space-md)', 
           background: 'var(--bg-card)', 
           borderRadius: 8,
@@ -268,8 +260,8 @@ export function VideoPlayerScreen({ data, onBack }: VideoPlayerScreenProps) {
         </div>
       )}
 
-      {/* Search - Sticky below current segment */}
-      <div style={{ position: 'sticky', top: 380, zIndex: 5, background: 'var(--bg-primary)', padding: 'var(--space-sm) 0' }}>
+      {/* Search */}
+      <div style={{ marginBottom: 'var(--space-md)' }}>
         <input
           type="text"
           value={search}
@@ -279,13 +271,15 @@ export function VideoPlayerScreen({ data, onBack }: VideoPlayerScreenProps) {
         />
       </div>
 
-      {/* Transcript List - Contained in fixed box */}
+      {/* Transcript List - Scrollable box */}
       <div style={{ 
-        maxHeight: '40vh', 
-        overflowY: 'auto', 
+        maxHeight: '40vh',
+        overflowY: 'auto',
         border: '1px solid var(--border)', 
         borderRadius: 8,
-        background: 'var(--bg-card)'
+        background: 'var(--bg-card)',
+        marginBottom: '40px',
+        flexShrink: 0
       }}>
         {filteredSegments.map((seg) => (
           <div

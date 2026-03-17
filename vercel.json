@@ -1,6 +1,9 @@
 {
   "functions": {
-    "api/auth.ts": {
+    "api/auth/login/index.ts": {
+      "maxDuration": 30
+    },
+    "api/auth/register/index.ts": {
       "maxDuration": 30
     },
     "api/video.ts": {

@@ -26,7 +26,7 @@ export function AppShell({ current, onNavigate, onBack, children }: AppShellProp
   const isMainTab = ['home', 'review', 'drill', 'cards', 'add'].includes(current)
   
   return (
-    <div style={{ minHeight: '100dvh', background: 'var(--bg)' }}>
+    <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: 'var(--bg)', overflow: 'hidden' }}>
       <header className="flex-between" style={{ 
         padding: 'var(--space-md) var(--space-xl)', 
         borderBottom: '1px solid var(--border-light)', 
@@ -72,30 +72,32 @@ export function AppShell({ current, onNavigate, onBack, children }: AppShellProp
         )}
       </header>
       
-      <main style={{ flex: 1, paddingBottom: 'calc(80px + env(safe-area-inset-bottom))' }}>
+      <main style={{ flex: 1, minHeight: 0, width: '100%', display: 'flex', flexDirection: 'column', overflowY: 'auto', overflowX: 'hidden' }}>
         {children}
       </main>
       
-      <nav className="bottom-tab" aria-label="Main navigation">
-        {[
-          { key: 'home', label: 'Home' },
-          { key: 'review', label: 'Review' },
-          { key: 'drill', label: 'Drill' },
-          { key: 'cards', label: 'Cards' },
-          { key: 'add', label: 'Add' },
-        ].map((t) => (
-          <button
-            key={t.key}
-            className={`tab-btn ${current === t.key ? 'active' : ''}`}
-            onClick={() => onNavigate(t.key)}
-            aria-label={t.label}
-            style={{ position: 'relative' }}
-          >
-            <TabIcon name={t.key} active={current === t.key} />
-            <span style={{ fontSize: 'var(--font-xs)', marginTop: 2 }}>{t.label}</span>
-          </button>
-        ))}
-      </nav>
+      {isMainTab && (
+        <nav className="bottom-tab" aria-label="Main navigation">
+          {[
+            { key: 'home', label: 'Home' },
+            { key: 'review', label: 'Review' },
+            { key: 'drill', label: 'Drill' },
+            { key: 'cards', label: 'Cards' },
+            { key: 'add', label: 'Add' },
+          ].map((t) => (
+            <button
+              key={t.key}
+              className={`tab-btn ${current === t.key ? 'active' : ''}`}
+              onClick={() => onNavigate(t.key)}
+              aria-label={t.label}
+              style={{ position: 'relative' }}
+            >
+              <TabIcon name={t.key} active={current === t.key} />
+              <span style={{ fontSize: 'var(--font-xs)', marginTop: 2 }}>{t.label}</span>
+            </button>
+          ))}
+        </nav>
+      )}
     </div>
   )
 }
