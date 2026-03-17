@@ -29,6 +29,7 @@ export function AddCardScreen({ onSave, onNavigateToVideoImport }: AddCardScreen
         .map(t => t.trim().toLowerCase())
         .filter(t => t.length > 0);
 
+      console.log('[AddCard] Creating card...');
       const card = await createCard(
         jaText.trim(),
         enText.trim(),
@@ -37,7 +38,10 @@ export function AddCardScreen({ onSave, onNavigateToVideoImport }: AddCardScreen
         notes.trim() || undefined
       );
 
+      console.log('[AddCard] Card created:', card.id);
+      console.log('[AddCard] Ensuring review states...');
       await ensureReviewStates(card);
+      console.log('[AddCard] Review states ensured.');
 
       setJaText('');
       setEnText('');

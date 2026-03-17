@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
+import fs from 'fs';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'kotolift-dev-secret-change-in-prod';
 const USERS_FILE = '/tmp/email-users.json'; // Use /tmp for limited persistence in serverless
@@ -17,7 +18,6 @@ const internalDb = new Map<string, EmailUser>();
 
 function loadFromTmp() {
   try {
-    const fs = require('fs');
     if (fs.existsSync(USERS_FILE)) {
       const data = JSON.parse(fs.readFileSync(USERS_FILE, 'utf-8'));
       Object.entries(data).forEach(([email, user]: [string, any]) => {
@@ -31,7 +31,6 @@ function loadFromTmp() {
 
 function saveToTmp() {
   try {
-    const fs = require('fs');
     fs.writeFileSync(USERS_FILE, JSON.stringify(Object.fromEntries(internalDb), null, 2));
   } catch (e) {
     // ignore
@@ -42,6 +41,14 @@ function saveToTmp() {
 loadFromTmp();
 
 export default async function handler(req: any, res: any) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   const { url = '' } = req;
   const method = req.method;
 

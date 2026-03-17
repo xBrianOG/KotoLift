@@ -131,7 +131,7 @@ router.post('/translate', authMiddleware, async (req: any, res: any) => {
         'Authorization': `Bearer ${OPENAI_API_KEY}`
       },
       body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
+        model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: prompt },
           { role: 'user', content: text }
