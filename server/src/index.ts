@@ -49,6 +49,6 @@ app.get("*", (req, res) => {
 app.listen(Number(PORT), '0.0.0.0', () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
   console.log(`📹 Video analysis: POST /api/video/analyze`);
-  console.log(`🔐 Auth: POST /auth/apple`);
+  console.log(`🔐 Auth: POST /api/auth/apple`);
   console.log(`📊 Usage: GET /api/usage/me`);
 });

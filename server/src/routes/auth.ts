@@ -21,7 +21,7 @@ router.post('/apple', async (req, res) => {
 
     const appleUser = await verifyAppleToken(identityToken);
 
-    const sessionToken = createSessionToken(appleUser);
+    const sessionToken = await createSessionToken(appleUser);
 
     res.json({
       token: sessionToken,
@@ -47,14 +47,14 @@ router.post('/apple', async (req, res) => {
   }
 });
 
-router.get('/me', (req, res) => {
+router.get('/me', async (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
   const token = authHeader.slice(7);
-  const payload = verifySessionToken(token);
+  const payload = await verifySessionToken(token);
 
   if (!payload) {
     return res.status(401).json({ error: 'Invalid or expired token' });
@@ -82,7 +82,7 @@ router.post('/register', async (req, res) => {
 
     const user = await registerEmailUser(email, password, name);
 
-    const sessionToken = createEmailSessionToken(user);
+    const sessionToken = await createEmailSessionToken(user);
 
     res.json({
       token: sessionToken,
@@ -120,7 +120,7 @@ router.post('/login', async (req, res) => {
 
     const user = await verifyEmailUser(email, password);
 
-    const sessionToken = createEmailSessionToken(user);
+    const sessionToken = await createEmailSessionToken(user);
 
     res.json({
       token: sessionToken,

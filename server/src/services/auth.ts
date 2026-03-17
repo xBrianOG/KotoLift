@@ -1,5 +1,4 @@
-import jwt from 'jsonwebtoken';
-import jwksRsa from 'jwks-rsa';
+import * as jose from 'jose';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import bcrypt from 'bcrypt';
 
@@ -7,22 +6,7 @@ const APPLE_JWKS_URI = 'https://appleid.apple.com/auth/keys';
 const JWT_SECRET = process.env.JWT_SECRET || 'kotolift-dev-secret-change-in-prod';
 const APPLE_CLIENT_ID = process.env.APPLE_CLIENT_ID || 'com.kotolift.app';
 
-const jwksClient = jwksRsa({
-  jwksUri: APPLE_JWKS_URI,
-  cache: true,
-  cacheMaxAge: 600000
-});
-
-function getSigningKey(header: jwt.JwtHeader, callback: jwt.SigningKeyCallback) {
-  jwksClient.getSigningKey(header.kid, (err, key) => {
-    if (err) {
-      callback(err);
-      return;
-    }
-    const signingKey = key?.getPublicKey();
-    callback(null, signingKey);
-  });
-}
+const JWKS = jose.createRemoteJWKSet(new URL(APPLE_JWKS_URI));
 
 export interface AppleUser {
   id: string;
@@ -94,60 +78,53 @@ const usersDb = loadUsers();
 const emailUsersDb = loadEmailUsers();
 
 export async function verifyAppleToken(identityToken: string): Promise<AppleUser> {
-  return new Promise((resolve, reject) => {
-    jwt.verify(
-      identityToken,
-      getSigningKey,
-      {
-        issuer: 'https://appleid.apple.com',
-        audience: APPLE_CLIENT_ID,
-        algorithms: ['RS256']
-      },
-      (err, decoded) => {
-        if (err) {
-          reject(new Error(`Token verification failed: ${err.message}`));
-          return;
-        }
-
-        const payload = decoded as any;
-        const sub = payload.sub;
-        const email = payload.email;
-
-        if (!sub) {
-          reject(new Error('Missing sub claim'));
-          return;
-        }
-
-        let user = usersDb.get(sub);
-
-        if (!user) {
-          user = {
-            id: sub,
-            email,
-            name: undefined,
-            createdAt: Date.now()
-          };
-          usersDb.set(sub, user);
-          saveUsers(usersDb);
-        }
-
-        resolve(user);
-      }
-    );
-  });
-}
-
-export function createSessionToken(user: AppleUser): string {
-  return jwt.sign(
-    { sub: user.id, email: user.email, name: user.name },
-    JWT_SECRET,
-    { expiresIn: '30d' }
-  );
-}
-
-export function verifySessionToken(token: string): { sub: string; email?: string; name?: string } | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as any;
+    const { payload } = await jose.jwtVerify(identityToken, JWKS, {
+      issuer: 'https://appleid.apple.com',
+      audience: APPLE_CLIENT_ID,
+      algorithms: ['RS256']
+    });
+
+    const sub = payload.sub;
+    const email = payload.email as string | undefined;
+
+    if (!sub) {
+      throw new Error('Missing sub claim');
+    }
+
+    let user = usersDb.get(sub);
+
+    if (!user) {
+      user = {
+        id: sub,
+        email,
+        name: undefined,
+        createdAt: Date.now()
+      };
+      usersDb.set(sub, user);
+      saveUsers(usersDb);
+    }
+
+    return user;
+  } catch (err: any) {
+    throw new Error(`Token verification failed: ${err.message}`);
+  }
+}
+
+export async function createSessionToken(user: AppleUser): Promise<string> {
+  const secret = new TextEncoder().encode(JWT_SECRET);
+  return new jose.SignJWT({ sub: user.id, email: user.email, name: user.name })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('30d')
+    .sign(secret);
+}
+
+export async function verifySessionToken(token: string): Promise<{ sub: string; email?: string; name?: string } | null> {
+  try {
+    const secret = new TextEncoder().encode(JWT_SECRET);
+    const { payload } = await jose.jwtVerify(token, secret);
+    return payload as any;
   } catch {
     return null;
   }
@@ -188,10 +165,11 @@ export async function verifyEmailUser(email: string, password: string): Promise<
   return user;
 }
 
-export function createEmailSessionToken(user: EmailUser): string {
-  return jwt.sign(
-    { sub: user.id, email: user.email, name: user.name, type: 'email' },
-    JWT_SECRET,
-    { expiresIn: '30d' }
-  );
+export async function createEmailSessionToken(user: EmailUser): Promise<string> {
+  const secret = new TextEncoder().encode(JWT_SECRET);
+  return new jose.SignJWT({ sub: user.id, email: user.email, name: user.name, type: 'email' })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('30d')
+    .sign(secret);
 }
