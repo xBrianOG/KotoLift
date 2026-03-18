@@ -68,23 +68,25 @@ function cacheResult(url: string, lang: string | undefined, result: AnalyzeResul
 }
 
 async function getVideoInfo(videoId: string): Promise<{ title: string; duration: number }> {
-  const cmd = `yt-dlp --print title --print duration ${videoId}`.split(' ');
-  cmd[1] = '--print';
-  cmd[2] = 'title';
-  cmd[3] = '%(title)s';
-  cmd.push('--print');
-  cmd.push('duration');
-  cmd.push('%(duration)s');
-  
-  const { stdout } = await execAsync(`yt-dlp --print "title:%(title)s" --print "duration:%(duration)s" "https://www.youtube.com/watch?v=${videoId}"`);
-  
-  const titleMatch = stdout.match(/title:(.+)/);
-  const durationMatch = stdout.match(/duration:(.+)/);
-  
-  const title = titleMatch ? titleMatch[1].trim() : `Video ${videoId}`;
-  const duration = durationMatch ? parseInt(durationMatch[1], 10) : 0;
-  
-  return { title, duration };
+  try {
+    // Use iOS client spoofing to bypass bot detection
+    const cmd = `yt-dlp --extractor-args "youtube:player-client=ios" --print "title:%(title)s" --print "duration:%(duration)s" "https://www.youtube.com/watch?v=${videoId}"`;
+    const { stdout } = await execAsync(cmd);
+    
+    const titleMatch = stdout.match(/title:(.+)/);
+    const durationMatch = stdout.match(/duration:(.+)/);
+    
+    const title = titleMatch ? titleMatch[1].trim() : `Video ${videoId}`;
+    const duration = durationMatch ? parseInt(durationMatch[1], 10) : 0;
+    
+    return { title, duration };
+  } catch (err: any) {
+    console.error('[Whisper] yt-dlp info failed:', err.message);
+    if (err.message.includes('Sign in to confirm') || err.message.includes('bot')) {
+      throw new Error('YouTube is blocking our server. Please use the Desktop version of KotoLift to analyze this video (it uses your local IP which won\'t be blocked).');
+    }
+    throw err;
+  }
 }
 
 export class WhisperProvider implements VideoProvider {
@@ -158,8 +160,17 @@ export class WhisperProvider implements VideoProvider {
   }
 
   private async downloadAudio(videoId: string, outputPath: string): Promise<void> {
-    const cmd = `yt-dlp -f "bestaudio" -o "${outputPath}" "https://www.youtube.com/watch?v=${videoId}"`;
-    await execAsync(cmd);
+    try {
+      // Use iOS client spoofing to bypass bot detection on server IPs
+      const cmd = `yt-dlp --extractor-args "youtube:player-client=ios" -f "bestaudio" -o "${outputPath}" "https://www.youtube.com/watch?v=${videoId}"`;
+      await execAsync(cmd);
+    } catch (err: any) {
+      console.error('[Whisper] yt-dlp download failed:', err.message);
+      if (err.message.includes('Sign in to confirm') || err.message.includes('bot')) {
+        throw new Error('YouTube bot detection triggered. Please use the Desktop version of KotoLift for this video.');
+      }
+      throw err;
+    }
   }
 
   private async transcribeAudio(audioPath: string, lang?: string): Promise<{ segments: Segment[], languageDetected?: string }> {

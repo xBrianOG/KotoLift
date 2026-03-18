@@ -19,15 +19,26 @@ export class YouTubeProvider implements VideoProvider {
       
       const pageRes = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
           headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36',
-              'Accept-Language': 'en-US,en;q=0.9'
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+              'Accept-Language': 'en-US,en;q=0.9',
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache'
           }
       });
       const html = await pageRes.text();
 
+      if (html.includes('Sign in to confirm you’re not a bot') || html.includes('consent.youtube.com')) {
+        console.warn('[YouTubeProvider] Server IP is blocked by bot detection');
+        throw new Error('YouTube is blocking our server. Please use the Desktop version of KotoLift (which uses your home IP) to analyze this video.');
+      }
+
       const jsonStartKey = 'ytInitialPlayerResponse = ';
       const jsonStartIdx = html.indexOf(jsonStartKey);
-      if (jsonStartIdx === -1) throw new Error('YouTube layout changed (Metadata missing)');
+      if (jsonStartIdx === -1) {
+        console.error('[YouTubeProvider] HTML Sample:', html.substring(0, 500));
+        throw new Error('YouTube layout changed or video is restricted. Use the Desktop version for a better chance.');
+      }
       
       const jsonBodyStart = jsonStartIdx + jsonStartKey.length;
       let jsonBodyEnd = html.indexOf(';var ', jsonBodyStart);
