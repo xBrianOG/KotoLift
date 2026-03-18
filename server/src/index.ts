@@ -31,6 +31,8 @@ app.use("/api/usage", usageRouter);
 app.get("/api/health", (req, res) => {
   res.json({ 
     status: "ok",
+    version: "1.0.1-monolith-fixed",
+    timestamp: new Date().toISOString(),
     hasOpenAI: !!process.env.OPENAI_API_KEY,
     environment: "railway"
   });
@@ -40,9 +42,13 @@ app.get("/api/health", (req, res) => {
 const distPath = path.join(__dirname, "../../dist");
 app.use(express.static(distPath));
 
-// SPA Fallback: Redirect all other requests to index.html
-app.get("/:path*", (req, res) => {
-  if (req.path.startsWith("/api")) return;
+// SPA Fallback: Serve index.html for all other requests (after API and Static files)
+app.use((req, res) => {
+  // If it's an API request that wasn't caught, return 404
+  if (req.path.startsWith("/api")) {
+    return res.status(404).json({ error: "API route not found" });
+  }
+  // Otherwise, serve the frontend for SPA routing
   res.sendFile(path.join(distPath, "index.html"));
 });
 
