@@ -4,6 +4,7 @@ import videoRouter from "./routes/video.js";
 import authRouter from "./routes/auth.js";
 import usageRouter from "./routes/usage.js";
 import cors from "cors";
+import fs from "fs";
 
 import path from "path";
 import { fileURLToPath } from "url";
@@ -13,6 +14,13 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Ensure data directory exists for user accounts
+const dataDir = path.join(__dirname, "../data");
+if (!fs.existsSync(dataDir)) {
+  console.log('📁 Creating data directory...');
+  fs.mkdirSync(dataDir, { recursive: true });
+}
 
 // CORS must be FIRST - before any routes
 app.use(cors({

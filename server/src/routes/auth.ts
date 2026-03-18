@@ -41,7 +41,8 @@ router.post('/apple', async (req, res) => {
       });
     }
 
-    res.status(401).json({
+    const statusCode = err.message?.includes('verification') ? 401 : 500;
+    res.status(statusCode).json({
       error: err.message || 'Authentication failed'
     });
   }
@@ -102,7 +103,9 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    res.status(401).json({
+    const isRegistered = err.message?.includes('registered');
+    const statusCode = isRegistered ? 400 : 500;
+    res.status(statusCode).json({
       error: err.message || 'Registration failed'
     });
   }
@@ -140,7 +143,9 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    res.status(401).json({
+    const isInvalid = err.message?.includes('Invalid');
+    const statusCode = isInvalid ? 401 : 500;
+    res.status(statusCode).json({
       error: err.message || 'Login failed'
     });
   }

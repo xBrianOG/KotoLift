@@ -1,6 +1,4 @@
-import jwt from 'jsonwebtoken';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'kotolift-dev-secret-change-in-prod';
+import { verifySessionToken } from '../services/auth.js';
 
 export interface SessionUser {
   sub: string;
@@ -9,20 +7,7 @@ export interface SessionUser {
   isDev?: boolean;
 }
 
-export function verifySessionToken(token: string): SessionUser | null {
-  // Always allow dev tokens (for testing)
-  if (token.startsWith('dev-token-')) {
-    return { sub: 'dev-user', isDev: true };
-  }
-  
-  try {
-    return jwt.verify(token, JWT_SECRET) as SessionUser;
-  } catch {
-    return null;
-  }
-}
-
-export function authMiddleware(req: any, res: any, next: any) {
+export async function authMiddleware(req: any, res: any, next: any) {
   const authHeader = req.headers.authorization;
   
   // Allow requests without auth header for dev/testing
@@ -34,13 +19,21 @@ export function authMiddleware(req: any, res: any, next: any) {
   }
 
   const token = authHeader.slice(7);
-  const payload = verifySessionToken(token);
+  
+  // Hand-off to dev bypass if applicable
+  if (token.startsWith('dev-token-')) {
+    req.userId = 'dev-user';
+    req.user = { sub: 'dev-user', isDev: true };
+    return next();
+  }
+
+  const payload = await verifySessionToken(token);
 
   if (!payload) {
     // Even if token is invalid, allow for dev testing
     console.warn('⚠️ Invalid token - allowing request (dev mode)');
     req.userId = 'dev-user';
-    req.user = payload;
+    req.user = undefined;
     return next();
   }
 

@@ -1,5 +1,11 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 
+import { fileURLToPath } from 'url';
+import path from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 export interface UsageRecord {
   userId: string;
   month: string; // YYYY-MM
@@ -7,12 +13,12 @@ export interface UsageRecord {
   updatedAt: number;
 }
 
-const DB_FILE = './data/usage.json';
+const DATA_DIR = path.join(__dirname, '../../data');
+const DB_FILE = path.join(DATA_DIR, 'usage.json');
 
 function getDbPath(): string {
-  const dir = './data';
-  if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true });
+  if (!existsSync(DATA_DIR)) {
+    mkdirSync(DATA_DIR, { recursive: true });
   }
   return DB_FILE;
 }

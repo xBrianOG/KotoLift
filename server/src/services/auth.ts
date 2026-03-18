@@ -1,6 +1,12 @@
 import * as jose from 'jose';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
+
+import { fileURLToPath } from 'url';
+import path from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const APPLE_JWKS_URI = 'https://appleid.apple.com/auth/keys';
 const JWT_SECRET = process.env.JWT_SECRET || 'kotolift-dev-secret-change-in-prod';
@@ -23,8 +29,9 @@ export interface EmailUser {
   createdAt: number;
 }
 
-const USERS_FILE = './data/users.json';
-const EMAIL_USERS_FILE = './data/email-users.json';
+const DATA_DIR = path.join(__dirname, '../../data');
+const USERS_FILE = path.join(DATA_DIR, 'users.json');
+const EMAIL_USERS_FILE = path.join(DATA_DIR, 'email-users.json');
 
 function loadUsers(): Map<string, AppleUser> {
   try {
@@ -40,9 +47,8 @@ function loadUsers(): Map<string, AppleUser> {
 
 function saveUsers(users: Map<string, AppleUser>) {
   try {
-    const dir = './data';
-    if (!existsSync(dir)) {
-      mkdirSync(dir, { recursive: true });
+    if (!existsSync(DATA_DIR)) {
+      mkdirSync(DATA_DIR, { recursive: true });
     }
     writeFileSync(USERS_FILE, JSON.stringify(Object.fromEntries(users), null, 2));
   } catch (e) {
@@ -64,9 +70,8 @@ function loadEmailUsers(): Map<string, EmailUser> {
 
 function saveEmailUsers(users: Map<string, EmailUser>) {
   try {
-    const dir = './data';
-    if (!existsSync(dir)) {
-      mkdirSync(dir, { recursive: true });
+    if (!existsSync(DATA_DIR)) {
+      mkdirSync(DATA_DIR, { recursive: true });
     }
     writeFileSync(EMAIL_USERS_FILE, JSON.stringify(Object.fromEntries(users), null, 2));
   } catch (e) {
@@ -136,6 +141,7 @@ export async function registerEmailUser(email: string, password: string, name?: 
     throw new Error('Email already registered');
   }
 
+  console.log(`[Auth] Registering new user: ${email}`);
   const passwordHash = await bcrypt.hash(password, 10);
   const user: EmailUser = {
     id: `email-${Date.now()}`,
@@ -157,6 +163,7 @@ export async function verifyEmailUser(email: string, password: string): Promise<
     throw new Error('Invalid email or password');
   }
 
+  console.log(`[Auth] Verifying user: ${email}`);
   const valid = await bcrypt.compare(password, user.passwordHash);
   if (!valid) {
     throw new Error('Invalid email or password');
