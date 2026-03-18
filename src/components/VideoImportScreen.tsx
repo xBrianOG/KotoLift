@@ -20,6 +20,7 @@ export function VideoImportScreen({ onComplete, onCancel, onViewTranscript, onOp
   const [title, setTitle] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
+  const [analysisMethod, setAnalysisMethod] = useState<string | null>(null);
 
   const handleAnalyze = async () => {
     if (!url.trim()) {
@@ -31,12 +32,16 @@ export function VideoImportScreen({ onComplete, onCancel, onViewTranscript, onOp
     setError(null);
     setSegments([]);
     setSelected(new Set());
+    setAnalysisMethod(null);
 
     try {
       const settings = getLearningSettings();
       const result = await analyzeVideo(url, lang, settings.preferWhisper);
       setSegments(result.segments);
       setTitle(result.title || 'Video');
+      if (result.method) {
+        setAnalysisMethod(result.method);
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Analysis failed';
       setError(message);
@@ -197,12 +202,39 @@ export function VideoImportScreen({ onComplete, onCancel, onViewTranscript, onOp
         onClick={handleAnalyze}
         disabled={loading || !url.trim()}
       >
-        {loading ? 'Analyzing...' : 'Analyze'}
+        {loading ? 'Analyzing via Invidious/Whisper...' : 'Analyze'}
       </button>
+
+      {loading && (
+        <div style={{ 
+          marginBottom: 'var(--space-md)', 
+          padding: 'var(--space-sm) var(--space-md)', 
+          background: 'var(--surface)', 
+          borderRadius: 8,
+          fontSize: 'var(--font-xs)',
+          color: 'var(--text-secondary)',
+          textAlign: 'center'
+        }}>
+          Trying free captions first, then AI transcription if needed...
+        </div>
+      )}
 
       {error && (
         <div className="card mb-lg" style={{ background: 'var(--error-bg, #fef2f2)', color: 'var(--error)', borderColor: 'var(--error)' }}>
           {error}
+        </div>
+      )}
+
+      {analysisMethod && (
+        <div style={{ 
+          marginBottom: 'var(--space-md)', 
+          padding: 'var(--space-sm) var(--space-md)', 
+          background: 'var(--accent-bg, #f0f9ff)', 
+          borderRadius: 8,
+          fontSize: 'var(--font-xs)',
+          color: 'var(--accent)'
+        }}>
+          ✓ {analysisMethod}
         </div>
       )}
 

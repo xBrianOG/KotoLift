@@ -24,5 +24,5 @@ export interface VideoProvider {
 
 export interface ProviderError extends Error {
   provider: string;
-  code: 'NO_CAPTIONS' | 'INVALID_URL' | 'NETWORK_ERROR' | 'OPENAI_KEY_MISSING' | 'VIDEO_TOO_LONG' | 'TRANSCRIPTION_FAILED' | 'AUDIO_DOWNLOAD_FAILED';
+  code: 'NO_CAPTIONS' | 'INVALID_URL' | 'NETWORK_ERROR' | 'OPENAI_KEY_MISSING' | 'VIDEO_TOO_LONG' | 'TRANSCRIPTION_FAILED' | 'AUDIO_DOWNLOAD_FAILED' | 'INVIDIOUS_FAILED';
 }

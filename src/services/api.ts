@@ -14,6 +14,7 @@ export interface VideoAnalysisResult {
   segments: VideoSegment[];
   languageDetected?: string;
   minutesUsed?: number;
+  method?: string;
 }
 
 export interface ApiError {

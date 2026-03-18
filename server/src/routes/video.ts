@@ -29,12 +29,13 @@ const providers = {
   whisper: new WhisperProvider()
 };
 
-async function analyzeVideo(url: string, lang?: string, providerName?: string, preferWhisper?: boolean): Promise<AnalyzeResult> {
+async function analyzeVideo(url: string, lang?: string, providerName?: string, preferWhisper?: boolean): Promise<AnalyzeResult & { method?: string }> {
   // If user explicitly chose a provider, use that one
   if (providerName && providers[providerName as keyof typeof providers]) {
     const provider = providers[providerName as keyof typeof providers];
     if (provider.canHandle(url)) {
-      return provider.extract(url, lang);
+      const result = await provider.extract(url, lang);
+      return { ...result, method: provider.name };
     }
   }
   
@@ -42,28 +43,34 @@ async function analyzeVideo(url: string, lang?: string, providerName?: string, p
   if (preferWhisper) {
     console.log('[Video] User prefers Whisper, skipping YouTube captions');
     if (providers.whisper.canHandle(url)) {
-      return providers.whisper.extract(url, lang);
+      const result = await providers.whisper.extract(url, lang);
+      return { ...result, method: 'Whisper (AI Transcription)' };
     }
   }
   
-  // Default: Try YouTube captions first, then fallback to Whisper
+  // Default: Try YouTube (Invidious) first, then fallback to Whisper
   if (!providerName || providerName === 'youtube') {
     try {
       if (providers.youtube.canHandle(url)) {
         const result = await providers.youtube.extract(url, lang);
-        console.log('[Video] Successfully got YouTube captions');
-        return result;
+        console.log('[Video] Successfully got YouTube captions via Invidious');
+        return { ...result, method: 'YouTube Captions (Free)' };
       }
     } catch (err: any) {
-      if (err.code !== 'NO_CAPTIONS') {
-        throw err;
+      // If Invidious failed, fall back to Whisper
+      if (err.code === 'INVIDIOUS_FAILED' || err.code === 'NO_CAPTIONS') {
+        console.log(`[Video] ${err.code === 'INVIDIOUS_FAILED' ? 'Invidious unavailable' : 'No captions available'}, falling back to Whisper...`);
+      } else {
+        console.warn('[Video] YouTube extraction failed:', err.message);
       }
-      console.log('[Video] YouTube captions unavailable, falling back to Whisper...');
     }
   }
   
+  // Fallback to Whisper (AI transcription)
   if (providers.whisper.canHandle(url)) {
-    return providers.whisper.extract(url, lang);
+    console.log('[Video] Using Whisper for transcription');
+    const result = await providers.whisper.extract(url, lang);
+    return { ...result, method: 'Whisper (AI Transcription)' };
   }
   
   throw new Error('Unsupported video URL. Currently only YouTube is supported.');

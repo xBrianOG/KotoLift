@@ -1,92 +1,146 @@
-import { YoutubeTranscript } from 'youtube-transcript';
 import type { VideoProvider, AnalyzeResult, Segment, ProviderError } from '../types.js';
 
 const YOUTUBE_REGEX = /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
 
+const INVIDIOUS_INSTANCES = [
+  'https://yewtu.be',
+  'https://invidious.privacyredirect.com',
+  'https://vid.priv.au',
+  'https://invidious.projectsegfau.lt'
+];
+
+interface InvidiousCaption {
+  label: string;
+  language: string;
+  url: string;
+}
+
+interface InvidiousVideoResponse {
+  title?: string;
+  description?: string;
+  captions?: InvidiousCaption[];
+}
+
+interface InvidiousCaptionsResponse {
+  captions: Array<{
+    start: number;
+    dur: number;
+    text: string;
+  }>;
+}
+
+async function fetchWithRetry(url: string, retries = 3): Promise<Response> {
+  let lastError: Error | null = null;
+  
+  for (const instance of INVIDIOUS_INSTANCES) {
+    try {
+      const fullUrl = instance + url;
+      const response = await fetch(fullUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; KotoLift/1.0)',
+          'Accept': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        return response;
+      }
+    } catch (err) {
+      lastError = err as Error;
+      console.warn(`[Invidious] Instance ${instance} failed:`, err);
+    }
+  }
+  
+  throw lastError || new Error('All Invidious instances failed');
+}
+
 export class YouTubeProvider implements VideoProvider {
-  name = 'YouTube';
+  name = 'YouTube (Invidious)';
 
   canHandle(url: string): boolean {
     return YOUTUBE_REGEX.test(url);
   }
 
+  private extractVideoId(url: string): string | null {
+    const match = url.match(YOUTUBEREGEX);
+    return match ? match[4] : null;
+  }
+
   async extract(url: string, lang: string = 'en'): Promise<AnalyzeResult> {
     const videoId = this.extractVideoId(url);
-    if (!videoId) throw new Error('Invalid YouTube URL');
+    if (!videoId) {
+      const error = new Error('Invalid YouTube URL') as ProviderError;
+      error.provider = this.name;
+      error.code = 'INVALID_URL';
+      throw error;
+    }
 
     try {
-      console.log(`[YouTubeProvider] Resilient Scraping for ${videoId}...`);
-      
-      const pageRes = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
-          headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-              'Accept-Language': 'en-US,en;q=0.9',
-              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-              'Cache-Control': 'no-cache',
-              'Pragma': 'no-cache'
-          }
-      });
-      const html = await pageRes.text();
+      console.log(`[YouTubeProvider] Fetching video info via Invidious for ${videoId}...`);
 
-      if (html.includes('Sign in to confirm you’re not a bot') || html.includes('consent.youtube.com')) {
-        console.warn('[YouTubeProvider] Server IP is blocked by bot detection');
-        throw new Error('YouTube is blocking our server. Please use the Desktop version of KotoLift (which uses your home IP) to analyze this video.');
-      }
+      // Get video info including captions
+      const infoUrl = `/api/v1/videos/${videoId}?format=json`;
+      const infoResponse = await fetchWithRetry(infoUrl);
+      const videoInfo: InvidiousVideoResponse = await infoResponse.json();
 
-      const jsonStartKey = 'ytInitialPlayerResponse = ';
-      const jsonStartIdx = html.indexOf(jsonStartKey);
-      if (jsonStartIdx === -1) {
-        console.error('[YouTubeProvider] HTML Sample:', html.substring(0, 500));
-        throw new Error('YouTube layout changed or video is restricted. Use the Desktop version for a better chance.');
-      }
-      
-      const jsonBodyStart = jsonStartIdx + jsonStartKey.length;
-      let jsonBodyEnd = html.indexOf(';var ', jsonBodyStart);
-      if (jsonBodyEnd === -1) jsonBodyEnd = html.indexOf(';</script>', jsonBodyStart);
-      
-      const playerResponse = JSON.parse(html.substring(jsonBodyStart, jsonBodyEnd).trim());
-      const captionTracks = playerResponse.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-
-      if (!captionTracks || captionTracks.length === 0) {
-        const error = new Error('No captions available for this video') as any;
+      if (!videoInfo.captions || videoInfo.captions.length === 0) {
+        const error = new Error('No captions available for this video') as ProviderError;
+        error.provider = this.name;
         error.code = 'NO_CAPTIONS';
         throw error;
       }
 
-      const targetTrack = captionTracks.find((t: any) => t.languageCode === lang) 
-                         || captionTracks.find((t: any) => t.languageCode.startsWith(lang))
-                         || captionTracks[0];
+      // Find the best matching caption track
+      const targetTrack = videoInfo.captions.find((t) => t.language === lang)
+        || videoInfo.captions.find((t) => t.language.startsWith(lang))
+        || videoInfo.captions[0];
 
-      const transcriptRes = await fetch(targetTrack.baseUrl);
-      const transcriptXml = await transcriptRes.text();
+      console.log(`[YouTubeProvider] Using caption track: ${targetTrack.label}`);
 
-      const segments: Segment[] = [];
-      const matches = Array.from(transcriptXml.matchAll(/<text start="([\d.]+)" dur="([\d.]+)"[^>]*>([^<]+)<\/text>/g));
-      
-      matches.forEach((match, i) => {
-          const start = parseFloat(match[1]);
-          const dur = parseFloat(match[2]);
-          const text = match[3]
-              .replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
-              .replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+      // Fetch the actual captions
+      const captionsUrl = targetTrack.url.replace(/&format=json/, '') + '&format=json';
+      const captionsResponse = await fetchWithRetry(captionsUrl);
+      const captionsData: InvidiousCaptionsResponse = await captionsResponse.json();
 
-          segments.push({
-              id: `seg-${i + 1}`,
-              startMs: Math.round(start * 1000),
-              endMs: Math.round((start + dur) * 1000),
-              text: text.trim()
-          });
-      });
+      if (!captionsData.captions || captionsData.captions.length === 0) {
+        const error = new Error('No caption content available') as ProviderError;
+        error.provider = this.name;
+        error.code = 'NO_CAPTIONS';
+        throw error;
+      }
+
+      const segments: Segment[] = captionsData.captions.map((caption, index) => ({
+        id: `seg-${index + 1}`,
+        startMs: Math.round(caption.start * 1000),
+        endMs: Math.round((caption.start + caption.dur) * 1000),
+        text: caption.text
+          .replace(/&amp;/g, '&')
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'")
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .trim()
+      }));
+
+      console.log(`[YouTubeProvider] Extracted ${segments.length} segments via Invidious`);
 
       return {
         segments,
-        title: playerResponse.videoDetails?.title || `Video ${videoId}`
+        title: videoInfo.title || `Video ${videoId}`
       };
 
     } catch (err: any) {
-      console.error('[YouTubeProvider] Resilient Scraping failed:', err.message);
-      if (err.code === 'NO_CAPTIONS') throw err;
-      throw new Error(`YouTube Extraction failed: ${err.message}`);
+      console.error('[YouTubeProvider] Invidious extraction failed:', err.message);
+      
+      if (err.code === 'NO_CAPTIONS') {
+        throw err;
+      }
+      
+      // Return a specific error that video.ts can catch and fallback to Whisper
+      const error = new Error(`Invidious failed: ${err.message}. Please try using Whisper transcription.`) as ProviderError;
+      error.provider = this.name;
+      error.code = 'INVIDIOUS_FAILED';
+      throw error;
     }
   }
 
@@ -98,9 +152,7 @@ export class YouTubeProvider implements VideoProvider {
       return [];
     }
   }
-
-  private extractVideoId(url: string): string | null {
-    const match = url.match(YOUTUBE_REGEX);
-    return match ? match[4] : null;
-  }
 }
+
+// Fix the regex reference
+const YOUTUBEREGEX = /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
