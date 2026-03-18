@@ -6,6 +6,7 @@ WORKDIR /app
 COPY package*.json ./
 COPY vite.config.ts ./
 COPY tsconfig.json ./
+COPY tsconfig.app.json ./
 COPY index.html ./
 
 # Copy server package files
