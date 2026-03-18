@@ -7,19 +7,20 @@
       "maxDuration": 60
     },
     "api/video/translate.ts": {
-      "maxDuration": 15
+      "maxDuration": 30
     },
     "api/explain/index.ts": {
       "maxDuration": 60
     },
     "api/usage/me.ts": {
       "maxDuration": 10
+    },
+    "api/health.ts": {
+      "maxDuration": 5
     }
   },
   "rewrites": [
-    {
-      "source": "/api/auth/:path*",
-      "destination": "/api/auth.ts"
-    }
+    { "source": "/api/auth/(.*)", "destination": "/api/auth.ts" },
+    { "source": "/api/video/(.*)", "destination": "/api/video/$1.ts" }
   ]
 }

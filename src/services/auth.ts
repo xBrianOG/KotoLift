@@ -2,7 +2,7 @@ const TOKEN_KEY = 'auth.token';
 const USER_KEY = 'auth.user';
 
 const DEV_AUTH = import.meta.env.VITE_DEV_AUTH === 'true';
-const API_BASE = import.meta.env.VITE_API_BASE || '';
+const API_BASE = import.meta.env.VITE_API_BASE || 'https://sumi.sumidev.com';
 
 if (DEV_AUTH) {
   console.warn('⚠️ Running in DEV AUTH mode – Authentication bypassed for testing');

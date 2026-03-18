@@ -136,35 +136,38 @@ export async function verifySessionToken(token: string): Promise<{ sub: string; 
 }
 
 export async function registerEmailUser(email: string, password: string, name?: string): Promise<EmailUser> {
-  const existing = emailUsersDb.get(email.toLowerCase());
+  const cleanEmail = email.trim().toLowerCase();
+  const existing = emailUsersDb.get(cleanEmail);
   if (existing) {
     throw new Error('Email already registered');
   }
 
-  console.log(`[Auth] Registering new user: ${email}`);
-  const passwordHash = await bcrypt.hash(password, 10);
+  console.log(`[Auth] Registering new user: ${cleanEmail}`);
+  const passwordHash = await bcrypt.hash(password.trim(), 10);
   const user: EmailUser = {
     id: `email-${Date.now()}`,
-    email: email.toLowerCase(),
+    email: cleanEmail,
     passwordHash,
-    name,
+    name: name?.trim(),
     createdAt: Date.now()
   };
 
-  emailUsersDb.set(email.toLowerCase(), user);
+  emailUsersDb.set(cleanEmail, user);
   saveEmailUsers(emailUsersDb);
 
   return user;
 }
 
 export async function verifyEmailUser(email: string, password: string): Promise<EmailUser> {
-  const user = emailUsersDb.get(email.toLowerCase());
+  const cleanEmail = email.trim().toLowerCase();
+  const user = emailUsersDb.get(cleanEmail);
   if (!user) {
+    console.warn(`[Auth] Login failed: User not found (${cleanEmail})`);
     throw new Error('Invalid email or password');
   }
 
-  console.log(`[Auth] Verifying user: ${email}`);
-  const valid = await bcrypt.compare(password, user.passwordHash);
+  console.log(`[Auth] Verifying user: ${cleanEmail}`);
+  const valid = await bcrypt.compare(password.trim(), user.passwordHash);
   if (!valid) {
     throw new Error('Invalid email or password');
   }
