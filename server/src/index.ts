@@ -1,4 +1,11 @@
 import 'dotenv/config';
+import { webcrypto } from 'node:crypto';
+
+// Polyfill for Node.js < 20 which doesn't have global crypto by default
+if (!globalThis.crypto) {
+  (globalThis as any).crypto = webcrypto;
+}
+
 import express from "express";
 import videoRouter from "./routes/video.js";
 import authRouter from "./routes/auth.js";
