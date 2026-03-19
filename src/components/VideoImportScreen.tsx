@@ -35,8 +35,8 @@ export function VideoImportScreen({ onComplete, onCancel, onViewTranscript, onOp
     setAnalysisMethod(null);
 
     try {
-      // Fetch transcript from user's browser (uses their home IP - no blocking!)
-      console.log('[VideoImport] Fetching transcript from browser...');
+      // Fetch transcript from backend
+      console.log('[VideoImport] Fetching transcript from backend...');
       const result = await fetchTranscript(url, lang);
       
       // Convert to VideoSegment format
