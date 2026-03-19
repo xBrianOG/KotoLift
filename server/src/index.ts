@@ -10,6 +10,7 @@ import express from "express";
 import videoRouter from "./routes/video.js";
 import authRouter from "./routes/auth.js";
 import usageRouter from "./routes/usage.js";
+import transcriptRouter from "./routes/transcript.js";
 import cors from "cors";
 import fs from "fs";
 
@@ -42,6 +43,7 @@ app.use(express.json());
 app.use("/api/video", videoRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/usage", usageRouter);
+app.use("/api/transcript", transcriptRouter);
 
 app.get("/api/health", (req, res) => {
   res.json({ 
