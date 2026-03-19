@@ -202,7 +202,7 @@ export function VideoImportScreen({ onComplete, onCancel, onViewTranscript, onOp
         onClick={handleAnalyze}
         disabled={loading || !url.trim()}
       >
-        {loading ? 'Analyzing via Invidious/Whisper...' : 'Analyze'}
+        {loading ? 'Analyzing...' : 'Analyze'}
       </button>
 
       {loading && (
@@ -215,7 +215,21 @@ export function VideoImportScreen({ onComplete, onCancel, onViewTranscript, onOp
           color: 'var(--text-secondary)',
           textAlign: 'center'
         }}>
-          Trying free captions first, then AI transcription if needed...
+          Fetching video captions via YouTube API...
+        </div>
+      )}
+
+      {error && error.includes('API key') && (
+        <div style={{ 
+          marginBottom: 'var(--space-md)', 
+          padding: 'var(--space-md)', 
+          background: 'var(--warning-bg, #fffbeb)', 
+          borderRadius: 8,
+          fontSize: 'var(--font-sm)',
+          color: 'var(--warning, #92400e)'
+        }}>
+          <strong>YouTube API not configured.</strong><br/>
+          Please add <code>YOUTUBE_API_KEY</code> to Railway environment variables, or use local dev mode for video imports.
         </div>
       )}
 

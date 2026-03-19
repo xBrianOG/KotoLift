@@ -29,48 +29,30 @@ const providers = {
   whisper: new WhisperProvider()
 };
 
+const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY || '';
+
 async function analyzeVideo(url: string, lang?: string, providerName?: string, preferWhisper?: boolean): Promise<AnalyzeResult & { method?: string }> {
-  // If user explicitly chose a provider, use that one
-  if (providerName && providers[providerName as keyof typeof providers]) {
-    const provider = providers[providerName as keyof typeof providers];
-    if (provider.canHandle(url)) {
-      const result = await provider.extract(url, lang);
-      return { ...result, method: provider.name };
-    }
-  }
-  
-  // If user prefers Whisper, use it directly
-  if (preferWhisper) {
-    console.log('[Video] User prefers Whisper, skipping YouTube captions');
+  // If user explicitly chose Whisper, use it
+  if (providerName === 'whisper' || preferWhisper) {
     if (providers.whisper.canHandle(url)) {
+      console.log('[Video] Using Whisper for transcription');
       const result = await providers.whisper.extract(url, lang);
       return { ...result, method: 'Whisper (AI Transcription)' };
     }
   }
   
-  // Default: Try YouTube (Invidious) first, then fallback to Whisper
+  // Default: Use YouTube API
   if (!providerName || providerName === 'youtube') {
-    try {
-      if (providers.youtube.canHandle(url)) {
-        const result = await providers.youtube.extract(url, lang);
-        console.log('[Video] Successfully got YouTube captions via Invidious');
-        return { ...result, method: 'YouTube Captions (Free)' };
+    if (providers.youtube.canHandle(url)) {
+      // Check if YouTube API key is configured
+      if (!YOUTUBE_API_KEY) {
+        throw new Error('YouTube API key not configured. Please add YOUTUBE_API_KEY to Railway environment variables, or select "Use Whisper" option.');
       }
-    } catch (err: any) {
-      // If Invidious failed, fall back to Whisper
-      if (err.code === 'INVIDIOUS_FAILED' || err.code === 'NO_CAPTIONS') {
-        console.log(`[Video] ${err.code === 'INVIDIOUS_FAILED' ? 'Invidious unavailable' : 'No captions available'}, falling back to Whisper...`);
-      } else {
-        console.warn('[Video] YouTube extraction failed:', err.message);
-      }
+      
+      const result = await providers.youtube.extract(url, lang);
+      console.log('[Video] Successfully got YouTube captions via API');
+      return { ...result, method: 'YouTube Captions' };
     }
-  }
-  
-  // Fallback to Whisper (AI transcription)
-  if (providers.whisper.canHandle(url)) {
-    console.log('[Video] Using Whisper for transcription');
-    const result = await providers.whisper.extract(url, lang);
-    return { ...result, method: 'Whisper (AI Transcription)' };
   }
   
   throw new Error('Unsupported video URL. Currently only YouTube is supported.');
