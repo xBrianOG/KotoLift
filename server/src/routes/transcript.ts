@@ -3,7 +3,7 @@ import { YouTubeTranscriptApi } from 'youtube-transcript-api-js';
 
 const router = Router();
 
-router.get('/transcript/:videoId', async (req, res) => {
+router.get('/:videoId', async (req, res) => {
   const { videoId } = req.params;
   const { lang = 'en' } = req.query;
 
