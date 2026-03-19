@@ -2,9 +2,8 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Install yt-dlp for audio downloads
-RUN apk add --no-cache python3 py3-pip ffmpeg && \
-    pip3 install --no-cache-dir yt-dlp --break-system-packages
+# Install ffmpeg for audio processing (needed for Whisper if used as fallback)
+RUN apk add --no-cache ffmpeg
 
 WORKDIR /app
 
