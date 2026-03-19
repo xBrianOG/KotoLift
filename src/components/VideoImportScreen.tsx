@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { analyzeVideo, VideoSegment, translateText, type SupportedLang } from '../services/api';
+import { VideoSegment, translateText, type SupportedLang } from '../services/api';
 import { ensureReviewStates } from '../services/review';
-import { getLearningSettings } from '../services/settings';
+import { fetchTranscript } from '../services/transcript';
 import { v4 as uuidv4 } from 'uuid';
 
 interface VideoImportScreenProps {
@@ -35,15 +35,24 @@ export function VideoImportScreen({ onComplete, onCancel, onViewTranscript, onOp
     setAnalysisMethod(null);
 
     try {
-      const settings = getLearningSettings();
-      const result = await analyzeVideo(url, lang, settings.preferWhisper);
-      setSegments(result.segments);
+      // Fetch transcript from user's browser (uses their home IP - no blocking!)
+      console.log('[VideoImport] Fetching transcript from browser...');
+      const result = await fetchTranscript(url, lang);
+      
+      // Convert to VideoSegment format
+      const videoSegments: VideoSegment[] = result.segments.map(seg => ({
+        id: seg.id,
+        startMs: seg.startMs,
+        endMs: seg.endMs,
+        text: seg.text
+      }));
+      
+      setSegments(videoSegments);
       setTitle(result.title || 'Video');
-      if (result.method) {
-        setAnalysisMethod(result.method);
-      }
+      setAnalysisMethod(result.method || 'Transcript');
+      console.log('[VideoImport] Successfully got transcript!');
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Analysis failed';
+      const message = err instanceof Error ? err.message : 'Failed to fetch transcript';
       setError(message);
     } finally {
       setLoading(false);
@@ -202,7 +211,7 @@ export function VideoImportScreen({ onComplete, onCancel, onViewTranscript, onOp
         onClick={handleAnalyze}
         disabled={loading || !url.trim()}
       >
-        {loading ? 'Transcribing...' : 'Analyze'}
+        {loading ? 'Getting Transcript...' : 'Get Transcript'}
       </button>
 
       {loading && (
@@ -215,7 +224,7 @@ export function VideoImportScreen({ onComplete, onCancel, onViewTranscript, onOp
           color: 'var(--text-secondary)',
           textAlign: 'center'
         }}>
-          Getting video transcription...
+          Fetching transcript using your connection (this may take a moment)...
         </div>
       )}
 
