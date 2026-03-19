@@ -5,7 +5,7 @@ WORKDIR /app
 
 # Install ffmpeg, python3 and pip for yt-dlp
 RUN apk add --no-cache ffmpeg python3 py3-pip && echo "rebuild-v3-$(date +%s)" > /tmp/build_marker
-RUN pip3 install --no-cache-dir yt-dlp
+RUN pip3 install --no-cache-dir --break-system-packages yt-dlp
 
 # Copy package files for root (frontend build)
 COPY package*.json ./
