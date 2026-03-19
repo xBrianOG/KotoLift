@@ -47,104 +47,90 @@ function parseXmlCaptions(xml: string): TranscriptSegment[] {
   return segments;
 }
 
-export async function fetchTranscriptFromBrowser(videoId: string, lang = 'en'): Promise<FetchResult> {
+async function fetchTranscriptFromIframe(videoId: string, lang = 'en'): Promise<FetchResult> {
   return new Promise((resolve, reject) => {
-    const container = document.createElement('div');
-    container.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;';
-    document.body.appendChild(container);
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;pointer-events:none;';
+    iframe.title = 'YouTube video';
+    iframe.src = `https://www.youtube.com/watch?v=${videoId}`;
+    document.body.appendChild(iframe);
 
-    const playerDiv = document.createElement('div');
-    container.appendChild(playerDiv);
+    let resolved = false;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 50;
+    const CHECK_MS = 500;
 
-    const script = document.createElement('script');
-    script.src = 'https://www.youtube.com/iframe_api';
-    document.body.appendChild(script);
+    const timeoutId = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        cleanup();
+        reject(new Error('Timed out waiting for YouTube page'));
+      }
+    }, MAX_ATTEMPTS * CHECK_MS + 2000);
 
-    const timeout = setTimeout(() => {
-      cleanup();
-      reject(new Error('YouTube player timed out'));
-    }, 30000);
+    const intervalId = setInterval(async () => {
+      attempts++;
+      if (resolved || attempts > MAX_ATTEMPTS) {
+        clearInterval(intervalId);
+        return;
+      }
+
+      try {
+        const win = iframe.contentWindow;
+        const doc = win?.document;
+        if (!doc || !win) return;
+
+        const yt = (win as any).yt;
+        if (!yt?.playerService?.createPlayer) return;
+
+        const title =
+          doc.querySelector('h1')?.textContent?.trim() ||
+          (win as any).yt?.playerModule?.playerMap?.values()?.next()?.value?.getVideoData?.()?.title ||
+          `Video ${videoId}`;
+
+        const captionTracks = doc.querySelectorAll('track[kind="captions"]');
+        if (captionTracks.length === 0) return;
+
+        const targetCode = lang.split('-')[0];
+        const langTrack = Array.from(captionTracks).find(
+          (t) => t.getAttribute('srclang')?.split('-')[0] === targetCode
+        );
+        const track = (langTrack || captionTracks[0]) as HTMLTrackElement;
+
+        if (!track.src) return;
+
+        // Within the iframe, fetch should work (same origin)
+        const response = await win.fetch(track.src);
+        if (!response.ok) return;
+
+        const xml = await response.text();
+        const segments = parseXmlCaptions(xml);
+
+        if (segments.length === 0) return;
+
+        if (!resolved) {
+          resolved = true;
+          clearInterval(intervalId);
+          clearTimeout(timeoutId);
+          cleanup();
+          resolve({
+            title: title.replace(/ - YouTube$/, '').trim(),
+            segments,
+            videoId,
+            method: 'YouTube Captions'
+          });
+        }
+      } catch {
+        // ignore errors during polling
+      }
+    }, CHECK_MS);
 
     function cleanup() {
-      clearTimeout(timeout);
-      const existingScript = document.querySelector('script[src*="youtube.com/iframe_api"]');
-      if (existingScript) existingScript.remove();
-      if (container.parentNode) container.parentNode.removeChild(container);
-      if ((window as any).YT) delete (window as any).YT;
+      clearInterval(intervalId);
+      clearTimeout(timeoutId);
+      if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+      delete (window as any).yt;
     }
-
-    (window as any).onYouTubeIframeAPIReady = async () => {
-      try {
-        const player = new (window as any).YT.Player(playerDiv, {
-          videoId,
-          height: '1',
-          width: '1',
-          playerVars: { 
-            autoplay: 0, 
-            rel: 0,
-            modestbranding: 1
-          },
-          events: {
-            onReady: async () => {
-              try {
-                const videoTitle = player.getVideoData()?.title || `Video ${videoId}`;
-                const availableLangs = player.getAvailableTranslationLanguages();
-                
-                const track = availableLangs.find((l: any) => l.languageCode === lang)
-                  || availableLangs[0];
-                
-                if (!track) {
-                  cleanup();
-                  reject(new Error('No caption tracks available'));
-                  return;
-                }
-
-                const langCode = track.languageCode;
-                const captionTracks = player.getOption('captions', 'tracklist') as any[];
-                
-                if (!captionTracks || captionTracks.length === 0) {
-                  cleanup();
-                  reject(new Error('No captions available for this video'));
-                  return;
-                }
-
-                const activeTrack = captionTracks.find((t: any) => t.languageCode === langCode) || captionTracks[0];
-                const baseUrl = `https://www.youtube.com/api/timedtext?v=${videoId}&ei=${activeTrack.languageCode}&caps=asr&kind=asr&lang=${activeTrack.languageCode}`;
-
-                const response = await fetch(baseUrl);
-                const xml = await response.text();
-                const segments = parseXmlCaptions(xml);
-
-                player.destroy();
-                cleanup();
-
-                if (segments.length === 0) {
-                  reject(new Error('Could not parse captions'));
-                  return;
-                }
-
-                resolve({
-                  title: videoTitle,
-                  segments,
-                  videoId,
-                  method: 'YouTube Captions'
-                });
-              } catch (e) {
-                cleanup();
-                reject(e);
-              }
-            },
-            onError: (e: any) => {
-              cleanup();
-              reject(new Error(`YouTube player error: ${e.data}`));
-            }
-          }
-        });
-      } catch (e) {
-        cleanup();
-        reject(e);
-      }
-    };
   });
 }
 
@@ -156,32 +142,32 @@ export async function fetchTranscript(videoUrl: string, lang: string = 'en'): Pr
 
   console.log(`[Transcript] Fetching transcript for video: ${videoId}`);
 
-  // Try browser-side fetch first (uses user's home IP)
+  // Try iframe (user's home IP + same-origin access to captions)
   try {
-    console.log(`[Transcript] Trying browser-side fetch (user's home IP)...`);
-    const result = await fetchTranscriptFromBrowser(videoId, lang);
-    console.log(`[Transcript] Success from browser! Got ${result.segments.length} segments`);
+    console.log(`[Transcript] Trying YouTube iframe (user's home IP)...`);
+    const result = await fetchTranscriptFromIframe(videoId, lang);
+    console.log(`[Transcript] Success from iframe! Got ${result.segments.length} segments`);
     return result;
   } catch (e) {
-    console.log(`[Transcript] Browser fetch failed:`, e);
+    console.log(`[Transcript] iframe failed:`, e);
   }
 
   // Fallback to Railway backend
   try {
-    console.log(`[Transcript] Trying Railway backend proxy...`);
+    console.log(`[Transcript] Trying Railway backend...`);
     const response = await fetch(`${RAILWAY_API}/transcript/${videoId}?lang=${lang}`);
     if (response.ok) {
       const data = await response.json();
       if (data.segments && data.segments.length > 0) {
-        console.log(`[Transcript] Success from Railway backend!`);
+        console.log(`[Transcript] Success from Railway!`);
         return data;
       }
     } else {
       const err = await response.json();
-      console.log(`[Transcript] Railway returned ${response.status}: ${err.error}`);
+      console.log(`[Transcript] Railway error: ${err.error}`);
     }
   } catch (e) {
-    console.error(`[Transcript] Railway backend failed:`, e);
+    console.error(`[Transcript] Railway failed:`, e);
   }
 
   throw new Error('Could not fetch transcript. Try a different video.');
