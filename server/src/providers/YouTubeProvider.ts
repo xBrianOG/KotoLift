@@ -87,22 +87,10 @@ async function getVideoCaptions(videoId: string, lang: string = 'en'): Promise<{
   );
 
   if (!captionResponse.ok) {
-    // If we can't download captions, try getting video transcript via other means
-    console.warn(`[YouTubeProvider] Could not download captions directly, using video snippet as fallback`);
-    
-    // Return a single segment with video description as a fallback
-    const description = videoInfo.description || '';
-    if (description.length > 10) {
-      const segments: Segment[] = [{
-        id: 'seg-1',
-        startMs: 0,
-        endMs: 60000,
-        text: description.substring(0, 500) // Use first 500 chars of description
-      }];
-      return { title, segments };
-    }
-    
-    const providerError = new Error('Could not retrieve captions. Video may have captions disabled.') as ProviderError;
+    // YouTube Data API v3 cannot download captions without OAuth
+    // Throw error to trigger Whisper fallback
+    console.warn(`[YouTubeProvider] Could not download captions (OAuth required), triggering Whisper fallback`);
+    const providerError = new Error('No captions available for this video. This video may have captions disabled by the creator.') as ProviderError;
     providerError.provider = 'YouTube API';
     providerError.code = 'NO_CAPTIONS';
     throw providerError;
