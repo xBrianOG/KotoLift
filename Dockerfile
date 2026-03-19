@@ -1,10 +1,11 @@
 FROM node:20-alpine
 
-ARG CACHE_BUST=3
+ARG CACHE_BUST=4
 WORKDIR /app
 
-# Install ffmpeg for audio processing
-RUN apk add --no-cache ffmpeg && echo "rebuild-v2-$(date +%s)" > /tmp/build_marker
+# Install ffmpeg, python3 and pip for yt-dlp
+RUN apk add --no-cache ffmpeg python3 py3-pip && echo "rebuild-v3-$(date +%s)" > /tmp/build_marker
+RUN pip3 install --no-cache-dir yt-dlp
 
 # Copy package files for root (frontend build)
 COPY package*.json ./

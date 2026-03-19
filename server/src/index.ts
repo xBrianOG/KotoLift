@@ -11,6 +11,7 @@ import videoRouter from "./routes/video.js";
 import authRouter from "./routes/auth.js";
 import usageRouter from "./routes/usage.js";
 import transcriptRouter from "./routes/transcript.js";
+import transcribeRouter from "./routes/transcribe.js";
 import cors from "cors";
 import fs from "fs";
 
@@ -44,11 +45,12 @@ app.use("/api/video", videoRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/usage", usageRouter);
 app.use("/api/transcript", transcriptRouter);
+app.use("/api/transcribe", transcribeRouter);
 
 app.get("/api/health", (req, res) => {
   res.json({ 
     status: "ok",
-    version: "1.0.2-transcript",
+    version: "1.0.3-whisper",
     timestamp: new Date().toISOString(),
     hasOpenAI: !!process.env.OPENAI_API_KEY,
     environment: "railway"

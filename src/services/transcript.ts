@@ -27,17 +27,17 @@ export async function fetchTranscript(videoUrl: string, lang: string = 'en'): Pr
     throw new Error('Invalid YouTube URL');
   }
 
-  console.log(`[Transcript] Fetching transcript for video: ${videoId}`);
+  console.log(`[Transcript] Transcribing video: ${videoId}`);
 
-  const response = await fetch(`${RAILWAY_API}/transcript/${videoId}?lang=${lang}`);
+  const response = await fetch(`${RAILWAY_API}/transcribe/${videoId}?lang=${lang}`);
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.error || 'Could not fetch transcript. Try a different video.');
+    throw new Error(data.error || 'Could not transcribe video. Please try again.');
   }
 
   if (!data.segments || data.segments.length === 0) {
-    throw new Error('No captions available for this video.');
+    throw new Error('No speech detected in this video.');
   }
 
   console.log(`[Transcript] Got ${data.segments.length} segments`);

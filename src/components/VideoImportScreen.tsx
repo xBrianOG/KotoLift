@@ -35,8 +35,8 @@ export function VideoImportScreen({ onComplete, onCancel, onViewTranscript, onOp
     setAnalysisMethod(null);
 
     try {
-      // Fetch transcript from backend
-      console.log('[VideoImport] Fetching transcript from backend...');
+      // Transcribe video using Whisper AI
+      console.log('[VideoImport] Transcribing video with Whisper...');
       const result = await fetchTranscript(url, lang);
       
       // Convert to VideoSegment format
