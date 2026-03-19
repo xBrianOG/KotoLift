@@ -14,7 +14,7 @@ const YOUTUBE_REGEX = /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
 const TRANSCRIBE_MODEL = process.env.TRANSCRIBE_MODEL || 'whisper-1';
-const MAX_DURATION_MINUTES = parseInt(process.env.MAX_DURATION_MINUTES || '15', 10);
+const MAX_DURATION_MINUTES = parseInt(process.env.MAX_DURATION_MINUTES || '999', 10);
 
 const CACHE_DIR = './cache/transcripts';
 
@@ -71,7 +71,7 @@ async function getVideoInfo(videoId: string): Promise<{ title: string; duration:
   try {
     // Use iOS client spoofing to bypass bot detection
     const cmd = `yt-dlp --extractor-args "youtube:player-client=ios" --print "title:%(title)s" --print "duration:%(duration)s" "https://www.youtube.com/watch?v=${videoId}"`;
-    const { stdout } = await execAsync(cmd);
+    const { stdout, stderr } = await execAsync(cmd);
     
     const titleMatch = stdout.match(/title:(.+)/);
     const durationMatch = stdout.match(/duration:(.+)/);
@@ -83,9 +83,15 @@ async function getVideoInfo(videoId: string): Promise<{ title: string; duration:
   } catch (err: any) {
     console.error('[Whisper] yt-dlp info failed:', err.message);
     if (err.message.includes('Sign in to confirm') || err.message.includes('bot')) {
-      throw new Error('YouTube is blocking our server. Please use the Desktop version of KotoLift to analyze this video (it uses your local IP which won\'t be blocked).');
+      const error = new Error('This video couldn\'t be transcribed. Try a different video.') as ProviderError;
+      error.provider = 'Whisper';
+      error.code = 'TRANSCRIPTION_FAILED';
+      throw error;
     }
-    throw err;
+    const error = new Error('This video couldn\'t be transcribed. Try a different video.') as ProviderError;
+    error.provider = 'Whisper';
+    error.code = 'TRANSCRIPTION_FAILED';
+    throw error;
   }
 }
 
@@ -167,9 +173,15 @@ export class WhisperProvider implements VideoProvider {
     } catch (err: any) {
       console.error('[Whisper] yt-dlp download failed:', err.message);
       if (err.message.includes('Sign in to confirm') || err.message.includes('bot')) {
-        throw new Error('YouTube bot detection triggered. Please use the Desktop version of KotoLift for this video.');
+        const error = new Error('This video couldn\'t be transcribed. Try a different video.') as ProviderError;
+        error.provider = 'Whisper';
+        error.code = 'TRANSCRIPTION_FAILED';
+        throw error;
       }
-      throw err;
+      const error = new Error('This video couldn\'t be transcribed. Try a different video.') as ProviderError;
+      error.provider = 'Whisper';
+      error.code = 'TRANSCRIPTION_FAILED';
+      throw error;
     }
   }
 

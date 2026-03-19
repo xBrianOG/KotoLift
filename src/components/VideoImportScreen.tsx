@@ -202,7 +202,7 @@ export function VideoImportScreen({ onComplete, onCancel, onViewTranscript, onOp
         onClick={handleAnalyze}
         disabled={loading || !url.trim()}
       >
-        {loading ? 'Analyzing...' : 'Analyze'}
+        {loading ? 'Transcribing...' : 'Analyze'}
       </button>
 
       {loading && (
@@ -215,27 +215,15 @@ export function VideoImportScreen({ onComplete, onCancel, onViewTranscript, onOp
           color: 'var(--text-secondary)',
           textAlign: 'center'
         }}>
-          Fetching video captions via YouTube API...
-        </div>
-      )}
-
-      {error && error.includes('API key') && (
-        <div style={{ 
-          marginBottom: 'var(--space-md)', 
-          padding: 'var(--space-md)', 
-          background: 'var(--warning-bg, #fffbeb)', 
-          borderRadius: 8,
-          fontSize: 'var(--font-sm)',
-          color: 'var(--warning, #92400e)'
-        }}>
-          <strong>YouTube API not configured.</strong><br/>
-          Please add <code>YOUTUBE_API_KEY</code> to Railway environment variables, or use local dev mode for video imports.
+          Getting video transcription...
         </div>
       )}
 
       {error && (
         <div className="card mb-lg" style={{ background: 'var(--error-bg, #fef2f2)', color: 'var(--error)', borderColor: 'var(--error)' }}>
-          {error}
+          {error.includes('TRANSCRIPTION_FAILED') || error.includes('couldn\'t be transcribed')
+            ? 'This video couldn\'t be transcribed. Try a different video.'
+            : error}
         </div>
       )}
 

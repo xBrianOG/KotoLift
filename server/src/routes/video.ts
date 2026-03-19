@@ -37,25 +37,37 @@ async function analyzeVideo(url: string, lang?: string, providerName?: string, p
     if (providers.whisper.canHandle(url)) {
       console.log('[Video] Using Whisper for transcription');
       const result = await providers.whisper.extract(url, lang);
-      return { ...result, method: 'Whisper (AI Transcription)' };
+      return { ...result, method: 'AI Transcription' };
     }
   }
   
-  // Default: Use YouTube API
+  // Default: Try YouTube captions first (free)
   if (!providerName || providerName === 'youtube') {
     if (providers.youtube.canHandle(url)) {
       // Check if YouTube API key is configured
-      if (!YOUTUBE_API_KEY) {
-        throw new Error('YouTube API key not configured. Please add YOUTUBE_API_KEY to Railway environment variables, or select "Use Whisper" option.');
+      if (YOUTUBE_API_KEY) {
+        try {
+          const result = await providers.youtube.extract(url, lang);
+          console.log('[Video] Successfully got YouTube captions via API');
+          return { ...result, method: 'YouTube Captions (Free)' };
+        } catch (ytError: any) {
+          console.log('[Video] YouTube captions not available, falling back to Whisper...');
+          // Continue to Whisper fallback
+        }
       }
-      
-      const result = await providers.youtube.extract(url, lang);
-      console.log('[Video] Successfully got YouTube captions via API');
-      return { ...result, method: 'YouTube Captions' };
     }
   }
   
-  throw new Error('Unsupported video URL. Currently only YouTube is supported.');
+  // Fallback: Use Whisper for AI transcription
+  if (providers.whisper.canHandle(url)) {
+    console.log('[Video] Using Whisper for AI transcription');
+    const result = await providers.whisper.extract(url, lang);
+    return { ...result, method: 'AI Transcription' };
+  }
+  
+  const error = new Error('This video couldn\'t be transcribed. Try a different video.') as any;
+  error.code = 'TRANSCRIPTION_FAILED';
+  throw error;
 }
 
 router.post('/analyze', authMiddleware, async (req: any, res: any, next: any) => {
