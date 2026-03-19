@@ -289,13 +289,13 @@ export function VideoImportScreen({ onComplete, onCancel, onViewTranscript, onOp
                   onClick={() => toggleSegment(seg.id)}
                   ref={(el) => {
                     if (el && seg.id === segments[0]?.id) {
-                      // @ts-ignore
+                      // @ts-expect-error debug property for layout inspection
                       window.debug_layout_info = window.debug_layout_info || [];
                       const cb = el.querySelector('input[type="checkbox"]');
                       if (cb) {
                         const style = window.getComputedStyle(cb);
                         const cstyle = window.getComputedStyle(el);
-                        // @ts-ignore
+                        // @ts-expect-error debug property for layout inspection
                         window.debug_layout_info.push({
                            html: el.outerHTML,
                            containerDisplay: cstyle.display,

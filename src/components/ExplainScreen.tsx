@@ -9,13 +9,13 @@ const API_URL = import.meta.env.VITE_EXPLAIN_API_URL || "/api/explain";
 // Simple in-editor logger that only outputs in DEV mode
 const log = (...args: unknown[]) => {
   if (import.meta.env.DEV) {
-    // eslint-disable-next-line no-console
+     
     console.log(...args);
   }
 };
 const logError = (...args: unknown[]) => {
   if (import.meta.env.DEV) {
-    // eslint-disable-next-line no-console
+     
     console.error(...args);
   }
 };

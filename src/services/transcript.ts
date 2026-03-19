@@ -74,7 +74,7 @@ export async function fetchTranscript(videoUrl: string, lang: string = 'en'): Pr
         const title = data.title || `Video ${videoId}`;
         
         // Get captions from the response
-        let captions = data.captions || data.subtitles || [];
+        const captions = data.captions || data.subtitles || [];
         
         if (captions.length > 0) {
           const track = captions[0]; // Use first available track

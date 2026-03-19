@@ -41,7 +41,9 @@ function App() {
     if (saved) {
       try {
         setTranscriptData(JSON.parse(saved));
-      } catch {}
+      } catch {
+        // ignore parse errors
+      }
     }
   }, []);
 
