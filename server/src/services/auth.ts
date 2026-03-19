@@ -1,18 +1,28 @@
 import * as jose from 'jose';
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import bcrypt from 'bcryptjs';
-
-import { fileURLToPath } from 'url';
-import path from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 const APPLE_JWKS_URI = 'https://appleid.apple.com/auth/keys';
 const JWT_SECRET = process.env.JWT_SECRET || 'kotolift-dev-secret-change-in-prod';
 const APPLE_CLIENT_ID = process.env.APPLE_CLIENT_ID || 'com.kotolift.app';
 
 const JWKS = jose.createRemoteJWKSet(new URL(APPLE_JWKS_URI));
+
+const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
+
+let supabase: SupabaseClient | null = null;
+
+function getSupabaseClient(): SupabaseClient {
+  if (!supabase && SUPABASE_URL && SUPABASE_ANON_KEY) {
+    supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log('[Auth] Connected to Supabase');
+  }
+  if (!supabase) {
+    throw new Error('Supabase not configured. Please set SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
+  }
+  return supabase;
+}
 
 export interface AppleUser {
   id: string;
@@ -29,59 +39,6 @@ export interface EmailUser {
   createdAt: number;
 }
 
-const DATA_DIR = path.join(__dirname, '../../data');
-const USERS_FILE = path.join(DATA_DIR, 'users.json');
-const EMAIL_USERS_FILE = path.join(DATA_DIR, 'email-users.json');
-
-function loadUsers(): Map<string, AppleUser> {
-  try {
-    if (existsSync(USERS_FILE)) {
-      const data = JSON.parse(readFileSync(USERS_FILE, 'utf-8'));
-      return new Map(Object.entries(data));
-    }
-  } catch (e) {
-    console.error('Failed to load users:', e);
-  }
-  return new Map();
-}
-
-function saveUsers(users: Map<string, AppleUser>) {
-  try {
-    if (!existsSync(DATA_DIR)) {
-      mkdirSync(DATA_DIR, { recursive: true });
-    }
-    writeFileSync(USERS_FILE, JSON.stringify(Object.fromEntries(users), null, 2));
-  } catch (e) {
-    console.error('Failed to save users:', e);
-  }
-}
-
-function loadEmailUsers(): Map<string, EmailUser> {
-  try {
-    if (existsSync(EMAIL_USERS_FILE)) {
-      const data = JSON.parse(readFileSync(EMAIL_USERS_FILE, 'utf-8'));
-      return new Map(Object.entries(data));
-    }
-  } catch (e) {
-    console.error('Failed to load email users:', e);
-  }
-  return new Map();
-}
-
-function saveEmailUsers(users: Map<string, EmailUser>) {
-  try {
-    if (!existsSync(DATA_DIR)) {
-      mkdirSync(DATA_DIR, { recursive: true });
-    }
-    writeFileSync(EMAIL_USERS_FILE, JSON.stringify(Object.fromEntries(users), null, 2));
-  } catch (e) {
-    console.error('Failed to save email users:', e);
-  }
-}
-
-const usersDb = loadUsers();
-const emailUsersDb = loadEmailUsers();
-
 export async function verifyAppleToken(identityToken: string): Promise<AppleUser> {
   try {
     const { payload } = await jose.jwtVerify(identityToken, JWKS, {
@@ -97,20 +54,12 @@ export async function verifyAppleToken(identityToken: string): Promise<AppleUser
       throw new Error('Missing sub claim');
     }
 
-    let user = usersDb.get(sub);
-
-    if (!user) {
-      user = {
-        id: sub,
-        email,
-        name: undefined,
-        createdAt: Date.now()
-      };
-      usersDb.set(sub, user);
-      saveUsers(usersDb);
-    }
-
-    return user;
+    return {
+      id: sub,
+      email,
+      name: undefined,
+      createdAt: Date.now()
+    };
   } catch (err: any) {
     throw new Error(`Token verification failed: ${err.message}`);
   }
@@ -137,42 +86,100 @@ export async function verifySessionToken(token: string): Promise<{ sub: string; 
 
 export async function registerEmailUser(email: string, password: string, name?: string): Promise<EmailUser> {
   const cleanEmail = email.trim().toLowerCase();
-  const existing = emailUsersDb.get(cleanEmail);
-  if (existing) {
-    throw new Error('Email already registered');
-  }
-
+  
   console.log(`[Auth] Registering new user: ${cleanEmail}`);
+  
   const passwordHash = await bcrypt.hash(password.trim(), 10);
-  const user: EmailUser = {
-    id: `email-${Date.now()}`,
-    email: cleanEmail,
-    passwordHash,
-    name: name?.trim(),
-    createdAt: Date.now()
-  };
-
-  emailUsersDb.set(cleanEmail, user);
-  saveEmailUsers(emailUsersDb);
-
-  return user;
+  
+  try {
+    const client = getSupabaseClient();
+    
+    // Check if user already exists
+    const { data: existing } = await client
+      .from('email_users')
+      .select('id')
+      .eq('email', cleanEmail)
+      .single();
+    
+    if (existing) {
+      throw new Error('Email already registered');
+    }
+    
+    // Insert new user
+    const { data, error } = await client
+      .from('email_users')
+      .insert({
+        email: cleanEmail,
+        password_hash: passwordHash,
+        name: name?.trim() || null
+      })
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('[Auth] Supabase insert error:', error);
+      throw new Error('Failed to create user');
+    }
+    
+    console.log(`[Auth] User registered successfully: ${cleanEmail}`);
+    
+    return {
+      id: data.id,
+      email: data.email,
+      passwordHash: data.password_hash,
+      name: data.name,
+      createdAt: new Date(data.created_at).getTime()
+    };
+  } catch (err: any) {
+    if (err.message === 'Email already registered' || err.message === 'Supabase not configured') {
+      throw err;
+    }
+    console.error('[Auth] Registration error:', err);
+    throw new Error('Failed to register user');
+  }
 }
 
 export async function verifyEmailUser(email: string, password: string): Promise<EmailUser> {
   const cleanEmail = email.trim().toLowerCase();
-  const user = emailUsersDb.get(cleanEmail);
-  if (!user) {
-    console.warn(`[Auth] Login failed: User not found (${cleanEmail})`);
-    throw new Error('Invalid email or password');
-  }
-
+  
   console.log(`[Auth] Verifying user: ${cleanEmail}`);
-  const valid = await bcrypt.compare(password.trim(), user.passwordHash);
-  if (!valid) {
+  
+  try {
+    const client = getSupabaseClient();
+    
+    const { data, error } = await client
+      .from('email_users')
+      .select('id, email, password_hash, name, created_at')
+      .eq('email', cleanEmail)
+      .single();
+    
+    if (error || !data) {
+      console.warn(`[Auth] Login failed: User not found (${cleanEmail})`);
+      throw new Error('Invalid email or password');
+    }
+    
+    const valid = await bcrypt.compare(password.trim(), data.password_hash);
+    if (!valid) {
+      console.warn(`[Auth] Login failed: Invalid password for ${cleanEmail}`);
+      throw new Error('Invalid email or password');
+    }
+    
+    console.log(`[Auth] User verified successfully: ${cleanEmail}`);
+    
+    return {
+      id: data.id,
+      email: data.email,
+      passwordHash: data.password_hash,
+      name: data.name,
+      createdAt: new Date(data.created_at).getTime()
+    };
+  } catch (err: any) {
+    if (err.message === 'Invalid email or password' || err.message === 'Supabase not configured') {
+      throw err;
+    }
+    console.error('[Auth] Verification error:', err);
     throw new Error('Invalid email or password');
   }
-
-  return user;
 }
 
 export async function createEmailSessionToken(user: EmailUser): Promise<string> {
