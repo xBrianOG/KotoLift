@@ -2,7 +2,11 @@ const INVIDIOUS_INSTANCES = [
   'https://yewtu.be',
   'https://invidious.privacyredirect.com',
   'https://vid.priv.au',
+  'https://invidious.poast.org',
+  'https://inv.nadeko.net',
 ];
+
+const CORS_PROXY = 'https://corsproxy.io/?';
 
 const YOUTUBE_REGEX = /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
 
@@ -35,20 +39,36 @@ function parseTimeToMs(timeStr: string): number {
   return 0;
 }
 
+async function tryFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  // Try direct first
+  try {
+    const response = await fetch(url, { ...options, mode: 'cors' });
+    if (response.ok) return response;
+  } catch (e) {
+    console.log('[Transcript] Direct fetch failed, trying CORS proxy...');
+  }
+  
+  // Try with CORS proxy
+  const proxyUrl = CORS_PROXY + encodeURIComponent(url);
+  return fetch(proxyUrl, options);
+}
+
 export async function fetchTranscript(videoUrl: string, lang: string = 'en'): Promise<FetchResult> {
   const videoId = extractVideoId(videoUrl);
   if (!videoId) {
     throw new Error('Invalid YouTube URL');
   }
 
-  // Try each Invidious instance
+  console.log(`[Transcript] Fetching transcript for video: ${videoId}`);
+
+  // Try each Invidious instance with CORS proxy
   for (const instance of INVIDIOUS_INSTANCES) {
     try {
       console.log(`[Transcript] Trying ${instance}...`);
       
-      // Get video info with captions
+      // Get video info with captions via CORS proxy
       const infoUrl = `${instance}/api/v1/videos/${videoId}?format=json`;
-      const infoResponse = await fetch(infoUrl, {
+      const infoResponse = await tryFetch(infoUrl, {
         headers: {
           'Accept': 'application/json'
         }
@@ -61,44 +81,111 @@ export async function fetchTranscript(videoUrl: string, lang: string = 'en'): Pr
 
       const videoInfo = await infoResponse.json();
       const title = videoInfo.title || `Video ${videoId}`;
+      console.log(`[Transcript] Got video info: ${title}`);
 
-      // Find caption tracks
-      const captions = videoInfo.captions || [];
+      // Check for subtitles/c captions in different formats
+      let captions = videoInfo.subtitles || videoInfo.captions || [];
+      
+      // If no captions, try the captions endpoint
+      if (captions.length === 0 && videoInfo.captionTracks) {
+        captions = videoInfo.captionTracks;
+      }
+
       if (captions.length === 0) {
         console.log(`[Transcript] No captions found on ${instance}`);
+        
+        // Try to get captions from a different endpoint
+        try {
+          const captionsUrl = `${instance}/api/v1/captions/${videoId}`;
+          const captionsResponse = await tryFetch(captionsUrl, {
+            headers: { 'Accept': 'application/json' }
+          });
+          if (captionsResponse.ok) {
+            const captionsData = await captionsResponse.json();
+            if (Array.isArray(captionsData)) {
+              captions = captionsData;
+            }
+          }
+        } catch (e) {
+          console.log(`[Transcript] Captions endpoint failed: ${e}`);
+        }
+        
+        if (captions.length === 0) {
+          continue;
+        }
+      }
+
+      console.log(`[Transcript] Found ${captions.length} caption tracks`);
+
+      // Find best matching caption track
+      const targetCaption = captions.find((c: any) => {
+        const label = c.label?.toLowerCase() || '';
+        const langCode = c.languageCode || '';
+        return label.includes(lang) || langCode === lang || langCode.startsWith(lang);
+      }) || captions[0];
+
+      if (!targetCaption) {
+        console.log(`[Transcript] No suitable caption track found`);
         continue;
       }
 
-      // Find best matching caption track
-      const targetCaption = captions.find((c: any) => c.label?.toLowerCase().includes(lang))
-        || captions.find((c: any) => c.languageCode === lang)
-        || captions.find((c: any) => c.languageCode?.startsWith(lang))
-        || captions[0];
+      console.log(`[Transcript] Using caption: ${targetCaption.label || targetCaption.languageCode}`);
 
-      if (!targetCaption || !targetCaption.url) {
-        console.log(`[Transcript] No caption URL found on ${instance}`);
-        continue;
+      // Get caption URL
+      let captionUrl = targetCaption.url || targetCaption.baseUrl;
+      if (!captionUrl) {
+        // Try constructing URL from video ID
+        captionUrl = `${instance}/api/v1/captions/${videoId}?label=${encodeURIComponent(targetCaption.label || '')}`;
       }
 
       // Fetch caption content
-      const captionUrl = targetCaption.url.replace(/&format=json/, '') + '&format=json';
-      const captionResponse = await fetch(captionUrl);
-
+      const captionResponse = await tryFetch(captionUrl);
+      
       if (!captionResponse.ok) {
         console.log(`[Transcript] Could not fetch caption URL from ${instance}`);
         continue;
       }
 
-      const captionXml = await captionResponse.text();
+      let captionXml = await captionResponse.text();
+      
+      // If we got JSON, try to extract the actual XML
+      if (captionXml.startsWith('{') || captionXml.startsWith('[')) {
+        console.log(`[Transcript] Got JSON response instead of XML, trying alternative...`);
+        // Some Invidious instances return JSON captions
+        try {
+          const jsonCaptions = JSON.parse(captionXml);
+          if (Array.isArray(jsonCaptions)) {
+            const segments: TranscriptSegment[] = jsonCaptions.map((item: any, index: number) => ({
+              id: `seg-${index + 1}`,
+              startMs: Math.round((item.start || item.startMs || 0) * 1000),
+              endMs: Math.round((item.end || item.endMs || item.start + item.duration || 0) * 1000),
+              text: item.text || item.content || ''
+            })).filter((s: TranscriptSegment) => s.text.trim());
+            
+            if (segments.length > 0) {
+              console.log(`[Transcript] Success! Got ${segments.length} segments from JSON`);
+              return {
+                title,
+                segments,
+                videoId,
+                method: 'YouTube Captions'
+              };
+            }
+          }
+        } catch (e) {
+          console.log(`[Transcript] JSON parsing failed`);
+        }
+        continue;
+      }
 
       // Parse XML captions
       const segments: TranscriptSegment[] = [];
-      const timeMatches = captionXml.matchAll(/<text start="([^"]+)"[^>]*dur="([^"]+)"[^>]*>([^<]+)<\/text>/g);
+      const timeMatches = captionXml.matchAll(/<text[^>]*start="([^"]+)"[^>]*>([^<]+)<\/text>/gi);
 
+      let matchIndex = 0;
       for (const match of timeMatches) {
-        const startTime = parseTimeToMs(match[1]);
-        const duration = parseFloat(match[2]) * 1000;
-        const text = match[3]
+        const startTimeStr = match[1];
+        const text = match[2]
           .replace(/&amp;/g, '&')
           .replace(/&quot;/g, '"')
           .replace(/&#39;/g, "'")
@@ -107,13 +194,18 @@ export async function fetchTranscript(videoUrl: string, lang: string = 'en'): Pr
           .trim();
 
         if (text) {
+          const startTime = parseTimeToMs(startTimeStr);
+          // Estimate end time (usually 2-3 seconds per segment)
+          const endTime = startTime + 3000;
+          
           segments.push({
             id: `seg-${segments.length + 1}`,
             startMs: startTime,
-            endMs: startTime + duration,
+            endMs: endTime,
             text
           });
         }
+        matchIndex++;
       }
 
       if (segments.length === 0) {
