@@ -2,6 +2,12 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+# Install yt-dlp for audio downloads
+RUN apk add --no-cache python3 py3-pip ffmpeg && \
+    pip3 install --no-cache-dir yt-dlp --break-system-packages
+
+WORKDIR /app
+
 # Copy package files for root (frontend build)
 COPY package*.json ./
 COPY vite.config.ts ./
