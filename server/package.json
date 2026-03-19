@@ -19,8 +19,6 @@
     "jsonwebtoken": "^9.0.3",
     "openai": "^4.0.0",
     "uuid": "^13.0.0",
-    "youtube-transcript": "^1.2.1",
-    "youtube-transcript-api": "^3.0.6",
     "ytdl-core": "^4.11.5",
     "zod": "^3.23.0"
   },

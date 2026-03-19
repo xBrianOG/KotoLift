@@ -6,8 +6,6 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import FormData from 'form-data';
 import axios from 'axios';
-// @ts-ignore - youtube-transcript-api doesn't have types
-import * as youtubeTranscript from 'youtube-transcript-api';
 import type { VideoProvider, AnalyzeResult, Segment, ProviderError } from '../types.js';
 
 const execAsync = promisify(exec);
@@ -16,8 +14,6 @@ const YOUTUBE_REGEX = /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
 const TRANSCRIBE_MODEL = process.env.TRANSCRIBE_MODEL || 'whisper-1';
-const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY || '';
-const YOUTUBE_API_BASE = 'https://www.googleapis.com/youtube/v3';
 
 const CACHE_DIR = './cache/transcripts';
 
@@ -70,44 +66,6 @@ function cacheResult(url: string, lang: string | undefined, result: AnalyzeResul
   }
 }
 
-async function getVideoTitle(videoId: string): Promise<string> {
-  if (YOUTUBE_API_KEY) {
-    try {
-      const response = await fetch(
-        `${YOUTUBE_API_BASE}/videos?part=snippet&id=${videoId}&key=${YOUTUBE_API_KEY}`
-      );
-      if (response.ok) {
-        const data = await response.json();
-        const title = data.items?.[0]?.snippet?.title;
-        if (title) return title;
-      }
-    } catch (e) {
-      console.error('[Whisper] YouTube API title fetch failed:', e);
-    }
-  }
-  return `Video ${videoId}`;
-}
-
-async function getTranscriptFromYouTube(videoId: string, lang: string = 'en'): Promise<Segment[]> {
-  try {
-    // @ts-ignore - youtube-transcript-api doesn't have types
-    const transcript = await youtubeTranscript.YoutubeTranscript.forVideo(videoId) as Array<{offset: number, duration: number, text: string}>;
-    
-    const segments: Segment[] = transcript.map((item: {offset: number, duration: number, text: string}, index: number) => ({
-      id: `seg-${index + 1}`,
-      startMs: Math.round(item.offset * 1000),
-      endMs: Math.round((item.offset + item.duration) * 1000),
-      text: item.text
-    }));
-    
-    console.log(`[Whisper] Got ${segments.length} transcript segments via youtube-transcript-api`);
-    return segments;
-  } catch (err: any) {
-    console.log('[Whisper] youtube-transcript-api failed:', err.message);
-    throw err;
-  }
-}
-
 export class WhisperProvider implements VideoProvider {
   name = 'Whisper';
 
@@ -116,7 +74,7 @@ export class WhisperProvider implements VideoProvider {
   }
 
   private extractVideoId(url: string): string | null {
-    const match = url.match(YOUTUBEREGEX);
+    const match = url.match(YOUTUBE_REGEX);
     return match ? match[4] : null;
   }
 
@@ -135,84 +93,48 @@ export class WhisperProvider implements VideoProvider {
       return cached;
     }
 
-    console.log(`[Whisper] Processing video: ${videoId}`);
-
-    let title = `Video ${videoId}`;
-    let segments: Segment[] = [];
-    let method = '';
-
-    // Step 1: Try youtube-transcript-api (free, no download needed)
-    try {
-      title = await getVideoTitle(videoId);
-      console.log(`[Whisper] Got title: ${title}`);
-      
-      const transcriptLang = lang || 'en';
-      segments = await getTranscriptFromYouTube(videoId, transcriptLang);
-      method = 'Transcript (Free)';
-      
-      if (segments.length > 0) {
-        const result: AnalyzeResult = { title, segments };
-        cacheResult(url, lang, result);
-        console.log(`[Whisper] Successfully got ${segments.length} transcript segments`);
-        return { ...result, languageDetected: transcriptLang };
-      }
-    } catch (transcriptErr) {
-      console.log('[Whisper] youtube-transcript-api failed, trying YouTube captions...');
-    }
-
-    // Step 2: Try OpenAI Whisper as last resort
     if (!OPENAI_API_KEY) {
-      const error = new Error('No transcript available for this video and OpenAI API key not configured.') as ProviderError;
+      const error = new Error('OpenAI API key not configured') as ProviderError;
       error.provider = this.name;
-      error.code = 'TRANSCRIPTION_FAILED';
+      error.code = 'OPENAI_KEY_MISSING';
       throw error;
     }
 
-    console.log(`[Whisper] Trying Whisper AI transcription...`);
+    console.log(`[Whisper] Processing video: ${videoId}`);
+
+    // Get video title
+    const title = `Video ${videoId}`;
+
+    console.log(`[Whisper] Downloading audio...`);
+
+    const tempFile = path.join(os.tmpdir(), `whisper-${Date.now()}.m4a`);
 
     try {
-      const tempFile = path.join(os.tmpdir(), `whisper-${Date.now()}.m4a`);
+      await this.downloadAudio(videoId, tempFile);
+      console.log(`[Whisper] Transcribing audio...`);
       
-      // Try to download audio using yt-dlp with alternative methods
-      try {
-        await this.downloadAudio(videoId, tempFile);
-      } catch (downloadErr: any) {
-        const error = new Error('This video couldn\'t be transcribed. Try a different video.') as ProviderError;
-        error.provider = this.name;
-        error.code = 'TRANSCRIPTION_FAILED';
-        throw error;
-      }
-
-      const { segments: whisperSegments, languageDetected } = await this.transcribeAudio(tempFile, lang);
-      segments = whisperSegments;
-      method = 'AI Transcription';
-
-      // Clean up temp file
+      const { segments, languageDetected } = await this.transcribeAudio(tempFile, lang);
+      
+      const result: AnalyzeResult = { 
+        title, 
+        segments,
+        languageDetected
+      };
+      
+      cacheResult(url, lang, result);
+      
+      return result;
+    } finally {
       if (fs.existsSync(tempFile)) {
         fs.unlinkSync(tempFile);
       }
-
-      const result: AnalyzeResult = { title, segments, languageDetected };
-      cacheResult(url, lang, result);
-      console.log(`[Whisper] Successfully transcribed ${segments.length} segments via Whisper`);
-      return result;
-    } catch (whisperErr: any) {
-      console.error('[Whisper] Whisper transcription failed:', whisperErr.message);
-      const error = new Error('This video couldn\'t be transcribed. Try a different video.') as ProviderError;
-      error.provider = this.name;
-      error.code = 'TRANSCRIPTION_FAILED';
-      throw error;
     }
   }
 
   private async downloadAudio(videoId: string, outputPath: string): Promise<void> {
     const methods = [
-      // Method 1: Standard yt-dlp
       `yt-dlp -f "bestaudio/best" -o "${outputPath}" "https://www.youtube.com/watch?v=${videoId}"`,
-      // Method 2: With iOS client
       `yt-dlp --extractor-args "youtube:player-client=ios" -f "bestaudio" -o "${outputPath}" "https://www.youtube.com/watch?v=${videoId}"`,
-      // Method 3: With android client
-      `yt-dlp --extractor-args "youtube:player-client=android" -f "bestaudio" -o "${outputPath}" "https://www.youtube.com/watch?v=${videoId}"`,
     ];
 
     for (let i = 0; i < methods.length; i++) {
@@ -226,7 +148,7 @@ export class WhisperProvider implements VideoProvider {
         if (i === methods.length - 1) {
           const error = new Error('Failed to download video audio.') as ProviderError;
           error.provider = 'Whisper';
-          error.code = 'TRANSCRIPTION_FAILED';
+          error.code = 'AUDIO_DOWNLOAD_FAILED';
           throw error;
         }
       }
@@ -310,5 +232,3 @@ export class WhisperProvider implements VideoProvider {
       .filter(s => s.trim().length > 0);
   }
 }
-
-const YOUTUBEREGEX = /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
