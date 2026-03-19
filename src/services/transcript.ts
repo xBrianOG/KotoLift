@@ -1,7 +1,4 @@
-const YOUTUBE_REGEX = /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
-
-// Cloudflare Worker proxy URL (you can deploy your own)
-const CF_WORKER_URL = 'https://yt-transcript.briandejesus.workers.dev';
+const YOUTUBE_REGEX = /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
 
 export interface TranscriptSegment {
   id: string;
@@ -19,7 +16,32 @@ export interface FetchResult {
 
 function extractVideoId(url: string): string | null {
   const match = url.match(YOUTUBE_REGEX);
-  return match ? match[4] : null;
+  return match ? match[1] : null;
+}
+
+function parseXmlCaptions(xml: string): TranscriptSegment[] {
+  const segments: TranscriptSegment[] = [];
+  const matches = xml.matchAll(/<text[^>]*start="([^"]+)"[^>]*dur="([^"]+)"[^>]*>([^<]+)<\/text>/gi);
+  for (const m of matches) {
+    const startMs = Math.round(parseFloat(m[1]) * 1000);
+    const durMs = Math.round(parseFloat(m[2]) * 1000);
+    const text = m[3]
+      .replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .trim();
+    if (text) {
+      segments.push({
+        id: `seg-${segments.length + 1}`,
+        startMs,
+        endMs: startMs + durMs,
+        text
+      });
+    }
+  }
+  return segments;
 }
 
 export async function fetchTranscript(videoUrl: string, lang: string = 'en'): Promise<FetchResult> {
@@ -30,100 +52,61 @@ export async function fetchTranscript(videoUrl: string, lang: string = 'en'): Pr
 
   console.log(`[Transcript] Fetching transcript for video: ${videoId}`);
 
-  // Method 1: Try Cloudflare Worker proxy (if deployed)
   try {
-    console.log(`[Transcript] Trying Cloudflare Worker proxy...`);
-    const response = await fetch(`${CF_WORKER_URL}/transcript/${videoId}?lang=${lang}`);
-    if (response.ok) {
-      const data = await response.json();
-      if (data.segments && data.segments.length > 0) {
-        console.log(`[Transcript] Success from CF Worker!`);
-        return {
-          title: data.title || `Video ${videoId}`,
-          segments: data.segments,
-          videoId,
-          method: 'YouTube Captions'
-        };
+    console.log(`[Transcript] Fetching video page to get API key...`);
+    const pageRes = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
       }
+    });
+    const pageHtml = await pageRes.text();
+    
+    const apiKeyMatch = pageHtml.match(/"INNERTUBE_API_KEY":"([^"]+)"/);
+    const apiKey = apiKeyMatch ? apiKeyMatch[1] : 'AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8';
+    
+    const titleMatch = pageHtml.match(/"title":"([^"]+)"/);
+    const title = titleMatch ? titleMatch[1].replace(/\\u0026/g, '&') : `Video ${videoId}`;
+
+    console.log(`[Transcript] Got API key, fetching player response...`);
+    const playerRes = await fetch(`https://www.youtube.com/youtubei/v1/player?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        context: {
+          client: { clientName: 'ANDROID', clientVersion: '20.10.38' }
+        },
+        videoId
+      })
+    });
+    
+    if (!playerRes.ok) {
+      throw new Error(`Player API failed: ${playerRes.status}`);
     }
+    
+    const playerData = await playerRes.json();
+    const captionTracks = playerData.captions?.playerCaptionsTracklistRenderer?.captionTracks || [];
+    
+    if (captionTracks.length === 0) {
+      throw new Error('No captions available for this video');
+    }
+    
+    const track = captionTracks.find((t: { languageCode: string }) => t.languageCode === lang) || captionTracks[0];
+    console.log(`[Transcript] Found caption track: ${track.languageCode}`);
+    
+    const xmlRes = await fetch(track.baseUrl);
+    const xml = await xmlRes.text();
+    const segments = parseXmlCaptions(xml);
+    
+    console.log(`[Transcript] Got ${segments.length} segments`);
+    
+    return {
+      title,
+      segments,
+      videoId,
+      method: 'YouTube Captions'
+    };
   } catch (e) {
-    console.log(`[Transcript] CF Worker failed:`, e);
+    console.error(`[Transcript] Failed:`, e);
+    throw new Error('Could not fetch transcript. Try a different video.');
   }
-
-  // Method 2: Direct fetch to working services
-  const services = [
-    {
-      name: 'yewtu.be',
-      url: (id: string) => `https://yewtu.be/api/v1/videos/${id}?format=json`
-    },
-    {
-      name: 'vid.priv.au',
-      url: (id: string) => `https://vid.priv.au/api/v1/videos/${id}?format=json`
-    }
-  ];
-
-  for (const service of services) {
-    try {
-      console.log(`[Transcript] Trying ${service.name}...`);
-      const response = await fetch(service.url(videoId), {
-        mode: 'cors'
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        const title = data.title || `Video ${videoId}`;
-        
-        // Get captions from the response
-        const captions = data.captions || data.subtitles || [];
-        
-        if (captions.length > 0) {
-          const track = captions[0]; // Use first available track
-          const captionUrl = track.url || track.baseUrl;
-          
-          if (captionUrl) {
-            const captionResponse = await fetch(captionUrl, { mode: 'cors' });
-            if (captionResponse.ok) {
-              const xml = await captionResponse.text();
-              
-              if (xml.includes('<text')) {
-                const segments: TranscriptSegment[] = [];
-                const matches = xml.matchAll(/<text[^>]*start="([^"]+)"[^>]*dur="([^"]+)"[^>]*>([^<]+)<\/text>/gi);
-                
-                for (const match of matches) {
-                  const startMs = Math.round(parseFloat(match[1]) * 1000);
-                  const durMs = Math.round(parseFloat(match[2]) * 1000);
-                  const text = match[3]
-                    .replace(/&amp;/g, '&')
-                    .replace(/&quot;/g, '"')
-                    .replace(/&#39;/g, "'")
-                    .replace(/&lt;/g, '<')
-                    .replace(/&gt;/g, '>')
-                    .trim();
-                  
-                  if (text) {
-                    segments.push({
-                      id: `seg-${segments.length + 1}`,
-                      startMs,
-                      endMs: startMs + durMs,
-                      text
-                    });
-                  }
-                }
-                
-                if (segments.length > 0) {
-                  console.log(`[Transcript] Success from ${service.name}!`);
-                  return { title, segments, videoId, method: 'YouTube Captions' };
-                }
-              }
-            }
-          }
-        }
-      }
-    } catch (e) {
-      console.log(`[Transcript] ${service.name} failed:`, e);
-    }
-  }
-
-  // If all methods fail, show helpful error
-  throw new Error('Could not fetch transcript. This may be due to network restrictions. Try a different video.');
 }
