@@ -1,9 +1,10 @@
 FROM node:20-alpine
 
+ARG CACHE_BUST=1
 WORKDIR /app
 
 # Install ffmpeg for audio processing
-RUN apk add --no-cache ffmpeg
+RUN apk add --no-cache ffmpeg && echo "rebuild-$(date +%s)" > /tmp/build_marker
 
 # Copy package files for root (frontend build)
 COPY package*.json ./
