@@ -67,7 +67,7 @@ async function getVideoCaptions(videoId: string, lang: string = 'en'): Promise<{
 
   // Step 3: Find the best matching caption track
   const targetTrack = captionTracks.find(t => t.languageCode === lang)
-    || captionTracks.find(t => t.languageCode.startsWith(lang))
+    || captionTracks.find(t => t.languageCode?.startsWith(lang))
     || captionTracks.find(t => t.languageCode === 'en')
     || captionTracks[0];
 
