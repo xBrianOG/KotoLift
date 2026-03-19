@@ -29,7 +29,7 @@ function updateEF(ef: number, q: number): number {
 export async function getDueReviewStates(
   promptLang: Language,
   answerLang: Language,
-  limit = 20
+  limit = 1000
 ): Promise<Array<ReviewState & { card: Card }>> {
   const now = Date.now();
 
@@ -54,7 +54,7 @@ export async function getDueReviewStates(
 
 export async function getMixedReviewStates(
   directions: Array<{ promptLang: Language; answerLang: Language }>,
-  limit = 20
+  limit = 1000
 ): Promise<Array<ReviewState & { card: Card }>> {
   const now = Date.now();
   const allDue: Array<ReviewState & { card: Card }> = [];
