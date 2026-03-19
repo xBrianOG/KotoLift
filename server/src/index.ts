@@ -48,7 +48,7 @@ app.use("/api/transcript", transcriptRouter);
 app.get("/api/health", (req, res) => {
   res.json({ 
     status: "ok",
-    version: "1.0.1-monolith-fixed",
+    version: "1.0.2-transcript",
     timestamp: new Date().toISOString(),
     hasOpenAI: !!process.env.OPENAI_API_KEY,
     environment: "railway"
