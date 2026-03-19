@@ -47,26 +47,36 @@ function parseXmlCaptions(xml: string): TranscriptSegment[] {
   return segments;
 }
 
-async function fetchTranscriptFromIframe(videoId: string, lang = 'en'): Promise<FetchResult> {
+async function fetchViaPopup(videoId: string, lang = 'en'): Promise<FetchResult> {
   return new Promise((resolve, reject) => {
-    const iframe = document.createElement('iframe');
-    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;pointer-events:none;';
-    iframe.title = 'YouTube video';
-    iframe.src = `https://www.youtube.com/watch?v=${videoId}`;
-    document.body.appendChild(iframe);
+    const width = 800;
+    const height = 600;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2;
+
+    const popup = window.open(
+      `https://www.youtube.com/watch?v=${videoId}`,
+      'youtube_transcript',
+      `width=${width},height=${height},left=${left},top=${top},popup=yes`
+    );
+
+    if (!popup) {
+      reject(new Error('Popup blocked. Please allow popups for this site.'));
+      return;
+    }
 
     let resolved = false;
     let attempts = 0;
-    const MAX_ATTEMPTS = 50;
+    const MAX_ATTEMPTS = 60;
     const CHECK_MS = 500;
 
     const timeoutId = setTimeout(() => {
       if (!resolved) {
         resolved = true;
-        cleanup();
-        reject(new Error('Timed out waiting for YouTube page'));
+        closePopup();
+        reject(new Error('Timed out loading YouTube page'));
       }
-    }, MAX_ATTEMPTS * CHECK_MS + 2000);
+    }, MAX_ATTEMPTS * CHECK_MS + 3000);
 
     const intervalId = setInterval(async () => {
       attempts++;
@@ -76,16 +86,21 @@ async function fetchTranscriptFromIframe(videoId: string, lang = 'en'): Promise<
       }
 
       try {
-        const win = iframe.contentWindow;
-        const doc = win?.document;
-        if (!doc || !win) return;
+        if (popup.closed) {
+          if (!resolved) {
+            resolved = true;
+            clearInterval(intervalId);
+            clearTimeout(timeoutId);
+            reject(new Error('Popup was closed'));
+          }
+          return;
+        }
 
-        const yt = (win as any).yt;
-        if (!yt?.playerService?.createPlayer) return;
+        const doc = popup.document;
+        if (!doc || doc.readyState !== 'complete') return;
 
         const title =
           doc.querySelector('h1')?.textContent?.trim() ||
-          (win as any).yt?.playerModule?.playerMap?.values()?.next()?.value?.getVideoData?.()?.title ||
           `Video ${videoId}`;
 
         const captionTracks = doc.querySelectorAll('track[kind="captions"]');
@@ -99,8 +114,7 @@ async function fetchTranscriptFromIframe(videoId: string, lang = 'en'): Promise<
 
         if (!track.src) return;
 
-        // Within the iframe, fetch should work (same origin)
-        const response = await win.fetch(track.src);
+        const response = await fetch(track.src);
         if (!response.ok) return;
 
         const xml = await response.text();
@@ -112,7 +126,7 @@ async function fetchTranscriptFromIframe(videoId: string, lang = 'en'): Promise<
           resolved = true;
           clearInterval(intervalId);
           clearTimeout(timeoutId);
-          cleanup();
+          closePopup();
           resolve({
             title: title.replace(/ - YouTube$/, '').trim(),
             segments,
@@ -121,15 +135,12 @@ async function fetchTranscriptFromIframe(videoId: string, lang = 'en'): Promise<
           });
         }
       } catch {
-        // ignore errors during polling
+        // keep trying
       }
     }, CHECK_MS);
 
-    function cleanup() {
-      clearInterval(intervalId);
-      clearTimeout(timeoutId);
-      if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
-      delete (window as any).yt;
+    function closePopup() {
+      try { popup!.close(); } catch { /* ignore */ }
     }
   });
 }
@@ -142,14 +153,14 @@ export async function fetchTranscript(videoUrl: string, lang: string = 'en'): Pr
 
   console.log(`[Transcript] Fetching transcript for video: ${videoId}`);
 
-  // Try iframe (user's home IP + same-origin access to captions)
+  // Try popup (user's home IP + same-origin access)
   try {
-    console.log(`[Transcript] Trying YouTube iframe (user's home IP)...`);
-    const result = await fetchTranscriptFromIframe(videoId, lang);
-    console.log(`[Transcript] Success from iframe! Got ${result.segments.length} segments`);
+    console.log(`[Transcript] Trying popup window...`);
+    const result = await fetchViaPopup(videoId, lang);
+    console.log(`[Transcript] Success from popup! Got ${result.segments.length} segments`);
     return result;
   } catch (e) {
-    console.log(`[Transcript] iframe failed:`, e);
+    console.log(`[Transcript] Popup failed:`, e);
   }
 
   // Fallback to Railway backend
