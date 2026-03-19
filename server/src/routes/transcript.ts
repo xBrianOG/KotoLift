@@ -21,6 +21,13 @@ router.get('/:videoId', async (req, res) => {
       startMs: Math.round(snippet.start * 1000),
       endMs: Math.round((snippet.start + snippet.duration) * 1000),
       text: snippet.text
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&apos;/g, "'")
+        .trim()
     }));
 
     return res.json({
