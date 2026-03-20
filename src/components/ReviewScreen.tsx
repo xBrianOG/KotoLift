@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getDueReviewStates, rateReview, getMixedReviewStates } from '../services/review';
+import { getDueReviewStates, rateReview, getMixedReviewStates, getPracticeReviewStates, getMixedPracticeReviewStates } from '../services/review';
 import { addStars, updateStreak } from '../services/stats';
 import { ProgressBar } from './ProgressBar';
 import { Stars } from './Stars';
@@ -16,6 +16,7 @@ const DIRECTIONS: { value: ReviewDirection; label: string; from: Language; to: L
 
 export const ReviewScreen: React.FC<{ onExplain?: (card: Card) => void; onNavigateHome?: ()=>void }>= ({ onExplain, onNavigateHome }) => {
   const [direction, setDirection] = useState<ReviewDirection>('ja-en');
+  const [practiceMode, setPracticeMode] = useState(false);
   const [cards, setCards] = useState<Array<ReviewState & { card: Card }>>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
@@ -33,21 +34,30 @@ export const ReviewScreen: React.FC<{ onExplain?: (card: Card) => void; onNaviga
     
     let dueCards: Array<ReviewState & { card: Card }>;
     if (direction === 'mixed') {
-      dueCards = await getMixedReviewStates([
-        { promptLang: 'ja', answerLang: 'en' },
-        { promptLang: 'ja', answerLang: 'es' },
-        { promptLang: 'en', answerLang: 'ja' },
-        { promptLang: 'es', answerLang: 'ja' },
-      ]);
+      dueCards = practiceMode
+        ? await getMixedPracticeReviewStates([
+            { promptLang: 'ja', answerLang: 'en' },
+            { promptLang: 'ja', answerLang: 'es' },
+            { promptLang: 'en', answerLang: 'ja' },
+            { promptLang: 'es', answerLang: 'ja' },
+          ])
+        : await getMixedReviewStates([
+            { promptLang: 'ja', answerLang: 'en' },
+            { promptLang: 'ja', answerLang: 'es' },
+            { promptLang: 'en', answerLang: 'ja' },
+            { promptLang: 'es', answerLang: 'ja' },
+          ]);
     } else {
-      dueCards = await getDueReviewStates(dir.from, dir.to);
+      dueCards = practiceMode
+        ? await getPracticeReviewStates(dir.from, dir.to)
+        : await getDueReviewStates(dir.from, dir.to);
     }
     
     setCards(dueCards);
     setCurrentIndex(0);
     setShowAnswer(false);
     setLoading(false);
-  }, [direction]);
+  }, [direction, practiceMode]);
 
   useEffect(() => {
     loadCards();
@@ -116,8 +126,11 @@ export const ReviewScreen: React.FC<{ onExplain?: (card: Card) => void; onNaviga
         <div className="card text-center" style={{ width: '100%', padding: 'var(--space-2xl)' }}>
           <h2 className="text-3xl font-bold mb-xs">Nice!</h2>
           <div className="mb-md"><Stars count={stars} /></div>
-          <p className="text-secondary mb-xl">You completed today's lesson.</p>
-          <button className="btn btn-primary btn-full" onClick={onNavigateHome ?? (() => {})}>
+          <p className="text-secondary mb-xl">{practiceMode ? 'Session complete! Great practice!' : 'You completed today\'s lesson.'}</p>
+          <button className="btn btn-primary btn-full mb-sm" onClick={() => { setCompleted(false); setCurrentIndex(0); setShowAnswer(false); setScore(0); loadCards(); }}>
+            Review More
+          </button>
+          <button className="btn btn-secondary btn-full" onClick={onNavigateHome ?? (() => {})}>
             Back to Home
           </button>
         </div>
@@ -148,6 +161,12 @@ export const ReviewScreen: React.FC<{ onExplain?: (card: Card) => void; onNaviga
           <p className="text-secondary">
             Add some cards or come back later.
           </p>
+          <button
+            className="btn btn-secondary mt-md"
+            onClick={() => setPracticeMode(true)}
+          >
+            Practice Mode
+          </button>
         </div>
       </div>
     );
@@ -166,17 +185,27 @@ export const ReviewScreen: React.FC<{ onExplain?: (card: Card) => void; onNaviga
         </div>
       )}
       <div className="flex-between mb-xl">
-        <select 
-          value={direction} 
-          onChange={(e) => setDirection(e.target.value as ReviewDirection)}
-          style={{ width: 'auto', padding: 'var(--space-sm) var(--space-md)' }}
-        >
-          {DIRECTIONS.map(d => (
-            <option key={d.value} value={d.value}>{d.label}</option>
-          ))}
-        </select>
+        <div className="flex gap-sm items-center">
+          <select 
+            value={direction} 
+            onChange={(e) => setDirection(e.target.value as ReviewDirection)}
+            style={{ width: 'auto', padding: 'var(--space-sm) var(--space-md)' }}
+          >
+            {DIRECTIONS.map(d => (
+              <option key={d.value} value={d.value}>{d.label}</option>
+            ))}
+          </select>
+          <button
+            className={`btn ${practiceMode ? 'btn-accent' : 'btn-subtle'}`}
+            onClick={() => setPracticeMode(p => !p)}
+            style={{ padding: 'var(--space-sm) var(--space-md)', fontSize: '0.75rem' }}
+            title="Practice Mode: review all cards without schedule limits"
+          >
+            Practice
+          </button>
+        </div>
         <div className="progress">
-          {cards.length - currentIndex} left today
+          {cards.length - currentIndex} left{practiceMode ? ' (practice)' : ''}
         </div>
       </div>
 

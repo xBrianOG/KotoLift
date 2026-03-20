@@ -81,6 +81,47 @@ export async function getMixedReviewStates(
     .slice(0, limit);
 }
 
+export async function getPracticeReviewStates(
+  promptLang: Language,
+  answerLang: Language,
+  limit = 100
+): Promise<Array<ReviewState & { card: Card }>> {
+  const allStates = await db.reviewStates
+    .where('promptLang').equals(promptLang)
+    .and(rs => rs.answerLang === answerLang)
+    .toArray();
+
+  const shuffled = allStates.sort(() => Math.random() - 0.5).slice(0, limit);
+
+  const cardIds = [...new Set(shuffled.map(s => s.cardId))];
+  const cards = await db.cards.where('id').anyOf(cardIds).toArray();
+  const cardMap = new Map(cards.map(c => [c.id, c]));
+
+  return shuffled
+    .map(state => ({ ...state, card: cardMap.get(state.cardId)! }))
+    .filter(item => item.card);
+}
+
+export async function getMixedPracticeReviewStates(
+  directions: Array<{ promptLang: Language; answerLang: Language }>,
+  limit = 100
+): Promise<Array<ReviewState & { card: Card }>> {
+  const allStates = await db.reviewStates.toArray();
+  const filtered = allStates.filter(rs =>
+    directions.some(d => d.promptLang === rs.promptLang && d.answerLang === rs.answerLang)
+  );
+
+  const shuffled = filtered.sort(() => Math.random() - 0.5).slice(0, limit);
+
+  const cardIds = [...new Set(shuffled.map(s => s.cardId))];
+  const cards = await db.cards.where('id').anyOf(cardIds).toArray();
+  const cardMap = new Map(cards.map(c => [c.id, c]));
+
+  return shuffled
+    .map(state => ({ ...state, card: cardMap.get(state.cardId)! }))
+    .filter(item => item.card);
+}
+
 /** SM-2 spaced repetition rating */
 export async function rateReview(rating: Rating, reviewState: ReviewState): Promise<void> {
   const now = Date.now();

@@ -40,6 +40,8 @@ export function ExplainScreen({ initialSentence }: { initialSentence?: string } 
     } catch {
       // ignore
     }
+    // Clear the localStorage after reading
+    localStorage.removeItem('explain.initial');
   }, [initialSentence]);
 
   const handleSubmit = async (e: FormEvent) => {

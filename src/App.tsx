@@ -9,10 +9,12 @@ import { SettingsScreen } from "./components/SettingsScreen";
 import { VideoImportScreen } from "./components/VideoImportScreen";
 import { TranscriptViewerScreen } from "./components/TranscriptViewerScreen";
 import { VideoPlayerScreen } from "./components/VideoPlayerScreen";
+import { LanguagePicker } from "./components/LanguagePicker";
 import { AppShell } from "./components/AppShell";
 import { LoginScreen } from "./components/LoginScreen";
 import { isLoggedIn, clearAuth, devLogin, isDevMode } from "./services/auth";
 import { initSettings } from "./services/settings";
+import type { Card } from "./types";
 import type { TranscriptData } from "./components/TranscriptViewerScreen";
 import type { VideoPlayerData } from "./components/VideoPlayerScreen";
 import "./types";
@@ -24,6 +26,7 @@ function App() {
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
   const [transcriptData, setTranscriptData] = useState<TranscriptData | null>(null);
   const [videoPlayerData, setVideoPlayerData] = useState<VideoPlayerData | null>(null);
+  const [pendingExplainCard, setPendingExplainCard] = useState<Card | null>(null);
 
   const screen = history[history.length - 1];
 
@@ -79,6 +82,16 @@ function App() {
     navigate('videoPlayer');
   };
 
+  const handleExplainCard = (card: Card) => {
+    setPendingExplainCard(card);
+  };
+
+  const handleExplainSelect = (sentence: string, lang: string) => {
+    localStorage.setItem("explain.initial", JSON.stringify({ sentence, lang }));
+    setPendingExplainCard(null);
+    navigate('explain');
+  };
+
   if (authenticated === null) {
     return (
       <div className="screen" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
@@ -96,24 +109,14 @@ function App() {
       {screen === "home" && <HomeScreen onNavigate={navigate} />}
       {screen === "review" && (
         <ReviewScreen
-          onExplain={(card) => {
-            if (card?.jaText) {
-              localStorage.setItem("explain.initial", JSON.stringify({ sentence: card.jaText }));
-            }
-            navigate('explain')
-          }}
+          onExplain={handleExplainCard}
           onNavigateHome={() => setHistory(["home"])}
         />
       )}
       {screen === "drill" && <DrillScreen />}
       {screen === "cards" && (
         <CardListScreen
-          onExplain={(card) => {
-            if (card?.jaText) {
-              localStorage.setItem("explain.initial", JSON.stringify({ sentence: card.jaText }));
-            }
-            navigate('explain')
-          }}
+          onExplain={handleExplainCard}
         />
       )}
       {screen === "add" && <AddCardScreen onSave={() => navigate('cards')} onNavigateToVideoImport={() => navigate('videoImport')} />}
@@ -139,6 +142,14 @@ function App() {
       )}
       {screen === "explain" && <ExplainScreen />}
       {screen === "settings" && <SettingsScreen onBack={goBack} onSignOut={handleLogout} />}
+
+      {pendingExplainCard && (
+        <LanguagePicker
+          card={pendingExplainCard}
+          onSelect={handleExplainSelect}
+          onClose={() => setPendingExplainCard(null)}
+        />
+      )}
     </AppShell>
   );
 }
