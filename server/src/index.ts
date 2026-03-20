@@ -12,6 +12,7 @@ import authRouter from "./routes/auth.js";
 import usageRouter from "./routes/usage.js";
 import transcriptRouter from "./routes/transcript.js";
 import transcribeRouter from "./routes/transcribe.js";
+import explainRouter from "./routes/explain.js";
 import cors from "cors";
 import fs from "fs";
 
@@ -46,6 +47,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/usage", usageRouter);
 app.use("/api/transcript", transcriptRouter);
 app.use("/api/transcribe", transcribeRouter);
+app.use("/api/explain", explainRouter);
 
 app.get("/api/health", (req, res) => {
   res.json({ 
