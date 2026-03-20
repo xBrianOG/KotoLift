@@ -3,8 +3,8 @@ FROM node:20-alpine
 ARG CACHE_BUST=4
 WORKDIR /app
 
-# Install ffmpeg, python3 and pip for yt-dlp
-RUN apk add --no-cache ffmpeg python3 py3-pip && echo "rebuild-v3-$(date +%s)" > /tmp/build_marker
+# Install ffmpeg, python3, pip, and nodejs (required by yt-dlp for YouTube extraction)
+RUN apk add --no-cache ffmpeg python3 py3-pip nodejs && echo "rebuild-v4-$(date +%s)" > /tmp/build_marker
 RUN pip3 install --no-cache-dir --break-system-packages yt-dlp
 
 # Copy package files for root (frontend build)
