@@ -15,7 +15,7 @@ const DIRECTIONS: { value: ReviewDirection; label: string; from: Language; to: L
 ];
 
 export const ReviewScreen: React.FC<{ onExplain?: (card: Card) => void; onNavigateHome?: ()=>void }>= ({ onExplain, onNavigateHome }) => {
-  const [direction, setDirection] = useState<ReviewDirection>('ja-en');
+  const [direction, setDirection] = useState<ReviewDirection>((localStorage.getItem('review.direction') as ReviewDirection) || 'ja-en');
   const [practiceMode, setPracticeMode] = useState(false);
   const [cards, setCards] = useState<Array<ReviewState & { card: Card }>>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -148,7 +148,8 @@ export const ReviewScreen: React.FC<{ onExplain?: (card: Card) => void; onNaviga
         <div className="mb-xl">
           <select 
             value={direction} 
-            onChange={(e) => setDirection(e.target.value as ReviewDirection)}
+            onChange={(e) => { const val = e.target.value as ReviewDirection; setDirection(val); localStorage.setItem('review.direction', val); }}
+            style={{ width: 'auto', padding: 'var(--space-sm) var(--space-md)' }}
           >
             {DIRECTIONS.map(d => (
               <option key={d.value} value={d.value}>{d.label}</option>
@@ -186,11 +187,11 @@ export const ReviewScreen: React.FC<{ onExplain?: (card: Card) => void; onNaviga
       )}
       <div className="flex-between mb-xl">
         <div className="flex gap-sm items-center">
-          <select 
-            value={direction} 
-            onChange={(e) => setDirection(e.target.value as ReviewDirection)}
-            style={{ width: 'auto', padding: 'var(--space-sm) var(--space-md)' }}
-          >
+        <select 
+          value={direction} 
+          onChange={(e) => { const val = e.target.value as ReviewDirection; setDirection(val); localStorage.setItem('review.direction', val); }}
+          style={{ width: 'auto', padding: 'var(--space-sm) var(--space-md)' }}
+        >
             {DIRECTIONS.map(d => (
               <option key={d.value} value={d.value}>{d.label}</option>
             ))}
