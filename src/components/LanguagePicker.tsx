@@ -55,13 +55,11 @@ export function LanguagePicker({ card, onSelect, onClose }: LanguagePickerProps)
             <button
               key={opt.lang}
               onClick={() => onSelect(opt.text, opt.lang)}
-              className="btn btn-secondary btn-full text-left"
-              style={{ justifyContent: 'flex-start', textAlign: 'left', padding: 'var(--space-md)' }}
+              className="btn btn-secondary btn-full"
+              style={{ padding: 'var(--space-md)' }}
             >
-              <div className="flex-col gap-xs" style={{ width: '100%' }}>
-                <span className="lang-badge" style={{ alignSelf: 'flex-start', marginBottom: '4px' }}>{opt.lang.toUpperCase()}</span>
-                <span className="text-base" style={{ wordBreak: 'break-word', lineHeight: 1.4 }}>{opt.text}</span>
-              </div>
+              <span className="lang-badge mr-sm">{opt.lang.toUpperCase()}</span>
+              <span className="text-base">{opt.label}</span>
             </button>
           ))}
         </div>
