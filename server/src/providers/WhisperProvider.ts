@@ -4,8 +4,12 @@ import * as crypto from 'crypto';
 import * as os from 'os';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { writeFileSync, unlinkSync, existsSync } from 'fs';
+import { join } from 'path';
+import { tmpdir } from 'os';
 import FormData from 'form-data';
 import axios from 'axios';
+import { YouTubeTranscriptApi } from 'youtube-transcript-api-js';
 import type { VideoProvider, AnalyzeResult, Segment, ProviderError } from '../types.js';
 
 const execAsync = promisify(exec);
@@ -66,6 +70,20 @@ function cacheResult(url: string, lang: string | undefined, result: AnalyzeResul
   }
 }
 
+/** Write YOUTUBE_COOKIES env var (base64 Netscape cookies) to a temp file for yt-dlp */
+function getCookieFile(): string | null {
+  const cookiesBase64 = process.env.YOUTUBE_COOKIES;
+  if (!cookiesBase64) return null;
+  try {
+    const cookies = Buffer.from(cookiesBase64, 'base64').toString('utf-8');
+    const tmpFile = join(tmpdir(), 'yt_cookies.txt');
+    writeFileSync(tmpFile, cookies, 'utf-8');
+    return tmpFile;
+  } catch {
+    return null;
+  }
+}
+
 export class WhisperProvider implements VideoProvider {
   name = 'Whisper';
 
@@ -93,79 +111,160 @@ export class WhisperProvider implements VideoProvider {
       return cached;
     }
 
+    // --- Step 1: Try captions via youtube-transcript-api-js (fast, no yt-dlp needed) ---
+    try {
+      console.log(`[Whisper] Trying YouTube captions for ${videoId}...`);
+      const result = await this.extractViaCaptions(videoId, lang);
+      console.log(`[Whisper] Got ${result.segments.length} segments via captions`);
+      cacheResult(url, lang, result);
+      return result;
+    } catch (captionErr: any) {
+      console.log(`[Whisper] Captions not available (${captionErr.message}), falling back to Whisper AI...`);
+    }
+
+    // --- Step 2: Fall back to yt-dlp + Whisper ---
     if (!OPENAI_API_KEY) {
-      const error = new Error('OpenAI API key not configured') as ProviderError;
+      const error = new Error('No captions available for this video and OpenAI API key is not configured for AI transcription.') as ProviderError;
       error.provider = this.name;
       error.code = 'OPENAI_KEY_MISSING';
       throw error;
     }
 
-    console.log(`[Whisper] Processing video: ${videoId}`);
-
-    // Get video title
-    const title = `Video ${videoId}`;
-
-    console.log(`[Whisper] Downloading audio...`);
+    console.log(`[Whisper] Processing video via AI transcription: ${videoId}`);
 
     const tempFile = path.join(os.tmpdir(), `whisper-${Date.now()}.m4a`);
+    let cookieFile: string | null = null;
 
     try {
-      await this.downloadAudio(videoId, tempFile);
+      cookieFile = getCookieFile();
+      await this.downloadAudio(videoId, tempFile, cookieFile);
       console.log(`[Whisper] Transcribing audio...`);
-      
+
       const { segments, languageDetected } = await this.transcribeAudio(tempFile, lang);
-      
-      const result: AnalyzeResult = { 
-        title, 
+
+      const result: AnalyzeResult = {
+        title: `Video ${videoId}`,
         segments,
         languageDetected
       };
-      
+
       cacheResult(url, lang, result);
-      
       return result;
     } finally {
       if (fs.existsSync(tempFile)) {
         fs.unlinkSync(tempFile);
       }
-    }
-  }
-
-  private async downloadAudio(videoId: string, outputPath: string): Promise<void> {
-    const methods = [
-      `yt-dlp -f "bestaudio/best" -o "${outputPath}" "https://www.youtube.com/watch?v=${videoId}"`,
-      `yt-dlp --extractor-args "youtube:player-client=ios" -f "bestaudio" -o "${outputPath}" "https://www.youtube.com/watch?v=${videoId}"`,
-    ];
-
-    for (let i = 0; i < methods.length; i++) {
-      try {
-        console.log(`[Whisper] Trying download method ${i + 1}...`);
-        await execAsync(methods[i]);
-        console.log(`[Whisper] Download method ${i + 1} succeeded`);
-        return;
-      } catch (err: any) {
-        console.log(`[Whisper] Download method ${i + 1} failed: ${err.message}`);
-        if (i === methods.length - 1) {
-          const error = new Error('Failed to download video audio.') as ProviderError;
-          error.provider = 'Whisper';
-          error.code = 'AUDIO_DOWNLOAD_FAILED';
-          throw error;
-        }
+      if (cookieFile && existsSync(cookieFile)) {
+        try { unlinkSync(cookieFile); } catch { /* ignore */ }
       }
     }
   }
 
+  private async extractViaCaptions(videoId: string, lang?: string): Promise<AnalyzeResult> {
+    const cookiesBase64 = process.env.YOUTUBE_COOKIES;
+    let cookieFile: string | null = null;
+
+    try {
+      if (cookiesBase64) {
+        const cookies = Buffer.from(cookiesBase64, 'base64').toString('utf-8');
+        cookieFile = join(tmpdir(), 'yt_cookies_caption.txt');
+        writeFileSync(cookieFile, cookies, 'utf-8');
+      }
+
+      const api = new YouTubeTranscriptApi(
+        undefined,
+        undefined,
+        cookieFile ? { cookiePath: cookieFile } : undefined
+      );
+
+      // Try requested lang first, then English, then any available
+      const langsToTry = lang ? [lang, 'en'] : ['en', 'ja', 'es'];
+      let lastError: any;
+
+      for (const tryLang of [...new Set(langsToTry)]) {
+        try {
+          const result = await api.fetch(videoId, [tryLang]);
+          const segments: Segment[] = result.snippets.map((snippet: any, i: number) => ({
+            id: `seg-${i + 1}`,
+            startMs: Math.round(snippet.start * 1000),
+            endMs: Math.round((snippet.start + snippet.duration) * 1000),
+            text: snippet.text
+              .replace(/&amp;/g, '&')
+              .replace(/&lt;/g, '<')
+              .replace(/&gt;/g, '>')
+              .replace(/&quot;/g, '"')
+              .replace(/&#39;/g, "'")
+              .replace(/&apos;/g, "'")
+              .trim()
+          })).filter((s: Segment) => s.text);
+
+          if (segments.length === 0) throw new Error('Empty captions');
+
+          return {
+            title: `Video ${videoId}`,
+            segments,
+            languageDetected: tryLang
+          };
+        } catch (e) {
+          lastError = e;
+        }
+      }
+
+      throw lastError || new Error('No captions found');
+    } finally {
+      if (cookieFile && existsSync(cookieFile)) {
+        try { unlinkSync(cookieFile); } catch { /* ignore */ }
+      }
+    }
+  }
+
+  private async downloadAudio(videoId: string, outputPath: string, cookieFile: string | null): Promise<void> {
+    const cookieArgs = cookieFile ? `--cookies "${cookieFile}"` : '';
+
+    const methods = [
+      // iOS client: avoids JS runtime requirement and often bypasses bot checks
+      `yt-dlp --extractor-args "youtube:player-client=ios" -f "bestaudio/best" ${cookieArgs} -o "${outputPath}" "https://www.youtube.com/watch?v=${videoId}" --no-playlist`,
+      // Android client fallback
+      `yt-dlp --extractor-args "youtube:player-client=android" -f "bestaudio/best" ${cookieArgs} -o "${outputPath}" "https://www.youtube.com/watch?v=${videoId}" --no-playlist`,
+      // mweb client as last resort
+      `yt-dlp --extractor-args "youtube:player-client=mweb" -f "bestaudio/best" ${cookieArgs} -o "${outputPath}" "https://www.youtube.com/watch?v=${videoId}" --no-playlist`,
+    ];
+
+    let lastError: any;
+    for (let i = 0; i < methods.length; i++) {
+      try {
+        console.log(`[Whisper] Trying yt-dlp method ${i + 1}/${methods.length}...`);
+        await execAsync(methods[i]);
+        if (fs.existsSync(outputPath)) {
+          console.log(`[Whisper] Download succeeded with method ${i + 1}`);
+          return;
+        }
+      } catch (err: any) {
+        lastError = err;
+        console.log(`[Whisper] yt-dlp method ${i + 1} failed: ${err.message?.split('\n')[0]}`);
+      }
+    }
+
+    const error = new Error(
+      'Could not download this video. YouTube may be blocking server-side downloads. ' +
+      'Try a video with captions enabled, or set the YOUTUBE_COOKIES environment variable.'
+    ) as ProviderError;
+    error.provider = 'Whisper';
+    error.code = 'AUDIO_DOWNLOAD_FAILED';
+    throw error;
+  }
+
   private async transcribeAudio(audioPath: string, lang?: string): Promise<{ segments: Segment[], languageDetected?: string }> {
     const form = new FormData();
-    
+
     form.append('file', fs.createReadStream(audioPath), {
       filename: 'audio.m4a',
       contentType: 'audio/mp4'
     });
-    
+
     form.append('model', TRANSCRIBE_MODEL);
     form.append('response_format', 'verbose_json');
-    
+
     if (lang) {
       form.append('language', this.mapLanguageCode(lang));
     }
@@ -184,7 +283,7 @@ export class WhisperProvider implements VideoProvider {
     );
 
     const data = response.data as WhisperResponse;
-    
+
     return {
       segments: this.parseWhisperResponse(data),
       languageDetected: data.language
@@ -193,11 +292,7 @@ export class WhisperProvider implements VideoProvider {
 
   private mapLanguageCode(lang: string | undefined): string {
     if (!lang || lang === 'auto') return '';
-    const langMap: Record<string, string> = {
-      'ja': 'ja',
-      'en': 'en',
-      'es': 'es'
-    };
+    const langMap: Record<string, string> = { 'ja': 'ja', 'en': 'en', 'es': 'es' };
     return langMap[lang] || '';
   }
 
@@ -214,7 +309,7 @@ export class WhisperProvider implements VideoProvider {
     if (data.text) {
       const sentences = this.splitIntoSentences(data.text);
       const avgMsPerSentence = Math.round(60000 / sentences.length);
-      
+
       return sentences.map((text, index) => ({
         id: `seg-${index + 1}`,
         startMs: index * avgMsPerSentence,
