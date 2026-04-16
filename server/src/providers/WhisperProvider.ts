@@ -219,35 +219,49 @@ export class WhisperProvider implements VideoProvider {
   }
 
   private async downloadAudio(videoId: string, outputPath: string, cookieFile: string | null): Promise<void> {
-    const cookieArgs = cookieFile ? `--cookies "${cookieFile}"` : '';
+    const url = `https://www.youtube.com/watch?v=${videoId}`;
+    const base = ['-f', 'bestaudio/best', '-o', outputPath, url, '--no-playlist'];
 
-    const methods = [
-      // iOS client: avoids JS runtime requirement and often bypasses bot checks
-      `yt-dlp --extractor-args "youtube:player-client=ios" -f "bestaudio/best" ${cookieArgs} -o "${outputPath}" "https://www.youtube.com/watch?v=${videoId}" --no-playlist`,
-      // Android client fallback
-      `yt-dlp --extractor-args "youtube:player-client=android" -f "bestaudio/best" ${cookieArgs} -o "${outputPath}" "https://www.youtube.com/watch?v=${videoId}" --no-playlist`,
-      // mweb client as last resort
-      `yt-dlp --extractor-args "youtube:player-client=mweb" -f "bestaudio/best" ${cookieArgs} -o "${outputPath}" "https://www.youtube.com/watch?v=${videoId}" --no-playlist`,
-    ];
+    const tryDownload = (args: string[]): Promise<void> =>
+      new Promise((resolve, reject) => {
+        const proc = execAsync(['yt-dlp', ...args].join(' '));
+        proc.then(() => {
+          if (fs.existsSync(outputPath)) resolve();
+          else reject(new Error('Output file not found'));
+        }).catch(reject);
+      });
 
-    let lastError: any;
-    for (let i = 0; i < methods.length; i++) {
+    // Strategy 1: iOS client without cookies (bypasses bot detection natively, rejects cookies)
+    try {
+      console.log(`[Whisper] Trying iOS client (no cookies)...`);
+      await execAsync(`yt-dlp --extractor-args "youtube:player-client=ios" ${base.join(' ')}`);
+      if (fs.existsSync(outputPath)) return;
+    } catch (e: any) {
+      console.log(`[Whisper] iOS failed: ${e.message?.split('\n')[0]}`);
+    }
+
+    // Strategy 2: Android client with cookies
+    if (cookieFile) {
       try {
-        console.log(`[Whisper] Trying yt-dlp method ${i + 1}/${methods.length}...`);
-        await execAsync(methods[i]);
-        if (fs.existsSync(outputPath)) {
-          console.log(`[Whisper] Download succeeded with method ${i + 1}`);
-          return;
-        }
-      } catch (err: any) {
-        lastError = err;
-        console.log(`[Whisper] yt-dlp method ${i + 1} failed: ${err.message?.split('\n')[0]}`);
+        console.log(`[Whisper] Trying Android client + cookies...`);
+        await execAsync(`yt-dlp --extractor-args "youtube:player-client=android" --cookies "${cookieFile}" ${base.join(' ')}`);
+        if (fs.existsSync(outputPath)) return;
+      } catch (e: any) {
+        console.log(`[Whisper] Android failed: ${e.message?.split('\n')[0]}`);
+      }
+
+      // Strategy 3: Web client with cookies
+      try {
+        console.log(`[Whisper] Trying web client + cookies...`);
+        await execAsync(`yt-dlp --extractor-args "youtube:player-client=web" --cookies "${cookieFile}" ${base.join(' ')}`);
+        if (fs.existsSync(outputPath)) return;
+      } catch (e: any) {
+        console.log(`[Whisper] Web failed: ${e.message?.split('\n')[0]}`);
       }
     }
 
     const error = new Error(
-      'Could not download this video. YouTube may be blocking server-side downloads. ' +
-      'Try a video with captions enabled, or set the YOUTUBE_COOKIES environment variable.'
+      'Could not download this video. Try a video with captions, or refresh your YouTube cookies.'
     ) as ProviderError;
     error.provider = 'Whisper';
     error.code = 'AUDIO_DOWNLOAD_FAILED';

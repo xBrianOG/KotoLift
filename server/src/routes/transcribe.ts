@@ -58,37 +58,55 @@ async function tryYouTubeCaptions(videoId: string, lang: string): Promise<any[] 
   return null;
 }
 
-async function downloadAudio(videoId: string, cookieFile: string | null): Promise<string> {
+async function runYtDlp(args: string[]): Promise<string> {
   return new Promise((resolve, reject) => {
-    const tmpDir = tmpdir();
-    const outputPath = join(tmpDir, `audio_${videoId}_${Date.now()}.mp3`);
-
-    const cookieArgs = cookieFile ? ['--cookies', cookieFile] : [];
-    const clientArgs = ['--extractor-args', 'youtube:player-client=ios'];
-
-    const args = [
-      '-x', '--audio-format', 'mp3', '--audio-quality', '0',
-      ...clientArgs,
-      ...cookieArgs,
-      '-o', outputPath,
-      `https://www.youtube.com/watch?v=${videoId}`,
-      '--no-playlist'
-    ];
-
-    console.log(`[Transcribe] Running yt-dlp${cookieFile ? ' with cookies' : ''}`);
     const ytdlp = spawn('yt-dlp', args);
-
     let stderr = '';
     ytdlp.stderr.on('data', (data) => { stderr += data.toString(); });
     ytdlp.on('close', (code) => {
-      if (code === 0 && existsSync(outputPath)) {
-        resolve(outputPath);
-      } else {
-        reject(new Error(`yt-dlp failed: ${stderr}`));
-      }
+      if (code === 0) resolve(stderr);
+      else reject(new Error(stderr));
     });
     ytdlp.on('error', (err) => reject(err));
   });
+}
+
+async function downloadAudio(videoId: string, cookieFile: string | null): Promise<string> {
+  const tmpDir = tmpdir();
+  const outputPath = join(tmpDir, `audio_${videoId}_${Date.now()}.mp3`);
+  const url = `https://www.youtube.com/watch?v=${videoId}`;
+  const base = ['-x', '--audio-format', 'mp3', '--audio-quality', '0', '-o', outputPath, url, '--no-playlist'];
+
+  // Strategy 1: iOS client without cookies (iOS bypasses bot detection natively, but rejects cookies)
+  try {
+    console.log(`[Transcribe] Trying yt-dlp with iOS client (no cookies)...`);
+    await runYtDlp([...base, '--extractor-args', 'youtube:player-client=ios']);
+    if (existsSync(outputPath)) return outputPath;
+  } catch (e: any) {
+    console.log(`[Transcribe] iOS client failed: ${e.message?.split('\n')[0]}`);
+  }
+
+  // Strategy 2: Android client with cookies
+  if (cookieFile) {
+    try {
+      console.log(`[Transcribe] Trying yt-dlp with Android client + cookies...`);
+      await runYtDlp([...base, '--extractor-args', 'youtube:player-client=android', '--cookies', cookieFile]);
+      if (existsSync(outputPath)) return outputPath;
+    } catch (e: any) {
+      console.log(`[Transcribe] Android client failed: ${e.message?.split('\n')[0]}`);
+    }
+
+    // Strategy 3: Web client with cookies
+    try {
+      console.log(`[Transcribe] Trying yt-dlp with web client + cookies...`);
+      await runYtDlp([...base, '--extractor-args', 'youtube:player-client=web', '--cookies', cookieFile]);
+      if (existsSync(outputPath)) return outputPath;
+    } catch (e: any) {
+      console.log(`[Transcribe] Web client failed: ${e.message?.split('\n')[0]}`);
+    }
+  }
+
+  throw new Error('Could not download video audio. YouTube may be blocking this video. Try a different video or refresh your YouTube cookies.');
 }
 
 router.get('/:videoId', async (req, res) => {
