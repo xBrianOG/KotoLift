@@ -1,26 +1,82 @@
 import { Router } from 'express';
 import { spawn } from 'child_process';
-import { createReadStream, unlinkSync, existsSync, mkdirSync } from 'fs';
+import { createReadStream, unlinkSync, existsSync, mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
-import { Readable } from 'stream';
+import { tmpdir } from 'os';
 import OpenAI from 'openai';
+import { YouTubeTranscriptApi } from 'youtube-transcript-api-js';
 
 const router = Router();
 
-async function downloadAudio(videoId: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const tmpDir = '/tmp';
-    if (!existsSync(tmpDir)) mkdirSync(tmpDir, { recursive: true });
-    const outputPath = join(tmpDir, `audio_${videoId}.mp3`);
+function getCookieFile(): string | null {
+  const cookiesBase64 = process.env.YOUTUBE_COOKIES;
+  if (!cookiesBase64) return null;
+  try {
+    const cookies = Buffer.from(cookiesBase64, 'base64').toString('utf-8');
+    const tmpFile = join(tmpdir(), 'yt_cookies_transcribe.txt');
+    writeFileSync(tmpFile, cookies, 'utf-8');
+    return tmpFile;
+  } catch {
+    return null;
+  }
+}
 
-    const ytdlp = spawn('yt-dlp', [
-      '-x',
-      '--audio-format', 'mp3',
-      '--audio-quality', '0',
+async function tryYouTubeCaptions(videoId: string, lang: string): Promise<any[] | null> {
+  try {
+    const cookiesBase64 = process.env.YOUTUBE_COOKIES;
+    let cookieFile: string | null = null;
+    if (cookiesBase64) {
+      const cookies = Buffer.from(cookiesBase64, 'base64').toString('utf-8');
+      cookieFile = join(tmpdir(), 'yt_cookies_caption2.txt');
+      writeFileSync(cookieFile, cookies, 'utf-8');
+    }
+
+    const api = new YouTubeTranscriptApi(
+      undefined,
+      undefined,
+      cookieFile ? { cookiePath: cookieFile } : undefined
+    );
+
+    const langsToTry = [lang, 'en', 'ja', 'es'];
+    for (const tryLang of [...new Set(langsToTry)]) {
+      try {
+        const result = await api.fetch(videoId, [tryLang]);
+        const segments = result.snippets
+          .map((s: any, i: number) => ({
+            id: `seg-${i + 1}`,
+            startMs: Math.round(s.start * 1000),
+            endMs: Math.round((s.start + s.duration) * 1000),
+            text: s.text
+              .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+              .replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim()
+          }))
+          .filter((s: any) => s.text);
+        if (segments.length > 0) return segments;
+      } catch { /* try next lang */ }
+    }
+  } catch { /* captions not available */ }
+  return null;
+}
+
+async function downloadAudio(videoId: string, cookieFile: string | null): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const tmpDir = tmpdir();
+    const outputPath = join(tmpDir, `audio_${videoId}_${Date.now()}.mp3`);
+
+    const cookieArgs = cookieFile ? ['--cookies', cookieFile] : [];
+    const clientArgs = ['--extractor-args', 'youtube:player-client=ios'];
+
+    const args = [
+      '-x', '--audio-format', 'mp3', '--audio-quality', '0',
+      ...clientArgs,
+      ...cookieArgs,
       '-o', outputPath,
       `https://www.youtube.com/watch?v=${videoId}`,
       '--no-playlist'
-    ]);
+    ];
+
+    console.log(`[Transcribe] Running yt-dlp${cookieFile ? ' with cookies' : ''}`);
+    const ytdlp = spawn('yt-dlp', args);
 
     let stderr = '';
     ytdlp.stderr.on('data', (data) => { stderr += data.toString(); });
@@ -33,21 +89,6 @@ async function downloadAudio(videoId: string): Promise<string> {
     });
     ytdlp.on('error', (err) => reject(err));
   });
-}
-
-function msToTimestamp(ms: number): string {
-  const totalSeconds = Math.floor(ms / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-  const millis = ms % 1000;
-  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(millis).padStart(3, '0')}`;
-}
-
-function generateSRT(segments: Array<{ start: number; end: number; text: string }>): string {
-  return segments.map((seg, i) => {
-    return `${i + 1}\n${msToTimestamp(seg.start)} --> ${msToTimestamp(seg.end)}\n${seg.text}\n`;
-  }).join('\n');
 }
 
 router.get('/:videoId', async (req, res) => {
@@ -63,17 +104,32 @@ router.get('/:videoId', async (req, res) => {
     return res.status(500).json({ error: 'OpenAI API key not configured' });
   }
 
+  // Step 1: Try captions first (fast, free, no download needed)
+  console.log(`[Transcribe] Trying captions for ${videoId}`);
+  const captionSegments = await tryYouTubeCaptions(videoId, lang);
+  if (captionSegments) {
+    console.log(`[Transcribe] Got ${captionSegments.length} segments via captions`);
+    return res.json({
+      title: `Video ${videoId}`,
+      segments: captionSegments,
+      videoId,
+      method: 'YouTube Captions'
+    });
+  }
+
+  // Step 2: Fall back to yt-dlp + Whisper
+  console.log(`[Transcribe] No captions, downloading audio for ${videoId}`);
   let audioPath: string | null = null;
+  let cookieFile: string | null = null;
+
   try {
-    console.log(`[Transcribe] Downloading audio for ${videoId}`);
-    
-    audioPath = await downloadAudio(videoId);
+    cookieFile = getCookieFile();
+    audioPath = await downloadAudio(videoId, cookieFile);
     console.log(`[Transcribe] Audio downloaded, sending to Whisper...`);
 
     const openai = new OpenAI({ apiKey });
-    
     const fileStream = createReadStream(audioPath) as unknown as File;
-    
+
     const whisperResponse = await openai.audio.transcriptions.create({
       file: fileStream,
       model: 'whisper-1',
@@ -103,6 +159,9 @@ router.get('/:videoId', async (req, res) => {
   } finally {
     if (audioPath && existsSync(audioPath)) {
       try { unlinkSync(audioPath); } catch { /* ignore */ }
+    }
+    if (cookieFile && existsSync(cookieFile)) {
+      try { unlinkSync(cookieFile); } catch { /* ignore */ }
     }
   }
 });
