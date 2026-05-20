@@ -221,8 +221,11 @@ export async function verifyEmailUser(email: string, password: string): Promise<
         .eq('email', cleanEmail)
         .single();
 
-      console.log('[Auth] Supabase result:', { error, hasData: !!data });
+      console.log('[Auth] Supabase result:', { error, data, cleanEmail });
 
+      // Handle case where .single() returns "no rows" error vs actual error
+      const isNotFoundError = error?.message?.includes('No rows');
+      
       if (!error && data) {
         const valid = await bcrypt.compare(password.trim(), data.password_hash);
         if (!valid) {
