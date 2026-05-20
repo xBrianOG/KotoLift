@@ -213,12 +213,15 @@ export async function verifyEmailUser(email: string, password: string): Promise<
   if (isSupabaseConfigured()) {
     try {
       const client = getSupabaseClient();
+      console.log('[Auth] Querying Supabase for:', cleanEmail);
 
       const { data, error } = await client
         .from('email_users')
         .select('id, email, password_hash, name, created_at')
         .eq('email', cleanEmail)
         .single();
+
+      console.log('[Auth] Supabase result:', { error, hasData: !!data });
 
       if (!error && data) {
         const valid = await bcrypt.compare(password.trim(), data.password_hash);
