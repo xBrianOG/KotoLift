@@ -1,6 +1,6 @@
 import { getAuthHeaders } from "./auth";
 
-const API_BASE = import.meta.env.VITE_API_BASE ?? "https://sumi.sumidev.com";
+const API_BASE = import.meta.env.VITE_API_BASE ?? "https://kotolift.onrender.com";
 
 export interface VideoSegment {
   id: string;

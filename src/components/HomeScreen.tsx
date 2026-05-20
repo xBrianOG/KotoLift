@@ -53,21 +53,45 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
         </button>
       </div>
 
-      {/* Secondary Actions */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--space-md)' }}>
-        <div className="card card-clickable text-center" style={{ padding: 'var(--space-lg)' }} onClick={() => onNavigate('cards')}>
-          <div className="mb-xs" style={{ fontSize: 28 }}>📚</div>
-          <div className="font-semibold text-sm text-primary">My Cards</div>
-        </div>
+      {/* Learn Section */}
+      <div className="mb-lg">
+        <h2 className="text-lg font-semibold mb-md">Learn</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--space-md)' }}>
+          <div className="card card-clickable text-center" style={{ padding: 'var(--space-lg)' }} onClick={() => onNavigate('assessment')}>
+            <div className="mb-xs" style={{ fontSize: 28 }}>📝</div>
+            <div className="font-semibold text-sm text-primary">Assess</div>
+          </div>
 
-        <div className="card card-clickable text-center" style={{ padding: 'var(--space-lg)' }} onClick={() => onNavigate('add')}>
-          <div className="mb-xs" style={{ fontSize: 28 }}>➕</div>
-          <div className="font-semibold text-sm text-primary">Add New</div>
-        </div>
+          <div className="card card-clickable text-center" style={{ padding: 'var(--space-lg)' }} onClick={() => onNavigate('lessons')}>
+            <div className="mb-xs" style={{ fontSize: 28 }}>📖</div>
+            <div className="font-semibold text-sm text-primary">Lessons</div>
+          </div>
 
-        <div className="card card-clickable text-center" style={{ padding: 'var(--space-lg)' }} onClick={() => onNavigate('videoImport')}>
-          <div className="mb-xs" style={{ fontSize: 28 }}>🎬</div>
-          <div className="font-semibold text-sm text-primary">Import</div>
+          <div className="card card-clickable text-center" style={{ padding: 'var(--space-lg)' }} onClick={() => onNavigate('vocabulary')}>
+            <div className="mb-xs" style={{ fontSize: 28 }}>💬</div>
+            <div className="font-semibold text-sm text-primary">Vocabulary</div>
+          </div>
+        </div>
+      </div>
+
+      {/* My Cards Section */}
+      <div className="mb-lg">
+        <h2 className="text-lg font-semibold mb-md">My Cards</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--space-md)' }}>
+          <div className="card card-clickable text-center" style={{ padding: 'var(--space-lg)' }} onClick={() => onNavigate('cards')}>
+            <div className="mb-xs" style={{ fontSize: 28 }}>📚</div>
+            <div className="font-semibold text-sm text-primary">My Cards</div>
+          </div>
+
+          <div className="card card-clickable text-center" style={{ padding: 'var(--space-lg)' }} onClick={() => onNavigate('add')}>
+            <div className="mb-xs" style={{ fontSize: 28 }}>➕</div>
+            <div className="font-semibold text-sm text-primary">Add New</div>
+          </div>
+
+          <div className="card card-clickable text-center" style={{ padding: 'var(--space-lg)' }} onClick={() => onNavigate('videoImport')}>
+            <div className="mb-xs" style={{ fontSize: 28 }}>🎬</div>
+            <div className="font-semibold text-sm text-primary">Import</div>
+          </div>
         </div>
       </div>
     </div>

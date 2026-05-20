@@ -13,6 +13,10 @@ import usageRouter from "./routes/usage.js";
 import transcriptRouter from "./routes/transcript.js";
 import transcribeRouter from "./routes/transcribe.js";
 import explainRouter from "./routes/explain.js";
+import vocabularyRouter from "./routes/vocabulary.js";
+import lessonsRouter from "./routes/lessons.js";
+import conjugationsRouter from "./routes/conjugations.js";
+import assessmentRouter from "./routes/assessment.js";
 import cors from "cors";
 import fs from "fs";
 
@@ -49,6 +53,10 @@ app.use("/api/usage", usageRouter);
 app.use("/api/transcript", transcriptRouter);
 app.use("/api/transcribe", transcribeRouter);
 app.use("/api/explain", explainRouter);
+app.use("/api/vocabulary", vocabularyRouter);
+app.use("/api/lessons", lessonsRouter);
+app.use("/api/conjugations", conjugationsRouter);
+app.use("/api/assessment", assessmentRouter);
 
 app.get("/api/health", (req, res) => {
   res.json({ 
