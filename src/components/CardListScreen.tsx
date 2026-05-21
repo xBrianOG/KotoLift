@@ -172,10 +172,10 @@ export function CardListScreen({ onExplain }: { onExplain?: (card: Card) => void
               { key: 'all', label: 'All Categories' },
               ...tags.map(c => ({ key: c, label: c }))
             ]}
-            selected={filterCategory}
+            selected={selectedTags}
             onChange={(newVals) => {
-              setFilterCategory(newVals);
-              // Trigger card reload with new filter
+              const withoutAll = newVals.filter(v => v !== 'all');
+              setSelectedTags(withoutAll.length > 0 ? withoutAll : []);
               loadCards();
             }}
             multiple={true}
