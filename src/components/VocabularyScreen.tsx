@@ -150,6 +150,7 @@ export function VocabularyScreen({ onBack }: VocabularyScreenProps) {
 
   useEffect(() => {
     fetchCategories();
+    fetchVocabulary(true);
   }, []);
 
   useEffect(() => {
@@ -266,8 +267,8 @@ export function VocabularyScreen({ onBack }: VocabularyScreenProps) {
     fetchVocabulary(true);
   };
 
-  // Build filter options - ensure all categories are always shown
-  const allCategoryNames = ['Business', 'Travel', 'Food', 'Technology', 'Sports', 'Movies', 'Music', 'Shopping'];
+  // Build filter options - get from vocabulary in DB
+  const vocabularyCategories = [...new Set(vocabulary.flatMap((w: VocabularyWord) => w.categories || []))];
   const levelOptions = [
     { key: 'all', label: 'All Levels' },
     ...LEVELS.filter(l => l.key !== 'all').map(l => ({ key: l.key, label: l.label }))
@@ -275,7 +276,7 @@ export function VocabularyScreen({ onBack }: VocabularyScreenProps) {
   
   const categoryOptions = [
     { key: 'all', label: 'All Categories' },
-    ...allCategoryNames.map(name => ({ key: name, label: name }))
+    ...vocabularyCategories.map((name: string) => ({ key: name, label: name }))
   ];
 
   if (selectedWord) {

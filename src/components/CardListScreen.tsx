@@ -164,16 +164,20 @@ export function CardListScreen({ onExplain }: { onExplain?: (card: Card) => void
           style={{ width: '100%' }}
         />
 
-        {/* Dropdown Filters */}
+{/* Dropdown Filters */}
         <div className="flex gap-sm mb-md" style={{ flexWrap: 'wrap' }}>
           <Dropdown
             label="Category"
             options={[
               { key: 'all', label: 'All Categories' },
-              ...['Business', 'Travel', 'Food', 'Technology', 'Sports', 'Movies', 'Music', 'Shopping'].map(c => ({ key: c, label: c }))
+              ...tags.map(c => ({ key: c, label: c }))
             ]}
             selected={filterCategory}
-            onChange={setFilterCategory}
+            onChange={(newVals) => {
+              setFilterCategory(newVals);
+              // Trigger card reload with new filter
+              loadCards();
+            }}
             multiple={true}
           />
         </div>
