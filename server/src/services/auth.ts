@@ -209,6 +209,7 @@ export async function verifyEmailUser(email: string, password: string): Promise<
   const cleanEmail = email.trim().toLowerCase();
 
   console.log(`[Auth] Verifying user: ${cleanEmail} (via ${isSupabaseConfigured() ? 'Supabase' : 'file'})`);
+  console.log(`[Auth] Supabase URL set: ${!!SUPABASE_URL}, Service key set: ${!!SUPABASE_SERVICE_KEY}`);
 
   if (isSupabaseConfigured()) {
     try {
@@ -221,7 +222,7 @@ export async function verifyEmailUser(email: string, password: string): Promise<
         .eq('email', cleanEmail)
         .single();
 
-      console.log('[Auth] Supabase result:', { error, data, cleanEmail });
+      console.log('[Auth] Supabase result:', { error, data: data ? 'has data' : 'no data', cleanEmail });
 
       // Handle case where .single() returns "no rows" error vs actual error
       const isNotFoundError = error?.message?.includes('No rows');
