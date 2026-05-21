@@ -170,7 +170,7 @@ export function CardListScreen({ onExplain }: { onExplain?: (card: Card) => void
             label="Category"
             options={[
               { key: 'all', label: 'All Categories' },
-              ...categories.map(c => ({ key: c.name, label: c.name }))
+              ...['Business', 'Travel', 'Food', 'Technology', 'Sports', 'Movies', 'Music', 'Shopping'].map(c => ({ key: c, label: c }))
             ]}
             selected={filterCategory}
             onChange={setFilterCategory}

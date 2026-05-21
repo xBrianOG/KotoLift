@@ -166,7 +166,18 @@ export function VocabularyScreen({ onBack }: VocabularyScreenProps) {
     try {
       const res = await fetch(`${API_BASE}/api/categories`, { headers: { ...getAuthHeaders() } });
       const data = await res.json();
-      setCategories(data.categories || []);
+      // Always preserve existing categories and add new ones
+      const newCats = data.categories || [];
+      setCategories(prev => {
+        const existingNames = prev.map(c => c.name);
+        const merged = [...prev];
+        newCats.forEach((c: any) => {
+          if (!existingNames.includes(c.name)) {
+            merged.push(c);
+          }
+        });
+        return merged;
+      });
     } catch (err) {
       console.error('Failed to load categories');
     }
@@ -255,7 +266,8 @@ export function VocabularyScreen({ onBack }: VocabularyScreenProps) {
     fetchVocabulary(true);
   };
 
-  // Build filter options
+  // Build filter options - ensure all categories are always shown
+  const allCategoryNames = ['Business', 'Travel', 'Food', 'Technology', 'Sports', 'Movies', 'Music', 'Shopping'];
   const levelOptions = [
     { key: 'all', label: 'All Levels' },
     ...LEVELS.filter(l => l.key !== 'all').map(l => ({ key: l.key, label: l.label }))
@@ -263,7 +275,7 @@ export function VocabularyScreen({ onBack }: VocabularyScreenProps) {
   
   const categoryOptions = [
     { key: 'all', label: 'All Categories' },
-    ...categories.map(c => ({ key: c.name, label: c.name, color: c.color }))
+    ...allCategoryNames.map(name => ({ key: name, label: name }))
   ];
 
   if (selectedWord) {
