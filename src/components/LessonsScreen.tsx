@@ -192,19 +192,23 @@ function LessonDetail({ lesson, onBack }: LessonDetailProps) {
 
       <div className="card mb-lg" style={{ background: 'var(--bg-elevated)' }}>
         <h2 className="font-semibold mb-md">Lesson Content</h2>
-        <div className="text-secondary" style={{ lineHeight: 1.8 }}>
-          {lesson.content ? (
-            typeof lesson.content === 'string' ? (
-              <p>{lesson.content}</p>
-            ) : (
-              <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>
-                {JSON.stringify(lesson.content, null, 2)}
-              </pre>
-            )
+        {lesson.content && lesson.content.type === 'vocabulary' && lesson.content.words ? (
+          <div className="vocab-grid">
+            {lesson.content.words.map((word: string, idx: number) => (
+              <span key={idx} className="chip" style={{ margin: '4px' }}>{word}</span>
+            ))}
+          </div>
+        ) : lesson.content ? (
+          typeof lesson.content === 'string' ? (
+            <p>{lesson.content}</p>
           ) : (
-            <p>Content coming soon!</p>
-          )}
-        </div>
+            <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>
+              {JSON.stringify(lesson.content, null, 2)}
+            </pre>
+          )
+        ) : (
+          <p>Content coming soon!</p>
+        )}
       </div>
 
       {lesson.exercises && (
