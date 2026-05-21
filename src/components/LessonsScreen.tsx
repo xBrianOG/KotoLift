@@ -152,34 +152,31 @@ function LessonPlayer({ lesson, onBack }: { lesson: Lesson; onBack: () => void }
       {/* Main Card */}
       <div className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: 'var(--space-xl)' }}>
         
-        {/* Word Display */}
+        {/* 1. FILL-IN-THE-BLANK SENTENCE - at the TOP */}
+        <div className="mb-lg" style={{ padding: 'var(--space-lg)', background: 'var(--bg-elevated)', borderRadius: 12 }}>
+          <p className="text-secondary text-sm mb-xs">Complete the sentence:</p>
+          <p className="font-medium" style={{ fontSize: '1.2rem', lineHeight: 1.6 }}>{ex.sentence}</p>
+        </div>
+
+        {/* 2. Part of Speech */}
         <div className="text-center mb-md">
-          <div style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: 8 }}>{ex.word}</div>
           <div className="text-secondary">{ex.partOfSpeech}</div>
         </div>
 
-        {/* English Definition + Japanese Translation - ALWAYS visible */}
+        {/* 3. MEANING - English + Japanese (shown BEFORE answering as hints) */}
         {!showResult && (
           <div className="mb-lg" style={{ padding: 'var(--space-md)', background: 'var(--bg-secondary)', borderRadius: 8 }}>
-            <p className="text-secondary text-sm mb-xs">Meaning:</p>
-            <p className="font-medium" style={{ fontSize: '1.1rem', marginBottom: 8 }}>{ex.english}</p>
+            <p className="text-secondary text-sm mb-xs">Hint (meaning):</p>
+            <p className="font-medium" style={{ fontSize: '1rem', marginBottom: 12 }}>{ex.english}</p>
             <p className="text-secondary text-sm mb-xs">意味：</p>
             <p className="font-medium" style={{ fontSize: '1rem' }}>{ex.japanese}</p>
           </div>
         )}
 
-        {/* Sentence prompt - shown as context */}
-        {!showResult && ex.sentence && (
-          <div className="mb-lg" style={{ padding: 'var(--space-md)', background: 'var(--bg-elevated)', borderRadius: 8 }}>
-            <p className="text-secondary text-sm mb-xs">Complete:</p>
-            <p className="font-medium" style={{ fontSize: '1rem' }}>{ex.sentence}</p>
-          </div>
-        )}
-
-        {/* Answer Options - with correct answer included */}
+        {/* 4. Answer Options */}
         {!showResult ? (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            <p className="text-center text-secondary mb-md">Select the correct word:</p>
+            <p className="text-center text-secondary mb-md">Choose the correct word:</p>
             <div style={{ display: 'grid', gap: 'var(--space-sm)' }}>
               {options.map((opt: string, idx: number) => (
                 <button
