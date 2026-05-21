@@ -21,7 +21,8 @@ function Dropdown({
 }) {
   const [open, setOpen] = useState(false);
 
-  const toggleOption = (key: string) => {
+  const handleSelect = (key: string) => {
+    console.log('[v0] handleSelect called with key:', key);
     if (!multiple) {
       onChange([key]);
       setOpen(false);
@@ -29,9 +30,13 @@ function Dropdown({
     }
     // For multiple selection, toggle the item
     if (selected.includes(key)) {
-      onChange(selected.filter(k => k !== key));
+      const newSelected = selected.filter(k => k !== key);
+      console.log('[v0] Removing key, new selected:', newSelected);
+      onChange(newSelected);
     } else {
-      onChange([...selected, key]);
+      const newSelected = [...selected, key];
+      console.log('[v0] Adding key, new selected:', newSelected);
+      onChange(newSelected);
     }
   };
 
@@ -41,8 +46,23 @@ function Dropdown({
     .map(o => o.label)
     .join(', ');
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    if (!open) return;
+    
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.dropdown-container')) {
+        setOpen(false);
+      }
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [open]);
+
   return (
-    <div style={{ position: 'relative', display: 'inline-block' }}>
+    <div className="dropdown-container" style={{ position: 'relative', display: 'inline-block' }}>
       <button
         type="button"
         className="btn btn-secondary"
@@ -52,70 +72,68 @@ function Dropdown({
         {label}: {selectedLabels || 'All'} ▼
       </button>
       {open && (
-        <>
-          {/* Backdrop — mousedown closes without blocking item clicks */}
-          <div
-            style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 99 }}
-            onMouseDown={() => setOpen(false)}
-          />
-          <div className="card" style={{ 
-            position: 'absolute', 
-            top: '100%', 
-            left: 0, 
-            zIndex: 200, 
-            minWidth: 180, 
-            maxHeight: 250, 
-            overflowY: 'auto',
-            marginTop: 4,
-            padding: 'var(--space-xs)'
-          }}>
-            {options.map(opt => {
-              const isSelected = selected.includes(opt.key);
-              return (
-                <div
-                  key={opt.key}
-                  onMouseDown={(e) => {
-                    e.preventDefault(); // prevent backdrop from firing first
-                    toggleOption(opt.key);
-                  }}
-                  style={{
-                    padding: '8px 12px',
-                    cursor: 'pointer',
+        <div className="card" style={{ 
+          position: 'absolute', 
+          top: '100%', 
+          left: 0, 
+          zIndex: 1000, 
+          minWidth: 180, 
+          maxHeight: 250, 
+          overflowY: 'auto',
+          marginTop: 4,
+          padding: 'var(--space-xs)'
+        }}>
+          {options.map(opt => {
+            const isSelected = selected.includes(opt.key);
+            return (
+              <button
+                type="button"
+                key={opt.key}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSelect(opt.key);
+                }}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  cursor: 'pointer',
+                  borderRadius: 4,
+                  background: 'transparent',
+                  border: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  fontSize: '0.85rem',
+                  textAlign: 'left',
+                  color: 'inherit'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                {multiple && (
+                  <span style={{ 
+                    width: 18, 
+                    height: 18, 
+                    border: `2px solid ${isSelected ? 'var(--primary)' : 'var(--border)'}`, 
                     borderRadius: 4,
-                    background: 'transparent',
+                    background: isSelected ? 'var(--primary)' : 'transparent',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 8,
-                    fontSize: '0.85rem'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface)'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                >
-                  {multiple && (
-                    <span style={{ 
-                      width: 18, 
-                      height: 18, 
-                      border: `2px solid ${isSelected ? 'var(--primary)' : 'var(--border)'}`, 
-                      borderRadius: 4,
-                      background: isSelected ? 'var(--primary)' : 'transparent',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'white',
-                      fontSize: 12,
-                      flexShrink: 0
-                    }}>
-                      {isSelected && '✓'}
-                    </span>
-                  )}
-                  <span style={{ color: isSelected ? 'var(--primary)' : 'inherit', fontWeight: isSelected ? 500 : 400 }}>
-                    {opt.label}
+                    justifyContent: 'center',
+                    color: 'white',
+                    fontSize: 12,
+                    flexShrink: 0
+                  }}>
+                    {isSelected && '✓'}
                   </span>
-                </div>
-              );
-            })}
-          </div>
-        </>
+                )}
+                <span style={{ color: isSelected ? 'var(--primary)' : 'inherit', fontWeight: isSelected ? 500 : 400 }}>
+                  {opt.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       )}
     </div>
   );
