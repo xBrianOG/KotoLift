@@ -11,12 +11,10 @@ interface Lesson {
   type: string;
   vocabulary_ids: string[];
   xp_reward: number;
-  estimated_minutes: number;
   content: any;
 }
 
 interface LessonContent {
-  words?: Array<{ word: string; partOfSpeech: string; definition: string }>;
   exercises?: Array<any>;
 }
 
@@ -35,11 +33,9 @@ export function LessonsScreen({ onBack }: LessonsScreenProps) {
   const [loading, setLoading] = useState(true);
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [filterLevel, setFilterLevel] = useState('all');
-  const [error, setError] = useState<string | null>(null);
 
   const fetchLessons = async (level?: string) => {
     setLoading(true);
-    setError(null);
     try {
       const params = new URLSearchParams();
       if (level && level !== 'all') params.append('level', level);
@@ -48,17 +44,14 @@ export function LessonsScreen({ onBack }: LessonsScreenProps) {
       const data = await res.json();
       setLessons(data.lessons || []);
     } catch (err) {
-      setError('Failed to load lessons');
+      console.error('Failed to load lessons');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => { fetchLessons(); }, []);
-
-  useEffect(() => {
-    fetchLessons(filterLevel !== 'all' ? filterLevel : undefined);
-  }, [filterLevel]);
+  useEffect(() => { fetchLessons(filterLevel !== 'all' ? filterLevel : undefined); }, [filterLevel]);
 
   if (selectedLesson) {
     return <LessonPlayer lesson={selectedLesson} onBack={() => setSelectedLesson(null)} />;
@@ -80,7 +73,6 @@ export function LessonsScreen({ onBack }: LessonsScreenProps) {
       </div>
 
       {loading ? <div className="text-center p-xl"><p>Loading...</p></div>
-      : error ? <div className="text-center p-xl"><p className="text-error">{error}</p></div>
       : lessons.length === 0 ? <div className="text-center p-xl"><p className="text-secondary">No lessons found</p></div>
       : (
         <div style={{ display: 'grid', gap: 'var(--space-md)' }}>
@@ -140,11 +132,8 @@ function LessonPlayer({ lesson, onBack }: { lesson: Lesson; onBack: () => void }
     );
   }
 
-  // Check if selected answer is correct
   const isCorrect = selected === ex.correctAnswer;
-
-  // Filter options: remove the target word, shuffle remaining
-  const options = ex.options?.filter((opt: string) => opt !== ex.word).sort(() => Math.random() - 0.5).slice(0, 4) || [];
+  const options = ex.options || [];
 
   return (
     <div className="screen animate-fade-in" style={{ padding: 'var(--space-lg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -169,15 +158,17 @@ function LessonPlayer({ lesson, onBack }: { lesson: Lesson; onBack: () => void }
           <div className="text-secondary">{ex.partOfSpeech}</div>
         </div>
 
-        {/* Definition - ALWAYS visible */}
+        {/* English Definition + Japanese Translation - ALWAYS visible */}
         {!showResult && (
           <div className="mb-lg" style={{ padding: 'var(--space-md)', background: 'var(--bg-secondary)', borderRadius: 8 }}>
             <p className="text-secondary text-sm mb-xs">Meaning:</p>
-            <p className="font-medium" style={{ fontSize: '1.1rem' }}>{ex.correctAnswer}</p>
+            <p className="font-medium" style={{ fontSize: '1.1rem', marginBottom: 8 }}>{ex.english}</p>
+            <p className="text-secondary text-sm mb-xs">意味：</p>
+            <p className="font-medium" style={{ fontSize: '1rem' }}>{ex.japanese}</p>
           </div>
         )}
 
-        {/* Sentence prompt for fill type - shown as context */}
+        {/* Sentence prompt - shown as context */}
         {!showResult && ex.sentence && (
           <div className="mb-lg" style={{ padding: 'var(--space-md)', background: 'var(--bg-elevated)', borderRadius: 8 }}>
             <p className="text-secondary text-sm mb-xs">Complete:</p>
@@ -185,7 +176,7 @@ function LessonPlayer({ lesson, onBack }: { lesson: Lesson; onBack: () => void }
           </div>
         )}
 
-        {/* Before answering - show options without target word */}
+        {/* Answer Options - with correct answer included */}
         {!showResult ? (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             <p className="text-center text-secondary mb-md">Select the correct word:</p>
@@ -215,13 +206,6 @@ function LessonPlayer({ lesson, onBack }: { lesson: Lesson; onBack: () => void }
                 {isCorrect ? 'Correct!' : `The answer was: ${ex.correctAnswer}`}
               </p>
             </div>
-
-            {ex.example && (
-              <div className="mb-lg" style={{ padding: 'var(--space-md)', background: 'var(--bg-elevated)', borderRadius: 8 }}>
-                <p className="text-secondary text-sm mb-xs">Example:</p>
-                <p style={{ fontStyle: 'italic' }}>{ex.example}</p>
-              </div>
-            )}
 
             <button className="btn btn-primary btn-full" onClick={next} style={{ padding: 'var(--space-md)' }}>
               {current < exercises.length - 1 ? 'Continue' : 'See Results'}
