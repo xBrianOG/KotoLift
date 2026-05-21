@@ -79,65 +79,69 @@ function Dropdown({
         {label}: {selectedLabels || 'All'} ▼
       </button>
       {open && (
-        <div className="card" style={{ 
-          position: 'absolute', 
-          top: '100%', 
-          left: 0, 
-          zIndex: 100, 
-          minWidth: 180, 
-          maxHeight: 250, 
-          overflowY: 'auto',
-          marginTop: 4,
-          padding: 'var(--space-xs)'
-        }}>
-          {options.map(opt => {
-            const isSelected = selected.includes(opt.key);
-            return (
-              <div
-                key={opt.key}
-                onClick={() => toggleOption(opt.key)}
-                style={{
-                  padding: '8px 12px',
-                  cursor: 'pointer',
-                  borderRadius: 4,
-                  background: 'transparent',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface)'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-              >
-                {multiple && (
-                  <span style={{ 
-                    width: 18, 
-                    height: 18, 
-                    border: `2px solid ${isSelected ? 'var(--primary)' : 'var(--border)'}`, 
+        <>
+          {/* Backdrop — mousedown closes without blocking item clicks */}
+          <div
+            style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 99 }}
+            onMouseDown={() => setOpen(false)}
+          />
+          <div className="card" style={{ 
+            position: 'absolute', 
+            top: '100%', 
+            left: 0, 
+            zIndex: 200, 
+            minWidth: 180, 
+            maxHeight: 250, 
+            overflowY: 'auto',
+            marginTop: 4,
+            padding: 'var(--space-xs)'
+          }}>
+            {options.map(opt => {
+              const isSelected = selected.includes(opt.key);
+              return (
+                <div
+                  key={opt.key}
+                  onMouseDown={(e) => {
+                    e.preventDefault(); // prevent backdrop from firing first
+                    toggleOption(opt.key);
+                  }}
+                  style={{
+                    padding: '8px 12px',
+                    cursor: 'pointer',
                     borderRadius: 4,
-                    background: isSelected ? 'var(--primary)' : 'transparent',
+                    background: 'transparent',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'white',
-                    fontSize: 12,
-                    flexShrink: 0
-                  }}>
-                    {isSelected && '✓'}
+                    gap: 8
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                >
+                  {multiple && (
+                    <span style={{ 
+                      width: 18, 
+                      height: 18, 
+                      border: `2px solid ${isSelected ? 'var(--primary)' : 'var(--border)'}`, 
+                      borderRadius: 4,
+                      background: isSelected ? 'var(--primary)' : 'transparent',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white',
+                      fontSize: 12,
+                      flexShrink: 0
+                    }}>
+                      {isSelected && '✓'}
+                    </span>
+                  )}
+                  <span style={{ color: isSelected ? 'var(--primary)' : 'inherit', fontWeight: isSelected ? 500 : 400 }}>
+                    {opt.label}
                   </span>
-                )}
-                <span style={{ color: isSelected ? 'var(--primary)' : 'inherit', fontWeight: isSelected ? 500 : 400 }}>
-                  {opt.label}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      )}
-      {open && (
-        <div 
-          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 99 }}
-          onClick={() => setOpen(false)}
-        />
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}
     </div>
   );
