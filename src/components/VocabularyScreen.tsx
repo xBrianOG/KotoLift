@@ -131,33 +131,6 @@ function Dropdown({
     </div>
   );
 }
-                alignItems: 'center',
-                gap: 8
-              }}
-            >
-              {multiple && (
-                <span style={{ 
-                  width: 16, 
-                  height: 16, 
-                  border: '2px solid currentColor', 
-                  borderRadius: 3,
-                  background: selected.includes(opt.key) ? 'white' : 'transparent',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 10
-                }}>
-                  {selected.includes(opt.key) && '✓'}
-                </span>
-              )}
-              {opt.label}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 export function VocabularyScreen({ onBack }: VocabularyScreenProps) {
   const [vocabulary, setVocabulary] = useState<VocabularyWord[]>([]);
