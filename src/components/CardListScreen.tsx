@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { getAllCards, deleteCard, updateCard, searchCards, getAllTags } from '../services/cards';
 import type { Card } from '../types';
 import { getCardSourceText, getCardTranslation } from '../types';
@@ -20,9 +20,9 @@ function Dropdown({
   multiple?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
 
   const handleSelect = (key: string) => {
-    console.log('[v0] handleSelect called with key:', key);
     if (!multiple) {
       onChange([key]);
       setOpen(false);
@@ -30,13 +30,9 @@ function Dropdown({
     }
     // For multiple selection, toggle the item
     if (selected.includes(key)) {
-      const newSelected = selected.filter(k => k !== key);
-      console.log('[v0] Removing key, new selected:', newSelected);
-      onChange(newSelected);
+      onChange(selected.filter(k => k !== key));
     } else {
-      const newSelected = [...selected, key];
-      console.log('[v0] Adding key, new selected:', newSelected);
-      onChange(newSelected);
+      onChange([...selected, key]);
     }
   };
 
@@ -51,18 +47,24 @@ function Dropdown({
     if (!open) return;
     
     const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest('.dropdown-container')) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setOpen(false);
       }
     };
     
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
+    // Add listener on next tick to avoid catching the opening click
+    const timeoutId = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside);
+    }, 0);
+    
+    return () => {
+      clearTimeout(timeoutId);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, [open]);
 
   return (
-    <div className="dropdown-container" style={{ position: 'relative', display: 'inline-block' }}>
+    <div ref={dropdownRef} style={{ position: 'relative', display: 'inline-block' }}>
       <button
         type="button"
         className="btn btn-secondary"
@@ -74,7 +76,6 @@ function Dropdown({
       {open && (
         <div 
           className="card" 
-          onClick={(e) => e.stopPropagation()}
           style={{ 
             position: 'absolute', 
             top: '100%', 
@@ -89,18 +90,12 @@ function Dropdown({
           {options.map(opt => {
             const isSelected = selected.includes(opt.key);
             return (
-              <div
+              <button
+                type="button"
                 key={opt.key}
-                role="button"
-                tabIndex={0}
-                onClick={() => {
-                  console.log('[v0] Item clicked:', opt.key);
+                onClick={(e) => {
+                  e.stopPropagation();
                   handleSelect(opt.key);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    handleSelect(opt.key);
-                  }
                 }}
                 style={{
                   width: '100%',
@@ -108,11 +103,13 @@ function Dropdown({
                   cursor: 'pointer',
                   borderRadius: 6,
                   background: 'transparent',
+                  border: 'none',
                   display: 'flex',
                   alignItems: 'center',
                   gap: 10,
                   fontSize: '0.9rem',
-                  userSelect: 'none'
+                  textAlign: 'left',
+                  color: 'inherit'
                 }}
                 onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface)'}
                 onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
@@ -137,7 +134,7 @@ function Dropdown({
                 <span style={{ color: isSelected ? 'var(--primary)' : 'inherit', fontWeight: isSelected ? 600 : 400 }}>
                   {opt.label}
                 </span>
-              </div>
+              </button>
             );
           })}
         </div>
@@ -354,7 +351,7 @@ export function CardListScreen({ onExplain }: { onExplain?: (card: Card) => void
       {deleteTarget && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, zIndex: 100 }}>
           <div className="card animate-slide-down" style={{ width: '100%', maxWidth: 340, textAlign: 'center' }}>
-            <div style={{ fontSize: 32, marginBottom: 12 }}>🗑️</div>
+            <div style={{ fontSize: 32, marginBottom: 12 }}>🗑��</div>
             <h3 className="font-bold text-lg mb-sm">Delete this card?</h3>
             <p className="text-secondary text-sm mb-xl">"{getCardSourceText(deleteTarget)}"</p>
             <div style={{ display: 'flex', gap: 12 }}>
