@@ -15,6 +15,11 @@ GRANT SELECT ON conjugations TO anon;
 GRANT SELECT ON vocabulary TO service_role;
 GRANT SELECT ON lessons TO service_role;
 
+-- Email users permissions
+GRANT ALL ON email_users TO service_role;
+GRANT SELECT ON email_users TO service_role;
+ALTER TABLE email_users DISABLE ROW LEVEL SECURITY;
+
 -- Disable RLS for public read tables (workaround for permission issues)
 ALTER TABLE vocabulary DISABLE ROW LEVEL SECURITY;
 ALTER TABLE lessons DISABLE ROW LEVEL SECURITY;
