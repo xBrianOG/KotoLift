@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { getAuthHeaders } from '../services/auth';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'https://kotolift.onrender.com';
@@ -38,7 +38,7 @@ function Dropdown({
   options, 
   selected, 
   onChange, 
-  multiple = true,
+  multiple = false,
   colorKey = null
 }: { 
   label: string; 
@@ -49,15 +49,6 @@ function Dropdown({
   colorKey?: string | null;
 }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, []);
 
   const toggleOption = (key: string) => {
     if (!multiple) {
@@ -75,22 +66,22 @@ function Dropdown({
   const selectedLabels = options.filter(o => selected.includes(o.key)).map(o => o.label).join(', ');
 
   return (
-    <div ref={ref} style={{ position: 'relative' }}>
+    <div style={{ position: 'relative', display: 'inline-block' }}>
       <button
+        type="button"
         className="btn btn-secondary"
         onClick={() => setOpen(!open)}
-        style={{ minWidth: 150, textAlign: 'left', justifyContent: 'space-between' }}
+        style={{ minWidth: 140, textAlign: 'left' }}
       >
-        <span>{label}: {selectedLabels || 'All'}</span>
-        <span style={{ marginLeft: 8 }}>▼</span>
+        {label}: {selectedLabels || 'All'} ▼
       </button>
       {open && (
         <div className="card" style={{ 
           position: 'absolute', 
           top: '100%', 
           left: 0, 
-          zIndex: 50, 
-          minWidth: 200, 
+          zIndex: 100, 
+          minWidth: 180, 
           maxHeight: 250, 
           overflowY: 'auto',
           marginTop: 4,
@@ -107,6 +98,39 @@ function Dropdown({
                 background: selected.includes(opt.key) ? (colorKey && opt.color ? opt.color : 'var(--primary)') : 'transparent',
                 color: selected.includes(opt.key) ? 'white' : 'inherit',
                 display: 'flex',
+                alignItems: 'center',
+                gap: 8
+              }}
+            >
+              {multiple && (
+                <span style={{ 
+                  width: 16, 
+                  height: 16, 
+                  border: '2px solid currentColor', 
+                  borderRadius: 3,
+                  background: selected.includes(opt.key) ? 'white' : 'transparent',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 10
+                }}>
+                  {selected.includes(opt.key) && '✓'}
+                </span>
+              )}
+              {opt.label}
+            </div>
+          ))}
+        </div>
+      )}
+      {open && (
+        <div 
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 99 }}
+          onClick={() => setOpen(false)}
+        />
+      )}
+    </div>
+  );
+}
                 alignItems: 'center',
                 gap: 8
               }}
