@@ -38,15 +38,13 @@ function Dropdown({
   options, 
   selected, 
   onChange, 
-  multiple = false,
-  colorKey = null
+  multiple = false
 }: { 
   label: string; 
   options: { key: string; label: string; color?: string }[]; 
   selected: string[]; 
   onChange: (keys: string[]) => void;
   multiple?: boolean;
-  colorKey?: string | null;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -56,6 +54,7 @@ function Dropdown({
       setOpen(false);
       return;
     }
+    // For multiple selection, toggle the item
     if (selected.includes(key)) {
       onChange(selected.filter(k => k !== key));
     } else {
@@ -63,7 +62,11 @@ function Dropdown({
     }
   };
 
-  const selectedLabels = options.filter(o => selected.includes(o.key)).map(o => o.label).join(', ');
+  // Show selected labels or "All" if nothing selected
+  const selectedLabels = options
+    .filter(o => selected.includes(o.key) && o.key !== 'all')
+    .map(o => o.label)
+    .join(', ');
 
   return (
     <div style={{ position: 'relative', display: 'inline-block' }}>
@@ -87,39 +90,47 @@ function Dropdown({
           marginTop: 4,
           padding: 'var(--space-xs)'
         }}>
-          {options.map(opt => (
-            <div
-              key={opt.key}
-              onClick={() => toggleOption(opt.key)}
-              style={{
-                padding: '8px 12px',
-                cursor: 'pointer',
-                borderRadius: 4,
-                background: selected.includes(opt.key) ? (colorKey && opt.color ? opt.color : 'var(--primary)') : 'transparent',
-                color: selected.includes(opt.key) ? 'white' : 'inherit',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8
-              }}
-            >
-              {multiple && (
-                <span style={{ 
-                  width: 16, 
-                  height: 16, 
-                  border: '2px solid currentColor', 
-                  borderRadius: 3,
-                  background: selected.includes(opt.key) ? 'white' : 'transparent',
+          {options.map(opt => {
+            const isSelected = selected.includes(opt.key);
+            return (
+              <div
+                key={opt.key}
+                onClick={() => toggleOption(opt.key)}
+                style={{
+                  padding: '8px 12px',
+                  cursor: 'pointer',
+                  borderRadius: 4,
+                  background: 'transparent',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 10
-                }}>
-                  {selected.includes(opt.key) && '✓'}
+                  gap: 8
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                {multiple && (
+                  <span style={{ 
+                    width: 18, 
+                    height: 18, 
+                    border: `2px solid ${isSelected ? 'var(--primary)' : 'var(--border)'}`, 
+                    borderRadius: 4,
+                    background: isSelected ? 'var(--primary)' : 'transparent',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    fontSize: 12,
+                    flexShrink: 0
+                  }}>
+                    {isSelected && '✓'}
+                  </span>
+                )}
+                <span style={{ color: isSelected ? 'var(--primary)' : 'inherit', fontWeight: isSelected ? 500 : 400 }}>
+                  {opt.label}
                 </span>
-              )}
-              {opt.label}
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </div>
       )}
       {open && (
@@ -324,10 +335,18 @@ export function VocabularyScreen({ onBack }: VocabularyScreenProps) {
         <Dropdown
           label="Category"
           options={categoryOptions}
-          selected={filterCategories}
-          onChange={setFilterCategories}
+          selected={filterCategories.length === 0 || filterCategories.includes('all') ? ['all'] : filterCategories}
+          onChange={(newVals) => {
+            // If "All Categories" is clicked, clear selection
+            if (newVals.includes('all') && !filterCategories.includes('all')) {
+              setFilterCategories(['all']);
+            } else {
+              // Remove 'all' from selection and set the categories
+              const withoutAll = newVals.filter(v => v !== 'all');
+              setFilterCategories(withoutAll.length > 0 ? withoutAll : ['all']);
+            }
+          }}
           multiple={true}
-          colorKey="color"
         />
       </div>
 

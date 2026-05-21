@@ -11,15 +11,13 @@ function Dropdown({
   options, 
   selected, 
   onChange, 
-  multiple = false,
-  colorKey = null
+  multiple = false
 }: { 
   label: string; 
   options: { key: string; label: string; color?: string }[]; 
   selected: string[]; 
   onChange: (keys: string[]) => void;
   multiple?: boolean;
-  colorKey?: string | null;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -29,6 +27,7 @@ function Dropdown({
       setOpen(false);
       return;
     }
+    // For multiple selection, toggle the item
     if (selected.includes(key)) {
       onChange(selected.filter(k => k !== key));
     } else {
@@ -36,7 +35,11 @@ function Dropdown({
     }
   };
 
-  const selectedLabels = options.filter(o => selected.includes(o.key)).map(o => o.label).join(', ');
+  // Show selected labels or "All" if nothing selected
+  const selectedLabels = options
+    .filter(o => selected.includes(o.key) && o.key !== 'all')
+    .map(o => o.label)
+    .join(', ');
 
   return (
     <div style={{ position: 'relative', display: 'inline-block' }}>
@@ -54,33 +57,54 @@ function Dropdown({
           top: '100%', 
           left: 0, 
           zIndex: 100, 
-          minWidth: 160, 
-          maxHeight: 200, 
+          minWidth: 180, 
+          maxHeight: 250, 
           overflowY: 'auto',
           marginTop: 4,
           padding: 'var(--space-xs)'
         }}>
-          {options.map(opt => (
-            <div
-              key={opt.key}
-              onClick={() => toggleOption(opt.key)}
-              style={{
-                padding: '6px 10px',
-                cursor: 'pointer',
-                borderRadius: 4,
-                background: selected.includes(opt.key) ? (colorKey && opt.color ? opt.color : 'var(--primary)') : 'transparent',
-                color: selected.includes(opt.key) ? 'white' : 'inherit',
-                fontSize: '0.85rem'
-              }}
-            >
-              {multiple && (
-                <span style={{ marginRight: 6 }}>
-                  {selected.includes(opt.key) ? '☑' : '☐'}
+          {options.map(opt => {
+            const isSelected = selected.includes(opt.key);
+            return (
+              <div
+                key={opt.key}
+                onClick={() => toggleOption(opt.key)}
+                style={{
+                  padding: '8px 12px',
+                  cursor: 'pointer',
+                  borderRadius: 4,
+                  background: 'transparent',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  fontSize: '0.85rem'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                {multiple && (
+                  <span style={{ 
+                    width: 18, 
+                    height: 18, 
+                    border: `2px solid ${isSelected ? 'var(--primary)' : 'var(--border)'}`, 
+                    borderRadius: 4,
+                    background: isSelected ? 'var(--primary)' : 'transparent',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    fontSize: 12,
+                    flexShrink: 0
+                  }}>
+                    {isSelected && '✓'}
+                  </span>
+                )}
+                <span style={{ color: isSelected ? 'var(--primary)' : 'inherit', fontWeight: isSelected ? 500 : 400 }}>
+                  {opt.label}
                 </span>
-              )}
-              {opt.label}
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </div>
       )}
       {open && (
@@ -172,11 +196,16 @@ export function CardListScreen({ onExplain }: { onExplain?: (card: Card) => void
               { key: 'all', label: 'All Categories' },
               ...tags.map(c => ({ key: c, label: c }))
             ]}
-            selected={selectedTags}
+            selected={selectedTags.length === 0 ? ['all'] : selectedTags}
             onChange={(newVals) => {
-              const withoutAll = newVals.filter(v => v !== 'all');
-              setSelectedTags(withoutAll.length > 0 ? withoutAll : []);
-              loadCards();
+              // If "All Categories" is clicked, clear selection
+              if (newVals.includes('all') && !selectedTags.includes('all')) {
+                setSelectedTags([]);
+              } else {
+                // Remove 'all' from selection and set the tags
+                const withoutAll = newVals.filter(v => v !== 'all');
+                setSelectedTags(withoutAll);
+              }
             }}
             multiple={true}
           />
