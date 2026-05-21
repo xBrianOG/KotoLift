@@ -164,13 +164,14 @@ router.get('/stats', async (req, res) => {
     if (error) throw error;
 
     const lessonsCompleted = data.filter(p => p.status === 'completed').length;
-    const totalXp = data.reduce((sum, p) => sum + (p.xp_earned || 0), 0);
+    const totalXp = data.reduce((sum: number, p: any) => sum + (p.xp_earned || 0), 0);
+    const vocabularyLearned = data.filter((p: any) => p.vocabulary_id && p.status === 'learned').length;
 
     res.json({ 
       stats: {
         lessonsCompleted,
         totalXp,
-        vocabularyLearned: data.filter(p => p.vocabulary_id && p.status === 'learned').length
+        vocabularyLearned
       }
     });
   } catch (err: any) {
