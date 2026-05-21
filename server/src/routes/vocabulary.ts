@@ -12,15 +12,26 @@ const supabase = createClient(supabaseUrl, supabaseKey, {
 
 router.get('/', async (req, res) => {
   try {
-    const { level, limit, offset } = req.query;
+    const { level, limit, offset, category, search } = req.query;
 
     let query = supabase
       .from('vocabulary')
-      .select('id, word, level, part_of_speech, translations, phonetic, frequency, example_sentences, collocations')
+      .select('id, word, level, part_of_speech, translations, phonetic, frequency, example_sentences, collocations, categories')
       .order('frequency', { ascending: true });
 
     if (level) {
       query = query.eq('level', level);
+    }
+
+    // Filter by category
+    if (category && category !== 'all') {
+      query = query.contains('categories', [category]);
+    }
+
+    // Keyword search
+    if (search) {
+      const searchTerm = search as string;
+      query = query.or(`word.ilike.%${searchTerm}%,part_of_speech.ilike.%${searchTerm}%`);
     }
 
     if (limit) {
@@ -41,42 +52,14 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.get('/search', async (req, res) => {
-  try {
-    const { q, level } = req.query;
-
-    if (!q) {
-      return res.status(400).json({ error: 'Search query required' });
-    }
-
-    let query = supabase
-      .from('vocabulary')
-      .select('id, word, level, part_of_speech, translations, phonetic, frequency, example_sentences, collocations')
-      .or(`word.ilike.%${q}%,example_sentences.cs.*${q}*`)
-      .order('frequency', { ascending: true })
-      .limit(20);
-
-    if (level) {
-      query = query.eq('level', level);
-    }
-
-    const { data, error } = await query;
-
-    if (error) throw error;
-    res.json({ vocabulary: data || [] });
-  } catch (err: any) {
-    console.error('Vocabulary search error:', err);
-    res.status(500).json({ error: err.message || 'Failed to search vocabulary' });
-  }
-});
-
+// Get vocabulary by ID
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
     const { data, error } = await supabase
       .from('vocabulary')
-      .select('id, word, level, part_of_speech, translations, phonetic, frequency, example_sentences, collocations')
+      .select('id, word, level, part_of_speech, translations, phonetic, frequency, example_sentences, collocations, categories')
       .eq('id', id)
       .single();
 
@@ -87,6 +70,75 @@ router.get('/:id', async (req, res) => {
   } catch (err: any) {
     console.error('Vocabulary detail error:', err);
     res.status(500).json({ error: err.message || 'Failed to fetch word' });
+  }
+});
+
+// Add category to vocabulary word
+router.post('/:id/categories', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { category } = req.body;
+
+    if (!category) {
+      return res.status(400).json({ error: 'Category is required' });
+    }
+
+    // Get current categories
+    const { data: current, error: fetchError } = await supabase
+      .from('vocabulary')
+      .select('categories')
+      .eq('id', id)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    const categories = current?.categories || [];
+    if (!categories.includes(category)) {
+      categories.push(category);
+    }
+
+    const { data, error } = await supabase
+      .from('vocabulary')
+      .update({ categories })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.json({ vocabulary: data });
+  } catch (err: any) {
+    console.error('Add category error:', err);
+    res.status(500).json({ error: err.message || 'Failed to add category' });
+  }
+});
+
+// Remove category from vocabulary word
+router.delete('/:id/categories/:category', async (req, res) => {
+  try {
+    const { id, category } = req.params;
+
+    const { data: current, error: fetchError } = await supabase
+      .from('vocabulary')
+      .select('categories')
+      .eq('id', id)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    const categories = (current?.categories || []).filter((c: string) => c !== category);
+
+    const { data, error } = await supabase
+      .from('vocabulary')
+      .update({ categories })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.json({ vocabulary: data });
+  } catch (err: any) {
+    console.error('Remove category error:', err);
+    res.status(500).json({ error: err.message || 'Failed to remove category' });
   }
 });
 
