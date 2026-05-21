@@ -1,61 +1,52 @@
 import { Router } from 'express';
+import { Pool } from 'pg';
 
 const router = Router();
 
-const SUPABASE_URL = process.env.SUPABASE_URL || '';
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
+const pool = new Pool({
+  host: process.env.PG_HOST || 'localhost',
+  port: parseInt(process.env.PG_PORT || '5432'),
+  database: process.env.PG_DATABASE || 'postgres',
+  user: process.env.PG_USER || 'postgres',
+  password: process.env.PG_PASSWORD || '',
+  ssl: { rejectUnauthorized: false }
+});
 
-async function querySupabase(table: string, params: Record<string, any> = {}) {
-  const url = `${SUPABASE_URL}/rest/v1/${table}`;
-  const headers: Record<string, string> = {
-    'apikey': SUPABASE_SERVICE_KEY,
-    'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
-    'Content-Type': 'application/json',
-    'Prefer': 'return=representation'
-  };
-
-  const queryParams = new URLSearchParams();
-  for (const [key, value] of Object.entries(params)) {
-    if (Array.isArray(value)) {
-      queryParams.append(key, `{${value.join(',')}}`);
-    } else if (typeof value === 'object') {
-      queryParams.append(key, JSON.stringify(value));
-    } else {
-      queryParams.append(key, String(value));
-    }
-  }
-
-  const response = await fetch(`${url}?${queryParams}`, { headers });
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Supabase error: ${error}`);
-  }
-  return response.json();
+function isSupabaseConfigured(): boolean {
+  return !!(process.env.PG_HOST && process.env.PG_USER);
 }
 
 router.get('/', async (req, res) => {
   try {
     const { level, type, limit } = req.query;
 
-    const params: Record<string, any> = {
-      select: 'id, title, description, level, type, vocabulary_ids, grammar_topic, xp_reward, estimated_minutes, content, exercises',
-      order: 'created_at.asc'
-    };
+    let query = 'SELECT id, title, description, level, type, vocabulary_ids, grammar_topic, xp_reward, estimated_minutes, content, exercises FROM lessons';
+    const params: any[] = [];
+    const conditions: string[] = [];
 
     if (level) {
-      params.level = `eq.${level}`;
+      conditions.push(`level = $${params.length + 1}`);
+      params.push(level);
     }
 
     if (type) {
-      params.type = `eq.${type}`;
+      conditions.push(`type = $${params.length + 1}`);
+      params.push(type);
     }
+
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ');
+    }
+
+    query += ' ORDER BY created_at ASC';
 
     if (limit) {
-      params.limit = parseInt(limit as string);
+      query += ` LIMIT $${params.length + 1}`;
+      params.push(parseInt(limit as string));
     }
 
-    const lessons = await querySupabase('lessons', params);
-    res.json({ lessons });
+    const result = await pool.query(query, params);
+    res.json({ lessons: result.rows });
   } catch (err: any) {
     console.error('Lessons fetch error:', err);
     res.status(500).json({ error: err.message || 'Failed to fetch lessons' });
@@ -66,17 +57,15 @@ router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const params = {
-      select: 'id, title, description, level, type, vocabulary_ids, grammar_topic, xp_reward, estimated_minutes, content, exercises',
-      id: `eq.${id}`
-    };
+    const query = `SELECT id, title, description, level, type, vocabulary_ids, grammar_topic, xp_reward, estimated_minutes, content, exercises 
+                   FROM lessons WHERE id = $1`;
+    const result = await pool.query(query, [id]);
 
-    const lessons = await querySupabase('lessons', params);
-    if (!lessons || lessons.length === 0) {
+    if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Lesson not found' });
     }
 
-    res.json({ lesson: lessons[0] });
+    res.json({ lesson: result.rows[0] });
   } catch (err: any) {
     console.error('Lesson detail error:', err);
     res.status(500).json({ error: err.message || 'Failed to fetch lesson' });

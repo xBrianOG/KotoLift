@@ -1,66 +1,52 @@
 import { Router } from 'express';
-import { z } from 'zod';
+import { Pool } from 'pg';
 
 const router = Router();
 
-const SUPABASE_URL = process.env.SUPABASE_URL || '';
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
+const pool = new Pool({
+  host: process.env.PG_HOST || 'localhost',
+  port: parseInt(process.env.PG_PORT || '5432'),
+  database: process.env.PG_DATABASE || 'postgres',
+  user: process.env.PG_USER || 'postgres',
+  password: process.env.PG_PASSWORD || '',
+  ssl: { rejectUnauthorized: false }
+});
 
 function isSupabaseConfigured(): boolean {
-  return !!(SUPABASE_URL && SUPABASE_SERVICE_KEY);
-}
-
-async function querySupabase(table: string, params: Record<string, any> = {}) {
-  const url = `${SUPABASE_URL}/rest/v1/${table}`;
-  const headers: Record<string, string> = {
-    'apikey': SUPABASE_SERVICE_KEY,
-    'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
-    'Content-Type': 'application/json',
-    'Prefer': 'return=representation'
-  };
-
-  const queryParams = new URLSearchParams();
-  for (const [key, value] of Object.entries(params)) {
-    if (Array.isArray(value)) {
-      queryParams.append(key, `{${value.join(',')}}`);
-    } else if (typeof value === 'object') {
-      queryParams.append(key, JSON.stringify(value));
-    } else {
-      queryParams.append(key, String(value));
-    }
-  }
-
-  const response = await fetch(`${url}?${queryParams}`, { headers });
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Supabase error: ${error}`);
-  }
-  return response.json();
+  return !!(process.env.PG_HOST && process.env.PG_USER);
 }
 
 router.get('/', async (req, res) => {
   try {
     const { level, limit, offset } = req.query;
 
-    const params: Record<string, any> = {
-      select: 'id, word, level, part_of_speech, translations, phonetic, frequency, example_sentences, collocations',
-      order: 'frequency.asc'
-    };
+    let query = 'SELECT id, word, level, part_of_speech, translations, phonetic, frequency, example_sentences, collocations FROM vocabulary';
+    const params: any[] = [];
+    const conditions: string[] = [];
 
     if (level) {
-      params.level = `eq.${level}`;
+      conditions.push(`level = $${params.length + 1}`);
+      params.push(level);
     }
 
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ');
+    }
+
+    query += ' ORDER BY frequency ASC';
+
     if (limit) {
-      params.limit = parseInt(limit as string);
+      query += ` LIMIT $${params.length + 1}`;
+      params.push(parseInt(limit as string));
     }
 
     if (offset) {
-      params.offset = parseInt(offset as string);
+      query += ` OFFSET $${params.length + 1}`;
+      params.push(parseInt(offset as string));
     }
 
-    const vocabulary = await querySupabase('vocabulary', params);
-    res.json({ vocabulary });
+    const result = await pool.query(query, params);
+    res.json({ vocabulary: result.rows });
   } catch (err: any) {
     console.error('Vocabulary fetch error:', err);
     res.status(500).json({ error: err.message || 'Failed to fetch vocabulary' });
@@ -75,19 +61,20 @@ router.get('/search', async (req, res) => {
       return res.status(400).json({ error: 'Search query required' });
     }
 
-    const params: Record<string, any> = {
-      select: 'id, word, level, part_of_speech, translations, phonetic, frequency, example_sentences, collocations',
-      or: `word.ilike.%${q}%,example_sentences.cs.*${q}*`,
-      order: 'frequency.asc',
-      limit: 20
-    };
+    const params: any[] = [`%${q}%`];
+    let query = `SELECT id, word, level, part_of_speech, translations, phonetic, frequency, example_sentences, collocations 
+                 FROM vocabulary 
+                 WHERE (word ILIKE $1 OR example_sentences::text ILIKE $1)`;
 
     if (level) {
-      params.level = `eq.${level}`;
+      params.push(level);
+      query += ` AND level = $${params.length}`;
     }
 
-    const vocabulary = await querySupabase('vocabulary', params);
-    res.json({ vocabulary });
+    query += ' ORDER BY frequency ASC LIMIT 20';
+
+    const result = await pool.query(query, params);
+    res.json({ vocabulary: result.rows });
   } catch (err: any) {
     console.error('Vocabulary search error:', err);
     res.status(500).json({ error: err.message || 'Failed to search vocabulary' });
@@ -98,17 +85,15 @@ router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const params = {
-      select: 'id, word, level, part_of_speech, translations, phonetic, frequency, example_sentences, collocations',
-      id: `eq.${id}`
-    };
+    const query = `SELECT id, word, level, part_of_speech, translations, phonetic, frequency, example_sentences, collocations 
+                   FROM vocabulary WHERE id = $1`;
+    const result = await pool.query(query, [id]);
 
-    const vocabulary = await querySupabase('vocabulary', params);
-    if (!vocabulary || vocabulary.length === 0) {
+    if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Word not found' });
     }
 
-    res.json({ vocabulary: vocabulary[0] });
+    res.json({ vocabulary: result.rows[0] });
   } catch (err: any) {
     console.error('Vocabulary detail error:', err);
     res.status(500).json({ error: err.message || 'Failed to fetch word' });
