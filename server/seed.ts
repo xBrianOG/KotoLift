@@ -619,57 +619,167 @@ function matchSentencesToVocabulary(vocabulary: any[], cache: SentenceCache): an
 }
 
 function generateLessons(vocabulary: any[]): any[] {
-  log("Generating lessons...");
+  log("Generating Duolingo-style lessons with exercises...");
 
   const b1Words = vocabulary.filter((w) => w.level === "B1");
   const b2Words = vocabulary.filter((w) => w.level === "B2");
 
   const lessons: any[] = [];
-  const chunkSize = 50;
 
+  const chunkSize = 8;
+  const wordsPerExercise = 4;
+
+  const createMultipleChoiceExercise = (words: any[], exerciseNum: number) => {
+    const targetWord = words[exerciseNum % words.length];
+    const otherWords = words.filter(w => w.id !== targetWord.id).slice(0, 3);
+    const options = [targetWord, ...otherWords].sort(() => Math.random() - 0.5);
+    
+    return {
+      id: `mc-${exerciseNum}`,
+      type: "multiple_choice",
+      question: `What is the meaning of "${targetWord.word}"?`,
+      correctAnswer: targetWord.word,
+      options: options.map(w => ({
+        word: w.word,
+        partOfSpeech: w.part_of_speech
+      })),
+      vocabularyId: targetWord.id
+    };
+  };
+
+  const createFillBlankExercise = (words: any[], exerciseNum: number) => {
+    const targetWord = words[exerciseNum % words.length];
+    const sentences = targetWord.example_sentences || [];
+    
+    if (sentences.length > 0) {
+      const sentence = sentences[0];
+      const blankWord = targetWord.word;
+      const blankedSentence = sentence.text.replace(new RegExp(blankWord, 'gi'), "_____");
+      
+      const otherWords = words.filter(w => w.id !== targetWord.id).slice(0, 3).map(w => w.word);
+      const options = [blankWord, ...otherWords].sort(() => Math.random() - 0.5);
+      
+      return {
+        id: `fill-${exerciseNum}`,
+        type: "fill_blank",
+        sentence: blankedSentence,
+        correctAnswer: blankWord,
+        options: options,
+        vocabularyId: targetWord.id
+      };
+    }
+    return null;
+  };
+
+  const createMatchExercise = (words: any[], exerciseNum: number) => {
+    const subset = words.slice(0, Math.min(4, words.length));
+    return {
+      id: `match-${exerciseNum}`,
+      type: "match",
+      pairs: subset.map(w => ({
+        word: w.word,
+        partOfSpeech: w.part_of_speech
+      })),
+      vocabularyIds: subset.map(w => w.id)
+    };
+  };
+
+  const createLesson = (words: any[], level: string, lessonNum: number, title: string, description: string) => {
+    const vocabularySection = words.slice(0, 8).map(w => ({
+      id: w.id,
+      word: w.word,
+      partOfSpeech: w.part_of_speech,
+      example: w.example_sentences?.[0]?.text || null
+    }));
+
+    const exercises = [];
+    const numExercises = 6;
+    
+    for (let i = 0; i < numExercises; i++) {
+      if (i % 3 === 0) {
+        const ex = createMultipleChoiceExercise(words, i);
+        if (ex) exercises.push(ex);
+      } else if (i % 3 === 1) {
+        const ex = createFillBlankExercise(words, i);
+        if (ex) exercises.push(ex);
+      } else {
+        const ex = createMatchExercise(words, i);
+        if (ex && ex.pairs.length > 0) exercises.push(ex);
+      }
+    }
+
+    return {
+      id: `lesson-${String(lessonNum).padStart(3, "0")}`,
+      title,
+      description,
+      level,
+      type: "vocabulary",
+      content: {
+        type: "duolingo",
+        vocabulary: vocabularySection,
+        exercises: exercises
+      },
+      vocabulary_ids: words.slice(0, 8).map(w => w.id),
+      xp_reward: 10 * exercises.length,
+      estimated_minutes: Math.ceil(words.length / 8) * 5,
+      difficulty: level === "B1" ? 1 : 2
+    };
+  };
+
+  const b1Titles = [
+    "Essential Actions",
+    "Daily Activities", 
+    "People & Places",
+    "Objects Around You",
+    "Describing Things",
+    "Communication"
+  ];
+
+  const b2Titles = [
+    "Advanced Actions",
+    "Complex Ideas",
+    "Professional Context",
+    "Abstract Concepts",
+    "Nuanced Expression",
+    "Academic Words"
+  ];
+
+  let lessonId = 1;
   const b1Chunks = [];
   for (let i = 0; i < b1Words.length; i += chunkSize) {
     b1Chunks.push(b1Words.slice(i, i + chunkSize));
   }
+
+  b1Chunks.forEach((group, i) => {
+    const lesson = createLesson(
+      group,
+      "B1",
+      lessonId,
+      `B1 - ${b1Titles[i] || `Part ${i + 1}`}`,
+      `Learn ${group.length} essential B1 vocabulary words with practice exercises`
+    );
+    lessons.push(lesson);
+    lessonId++;
+  });
 
   const b2Chunks = [];
   for (let i = 0; i < b2Words.length; i += chunkSize) {
     b2Chunks.push(b2Words.slice(i, i + chunkSize));
   }
 
-  let lessonId = 1;
-  const b1Titles = ["Essential Words", "Common Actions", "Everyday Life", "Describing Things", "Communication", "Daily Routines"];
-  const b2Titles = ["Advanced Concepts", "Complex Actions", "Abstract Ideas", "Professional Context", "Nuanced Expression", "Academic Vocabulary"];
-
-  b1Chunks.forEach((group, i) => {
-    lessons.push({
-      id: `lesson-${String(lessonId).padStart(3, "0")}`,
-      title: `B1 Vocabulary – ${b1Titles[i] || `Part ${i + 1}`}`,
-      description: `Learn ${group.length} common B1 vocabulary words with example sentences`,
-      level: "B1",
-      type: "vocabulary",
-      content: { type: "vocabulary", words: group.map((w) => w.word) },
-      vocabulary_ids: group.map((w) => w.id),
-      difficulty: 1,
-    });
-    lessonId++;
-  });
-
   b2Chunks.forEach((group, i) => {
-    lessons.push({
-      id: `lesson-${String(lessonId).padStart(3, "0")}`,
-      title: `B2 Vocabulary – ${b2Titles[i] || `Part ${i + 1}`}`,
-      description: `Learn ${group.length} advanced B2 vocabulary words`,
-      level: "B2",
-      type: "vocabulary",
-      content: { type: "vocabulary", words: group.map((w) => w.word) },
-      vocabulary_ids: group.map((w) => w.id),
-      difficulty: 2,
-    });
+    const lesson = createLesson(
+      group,
+      "B2",
+      lessonId,
+      `B2 - ${b2Titles[i] || `Part ${i + 1}`}`,
+      `Master ${group.length} advanced B2 vocabulary words`
+    );
+    lessons.push(lesson);
     lessonId++;
   });
 
-  log(`Created ${lessons.length} lessons`);
+  log(`Created ${lessons.length} Duolingo-style lessons`);
   return lessons;
 }
 
