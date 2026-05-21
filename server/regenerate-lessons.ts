@@ -43,12 +43,19 @@ async function regenerateLessons() {
       if (i % 3 === 0) {
         const otherWords = words.filter((w: any) => w.id !== targetWord.id).slice(0, 3);
         const options = [targetWord, ...otherWords].sort(() => Math.random() - 0.5);
-        const posOptions = ['verb', 'noun', 'adjective', 'adverb'].filter(p => p !== targetWord.part_of_speech);
-        const randomPos = posOptions[Math.floor(Math.random() * posOptions.length)];
+        
+        const qTypes = [
+          `Which is a ${targetWord.part_of_speech}?`,
+          `Pick the ${targetWord.part_of_speech}:`,
+          `Select the ${targetWord.part_of_speech}:`,
+          `Find the ${targetWord.part_of_speech}:`,
+        ];
+        const question = qTypes[i % qTypes.length];
+        
         exercises.push({
           id: `mc-${i}`,
           type: "multiple_choice",
-          question: `Which word is a ${targetWord.part_of_speech}?`,
+          question,
           correctAnswer: targetWord.word,
           options: options.map((w: any) => w.word),
           vocabularyId: targetWord.id

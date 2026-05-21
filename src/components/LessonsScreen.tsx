@@ -264,9 +264,10 @@ function LessonDetail({ lesson, onBack }: LessonDetailProps) {
             <div>
               <p className="mb-md font-medium">{exercise.question}</p>
               <div style={{ display: 'grid', gap: 'var(--space-sm)' }}>
-                {exercise.options?.map((opt, idx) => {
-                  const isSelected = selectedAnswer === opt.word;
-                  const isExerciseCorrect = opt.word === exercise.correctAnswer;
+                {exercise.options?.map((opt: any, idx: number) => {
+                  const optWord = typeof opt === 'string' ? opt : opt.word;
+                  const isSelected = selectedAnswer === optWord;
+                  const isExerciseCorrect = optWord === exercise.correctAnswer;
                   let btnStyle = {};
                   if (showResult) {
                     if (isExerciseCorrect) btnStyle = { background: 'var(--success)', color: 'white' };
@@ -277,10 +278,10 @@ function LessonDetail({ lesson, onBack }: LessonDetailProps) {
                       key={idx}
                       className={`btn ${isSelected ? 'btn-primary' : 'btn-secondary'}`}
                       style={{ ...btnStyle, textAlign: 'left' }}
-                      onClick={() => !showResult && handleAnswer(opt.word)}
+                      onClick={() => !showResult && handleAnswer(optWord)}
                       disabled={showResult}
                     >
-                      {opt.word} <span className="text-secondary">({opt.partOfSpeech})</span>
+                      {optWord}
                     </button>
                   );
                 })}
