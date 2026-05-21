@@ -17,6 +17,12 @@ interface Lesson {
   exercises: any;
 }
 
+interface LessonContent {
+  type?: string;
+  words?: Array<{ id: string; word: string; partOfSpeech: string; definition: string }>;
+  exercises?: Array<any>;
+}
+
 interface LessonsScreenProps {
   onBack: () => void;
 }
@@ -141,9 +147,6 @@ export function LessonsScreen({ onBack }: LessonsScreenProps) {
                   </div>
                   <h3 className="font-semibold mb-xs">{lesson.title}</h3>
                   <p className="text-secondary text-sm">{lesson.description}</p>
-                  {lesson.grammar_topic && (
-                    <p className="text-secondary text-sm mt-xs">Grammar: {lesson.grammar_topic}</p>
-                  )}
                 </div>
                 <div className="text-center" style={{ minWidth: 60 }}>
                   <div className="text-lg font-bold text-accent">+{lesson.xp_reward}</div>
@@ -156,20 +159,6 @@ export function LessonsScreen({ onBack }: LessonsScreenProps) {
       )}
     </div>
   );
-}
-
-interface LessonContent {
-  type?: string;
-  vocabulary?: Array<{ id: string; word: string; partOfSpeech: string; example: string }>;
-  exercises?: Array<{
-    id: string;
-    type: string;
-    question?: string;
-    sentence?: string;
-    correctAnswer: string;
-    options?: Array<{ word: string; partOfSpeech?: string }>;
-    pairs?: Array<{ word: string; partOfSpeech: string }>;
-  }>;
 }
 
 interface LessonDetailProps {
@@ -189,7 +178,9 @@ function LessonDetail({ lesson, onBack }: LessonDetailProps) {
 
   const exercises = content?.exercises || [];
   const exercise = exercises[currentExercise];
-  const isCorrect = selectedAnswer === exercise?.correctAnswer;
+  const isCorrect = selectedAnswer === exercise?.correctAnswer || 
+    (exercise?.correctAnswer === "true" && selectedAnswer === "true") ||
+    (exercise?.correctAnswer === "false" && selectedAnswer === "false");
 
   const handleAnswer = (answer: string) => {
     setSelectedAnswer(answer);
@@ -220,147 +211,225 @@ function LessonDetail({ lesson, onBack }: LessonDetailProps) {
     );
   }
 
+  const getExerciseTypeLabel = (type: string) => {
+    switch(type) {
+      case 'multiple_choice_meaning': return 'What does it mean?';
+      case 'multiple_choice_word': return 'Which word?';
+      case 'fill_blank': return 'Complete the sentence';
+      case 'true_false': return 'True or False';
+      default: return 'Exercise';
+    }
+  };
+
   return (
     <div className="screen animate-fade-in" style={{ padding: 'var(--space-xl)' }}>
+      {/* Header */}
       <div className="flex-between mb-lg">
-        <button onClick={onBack} className="btn btn-secondary">Back</button>
-        <div className="text-center">
+        <button onClick={onBack} className="btn btn-secondary">✕</button>
+        <div className="flex gap-sm">
           <span className="chip">{lesson.level}</span>
-          <span className="chip chip--secondary ml-sm">{lesson.type}</span>
         </div>
       </div>
 
-      <div className="mb-lg">
-        <h1 className="text-2xl font-bold mb-sm">{lesson.title}</h1>
-        <p className="text-secondary">{lesson.description}</p>
-        <p className="text-sm text-secondary mt-sm">Exercise {currentExercise + 1} of {exercises.length}</p>
+      {/* Progress bar */}
+      <div style={{ background: 'var(--bg-secondary)', height: 8, borderRadius: 4, marginBottom: 'var(--space-lg)' }}>
+        <div 
+          style={{ 
+            background: 'var(--success)', 
+            height: '100%', 
+            borderRadius: 4,
+            width: `${((currentExercise + 1) / exercises.length) * 100}%`,
+            transition: 'width 0.3s ease'
+          }} 
+        />
       </div>
 
-      {content?.vocabulary && currentExercise === 0 && (
-        <div className="card mb-lg" style={{ background: 'var(--bg-elevated)' }}>
-          <h2 className="font-semibold mb-md">Vocabulary</h2>
-          <div style={{ display: 'grid', gap: 'var(--space-sm)' }}>
-            {content.vocabulary.map((word, idx) => (
-              <div key={idx} className="flex-between" style={{ padding: 'var(--space-sm)', background: 'var(--bg-primary)', borderRadius: 8 }}>
-                <div>
-                  <span className="font-semibold">{word.word}</span>
-                  <span className="text-secondary text-sm ml-sm">({word.partOfSpeech})</span>
-                  {word.example && <p className="text-secondary text-sm mt-xs">"{word.example}"</p>}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <p className="text-sm text-secondary mb-lg">{currentExercise + 1} / {exercises.length}</p>
 
       {exercise && (
-        <div className="card mb-lg">
-          <h2 className="font-semibold mb-md">
-            {exercise.type === 'multiple_choice' ? 'Multiple Choice' : 
-             exercise.type === 'fill_blank' ? 'Fill in the Blank' : 'Match Pairs'}
+        <div className="card mb-lg" style={{ padding: 'var(--space-xl)' }}>
+          {/* Word highlight for context */}
+          {exercise.word && (
+            <div className="text-center mb-lg">
+              <span style={{ fontSize: '2rem', fontWeight: 'bold' }}>{exercise.word}</span>
+              <p className="text-secondary text-sm">
+                {content?.words?.find(w => w.word === exercise.word)?.definition || ''}
+              </p>
+            </div>
+          )}
+
+          <h2 className="font-semibold mb-md text-center">
+            {exercise.question || getExerciseTypeLabel(exercise.type)}
           </h2>
-          
-          {exercise.type === 'multiple_choice' && (
-            <div>
-              <p className="mb-md font-medium">{exercise.question}</p>
-              <div style={{ display: 'grid', gap: 'var(--space-sm)' }}>
-                {exercise.options?.map((opt: any, idx: number) => {
-                  const optWord = typeof opt === 'string' ? opt : opt.word;
-                  const isSelected = selectedAnswer === optWord;
-                  const isExerciseCorrect = optWord === exercise.correctAnswer;
-                  let btnStyle = {};
-                  if (showResult) {
-                    if (isExerciseCorrect) btnStyle = { background: 'var(--success)', color: 'white' };
-                    else if (isSelected && !isExerciseCorrect) btnStyle = { background: 'var(--error)', color: 'white' };
-                  }
-                  return (
-                    <button
-                      key={idx}
-                      className={`btn ${isSelected ? 'btn-primary' : 'btn-secondary'}`}
-                      style={{ ...btnStyle, textAlign: 'left' }}
-                      onClick={() => !showResult && handleAnswer(optWord)}
-                      disabled={showResult}
-                    >
-                      {optWord}
-                    </button>
-                  );
-                })}
-              </div>
+
+          {/* Sentence for fill_blank */}
+          {exercise.sentence && (
+            <p className="mb-lg text-lg font-medium text-center" style={{ fontStyle: 'italic' }}>
+              {exercise.sentence}
+            </p>
+          )}
+
+          {/* Multiple choice - meaning */}
+          {exercise.type === 'multiple_choice_meaning' && (
+            <div style={{ display: 'grid', gap: 'var(--space-sm)' }}>
+              {exercise.options?.map((opt: string, idx: number) => {
+                const isSelected = selectedAnswer === opt;
+                const isExerciseCorrect = opt === exercise.correctAnswer;
+                let btnStyle: any = { padding: 'var(--space-md)', fontSize: '1rem' };
+                if (showResult) {
+                  if (isExerciseCorrect) btnStyle.background = 'var(--success)';
+                  else if (isSelected && !isExerciseCorrect) btnStyle.background = 'var(--error)';
+                }
+                return (
+                  <button
+                    key={idx}
+                    className={`btn ${isSelected ? 'btn-primary' : 'btn-secondary'}`}
+                    style={btnStyle}
+                    onClick={() => !showResult && handleAnswer(opt)}
+                    disabled={showResult}
+                  >
+                    {opt}
+                  </button>
+                );
+              })}
             </div>
           )}
 
+          {/* Multiple choice - word */}
+          {exercise.type === 'multiple_choice_word' && (
+            <div style={{ display: 'grid', gap: 'var(--space-sm)' }}>
+              {exercise.options?.map((opt: string, idx: number) => {
+                const isSelected = selectedAnswer === opt;
+                const isExerciseCorrect = opt === exercise.correctAnswer;
+                let btnStyle: any = { padding: 'var(--space-md)', fontSize: '1.1rem', fontWeight: 'bold' };
+                if (showResult) {
+                  if (isExerciseCorrect) btnStyle.background = 'var(--success)';
+                  else if (isSelected && !isExerciseCorrect) btnStyle.background = 'var(--error)';
+                }
+                return (
+                  <button
+                    key={idx}
+                    className={`btn ${isSelected ? 'btn-primary' : 'btn-secondary'}`}
+                    style={btnStyle}
+                    onClick={() => !showResult && handleAnswer(opt)}
+                    disabled={showResult}
+                  >
+                    {opt}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Fill in the blank */}
           {exercise.type === 'fill_blank' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-sm)' }}>
+              {exercise.options?.map((opt: string, idx: number) => {
+                const isSelected = selectedAnswer === opt;
+                const isExerciseCorrect = opt === exercise.correctAnswer;
+                let btnStyle: any = { padding: 'var(--space-md)', fontSize: '1.1rem' };
+                if (showResult) {
+                  if (isExerciseCorrect) btnStyle.background = 'var(--success)';
+                  else if (isSelected && !isExerciseCorrect) btnStyle.background = 'var(--error)';
+                }
+                return (
+                  <button
+                    key={idx}
+                    className={`btn ${isSelected ? 'btn-primary' : 'btn-secondary'}`}
+                    style={btnStyle}
+                    onClick={() => !showResult && handleAnswer(opt)}
+                    disabled={showResult}
+                  >
+                    {opt}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* True/False */}
+          {exercise.type === 'true_false' && (
             <div>
-              <p className="mb-md font-medium">{exercise.sentence}</p>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-sm)' }}>
-                {exercise.options?.map((opt, idx) => {
-                  const isSelected = selectedAnswer === opt;
-                  const isExerciseCorrect = opt === exercise.correctAnswer;
-                  let btnStyle = {};
-                  if (showResult) {
-                    if (isExerciseCorrect) btnStyle = { background: 'var(--success)', color: 'white' };
-                    else if (isSelected && !isExerciseCorrect) btnStyle = { background: 'var(--error)', color: 'white' };
-                  }
-                  return (
-                    <button
-                      key={idx}
-                      className={`btn ${isSelected ? 'btn-primary' : 'btn-secondary'}`}
-                      style={btnStyle}
-                      onClick={() => !showResult && handleAnswer(opt)}
-                      disabled={showResult}
-                    >
-                      {opt}
-                    </button>
-                  );
-                })}
+              {exercise.sentence && (
+                <p className="mb-lg text-lg font-medium text-center" style={{ fontStyle: 'italic' }}>
+                  {exercise.sentence}
+                </p>
+              )}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)' }}>
+                <button
+                  className={`btn ${selectedAnswer === 'true' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ padding: 'var(--space-lg)', fontSize: '1.2rem' }}
+                  onClick={() => !showResult && handleAnswer('true')}
+                  disabled={showResult}
+                >
+                  ✓ True
+                </button>
+                <button
+                  className={`btn ${selectedAnswer === 'false' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ padding: 'var(--space-lg)', fontSize: '1.2rem' }}
+                  onClick={() => !showResult && handleAnswer('false')}
+                  disabled={showResult}
+                >
+                  ✗ False
+                </button>
               </div>
             </div>
           )}
 
-          {exercise.type === 'match' && (
-            <div>
-              <p className="mb-md text-secondary">Match the words with their parts of speech:</p>
-              <div style={{ display: 'grid', gap: 'var(--space-sm)' }}>
-                {exercise.pairs?.map((pair, idx) => (
-                  <div key={idx} className="flex-between" style={{ padding: 'var(--space-sm)', background: 'var(--bg-secondary)', borderRadius: 8 }}>
-                    <span className="font-semibold">{pair.word}</span>
-                    <span className="chip chip--secondary">{pair.partOfSpeech}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
+          {/* Result feedback */}
           {showResult && (
             <div className="mt-lg">
-              <div className={`card ${isCorrect ? '' : ''}`} style={{ background: isCorrect ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)', padding: 'var(--space-md)' }}>
-                <p className={`font-semibold ${isCorrect ? 'text-success' : 'text-error'}`}>
-                  {isCorrect ? '✓ Correct!' : `✗ The answer is: ${exercise.correctAnswer}`}
+              <div 
+                style={{ 
+                  padding: 'var(--space-md)', 
+                  borderRadius: 8,
+                  background: isCorrect ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)',
+                  textAlign: 'center'
+                }}
+              >
+                <p className={`font-bold ${isCorrect ? 'text-success' : 'text-error'}`} style={{ fontSize: '1.2rem' }}>
+                  {isCorrect ? '✓ Correct!' : `✗ Wrong. The answer is: ${exercise.correctAnswer}`}
                 </p>
               </div>
-              <button className="btn btn-primary btn-full mt-md" onClick={nextExercise}>
-                {currentExercise < exercises.length - 1 ? 'Next Exercise' : 'Complete Lesson'}
+              <button 
+                className="btn btn-primary btn-full mt-md" 
+                onClick={nextExercise}
+                style={{ padding: 'var(--space-md)' }}
+              >
+                {currentExercise < exercises.length - 1 ? 'Continue' : 'Finish Lesson'}
               </button>
             </div>
           )}
         </div>
       )}
 
-      {!completed && !exercise && (
-        <button
-          className="btn btn-primary btn-full"
-          onClick={() => setCompleted(true)}
-        >
-          Start Lesson
-        </button>
-      )}
-
+      {/* Completion screen */}
       {completed && (
-        <div className="card text-center" style={{ background: 'var(--bg-elevated)', padding: 'var(--space-xl)' }}>
-          <h2 className="text-xl font-bold text-success mb-sm">Lesson Complete!</h2>
-          <p className="text-secondary mb-md">You've completed this lesson</p>
-          <div className="font-bold text-accent text-lg mb-md">+{lesson.xp_reward} XP</div>
-          <button className="btn btn-primary" onClick={onBack}>Back to Lessons</button>
+        <div 
+          className="card text-center" 
+          style={{ 
+            background: 'var(--bg-elevated)', 
+            padding: 'var(--space-xl)',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center'
+          }}
+        >
+          <div style={{ fontSize: '4rem', marginBottom: 'var(--space-md)' }}>🎉</div>
+          <h2 className="text-xl font-bold mb-sm">Lesson Complete!</h2>
+          <p className="text-secondary mb-lg">You've finished all exercises</p>
+          <div className="font-bold text-accent text-lg mb-xl" style={{ fontSize: '2rem' }}>
+            +{lesson.xp_reward} XP
+          </div>
+          <button className="btn btn-primary" onClick={onBack} style={{ padding: 'var(--space-md) var(--space-xl)' }}>
+            Continue
+          </button>
         </div>
       )}
     </div>

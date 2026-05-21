@@ -16,6 +16,7 @@ async function regenerateLessons() {
     SELECT id, word, level, part_of_speech, example_sentences 
     FROM vocabulary 
     ORDER BY frequency ASC
+    LIMIT 500
   `);
   
   const vocabulary = vocabResult.rows;
@@ -26,63 +27,173 @@ async function regenerateLessons() {
   
   const chunkSize = 8;
   
+  // Simple definitions for common words (since we don't have translations)
+  const definitions: Record<string, string> = {
+    "verb": "action word",
+    "noun": "person, place, or thing",
+    "adjective": "describes a noun",
+    "adverb": "describes a verb",
+    "need": "to require something",
+    "want": "to desire something",
+    "have": "to possess",
+    "be": "to exist",
+    "do": "to perform an action",
+    "make": "to create",
+    "get": "to receive",
+    "know": "to understand",
+    "think": "to believe",
+    "say": "to speak",
+    "tell": "to inform",
+    "find": "to discover",
+    "give": "to offer",
+    "take": "to grab",
+    "see": "to view",
+    "come": "to arrive",
+    "go": "to leave",
+    "become": "to turn into",
+    "leave": "to go away",
+    "put": "to place",
+    "keep": "to hold",
+    "let": "to allow",
+    "begin": "to start",
+    "seem": "to appear",
+    "help": "to assist",
+    "show": "to demonstrate",
+    "hear": "to listen",
+    "play": "to have fun",
+    "run": "to move fast",
+    "move": "to change position",
+    "live": "to reside",
+    "believe": "to trust",
+    "bring": "to carry",
+    "happen": "to occur",
+    "write": "to compose",
+    "provide": "to supply",
+    "sit": "to be seated",
+    "stand": "to be upright",
+    "lose": "to misplace",
+    "pay": "to give money",
+    "meet": "to encounter",
+    "include": "to contain",
+    "continue": "to keep going",
+    "set": "to arrange",
+    "learn": "to gain knowledge",
+    "change": "to modify",
+    "lead": "to guide",
+    "understand": "to comprehend",
+    "watch": "to observe",
+    "follow": "to pursue",
+    "stop": "to halt",
+    "create": "to make",
+    "speak": "to talk",
+    "read": "to interpret text",
+    "allow": "to permit",
+    "add": "to combine",
+    "spend": "to use time/money",
+    "grow": "to increase",
+    "open": "to unfold",
+    "walk": "to move on foot",
+    "win": "to succeed",
+    "offer": "to propose",
+    "remember": "to recall",
+    "love": "to care deeply",
+    "consider": "to think about",
+    "appear": "to show up",
+    "buy": "to purchase",
+    "wait": "to pause",
+    "serve": "to assist",
+    "die": "to cease living",
+    "send": "to transmit",
+    "expect": "to anticipate",
+    "build": "to construct",
+    "stay": "to remain",
+    "fall": "to drop",
+    "cut": "to divide",
+    "reach": "to arrive at",
+    "kill": "to cause death",
+    "remain": "to stay",
+    "suggest": "to propose",
+    "raise": "to lift",
+    "pass": "to go by",
+    "sell": "to exchange for money",
+    "require": "to need",
+    "report": "to describe",
+    "decide": "to make a choice",
+    "pull": "to draw toward",
+  };
+
+  const getDefinition = (word: string, pos: string): string => {
+    if (definitions[word]) return definitions[word];
+    return `${pos}: ${word}`;
+  };
+  
   const createLesson = (words: any[], level: string, lessonNum: number, title: string, description: string) => {
-    const vocabularySection = words.slice(0, 8).map((w: any) => ({
-      id: w.id,
-      word: w.word,
-      partOfSpeech: w.part_of_speech,
-      example: w.example_sentences?.[0]?.text || null
-    }));
-    
     const exercises = [];
-    const numExercises = 6;
+    const numExercises = 7;
     
     for (let i = 0; i < numExercises; i++) {
       const targetWord = words[i % words.length];
+      const definition = getDefinition(targetWord.word, targetWord.part_of_speech);
       
-      if (i % 3 === 0) {
+      if (i % 4 === 0) {
+        // Type 1: See word, pick meaning
+        const otherWords = words.filter((w: any) => w.id !== targetWord.id).slice(0, 3);
+        const options = [
+          { word: targetWord.word, meaning: definition },
+          ...otherWords.map((w: any) => ({ word: w.word, meaning: getDefinition(w.word, w.part_of_speech) }))
+        ].sort(() => Math.random() - 0.5);
+        
+        exercises.push({
+          id: `meaning-${i}`,
+          type: "multiple_choice_meaning",
+          question: `What does "${targetWord.word}" mean?`,
+          correctAnswer: definition,
+          options: options.map((o: any) => o.meaning),
+          word: targetWord.word
+        });
+      } else if (i % 4 === 1) {
+        // Type 2: See meaning, pick word
         const otherWords = words.filter((w: any) => w.id !== targetWord.id).slice(0, 3);
         const options = [targetWord, ...otherWords].sort(() => Math.random() - 0.5);
         
-        const qTypes = [
-          `Which is a ${targetWord.part_of_speech}?`,
-          `Pick the ${targetWord.part_of_speech}:`,
-          `Select the ${targetWord.part_of_speech}:`,
-          `Find the ${targetWord.part_of_speech}:`,
-        ];
-        const question = qTypes[i % qTypes.length];
-        
         exercises.push({
-          id: `mc-${i}`,
-          type: "multiple_choice",
-          question,
+          id: `word-${i}`,
+          type: "multiple_choice_word",
+          question: `Which word means "${definition}"?`,
           correctAnswer: targetWord.word,
           options: options.map((w: any) => w.word),
-          vocabularyId: targetWord.id
+          word: targetWord.word
         });
-      } else if (i % 3 === 1) {
-        const sentences = targetWord.example_sentences || [];
-        if (sentences.length > 0) {
-          const sentence = sentences[0];
-          const blankedSentence = sentence.text.replace(new RegExp(targetWord.word, 'gi'), "_____");
-          const otherWords = words.filter((w: any) => w.id !== targetWord.id).slice(0, 3).map((w: any) => w.word);
-          const options = [targetWord.word, ...otherWords].sort(() => Math.random() - 0.5);
-          exercises.push({
-            id: `fill-${i}`,
-            type: "fill_blank",
-            sentence: blankedSentence,
-            correctAnswer: targetWord.word,
-            options: options,
-            vocabularyId: targetWord.id
-          });
-        }
-      } else {
-        const subset = words.slice(0, Math.min(4, words.length));
+      } else if (i % 4 === 2) {
+        // Type 3: Complete the sentence
+        const sentence = `I ___ to ${targetWord.word} every day.`;
+        
+        const otherWords = words.filter((w: any) => w.id !== targetWord.id).slice(0, 3);
+        const options = [targetWord.word, ...otherWords.map((w: any) => w.word)].sort(() => Math.random() - 0.5);
+        
         exercises.push({
-          id: `match-${i}`,
-          type: "match",
-          pairs: subset.map((w: any) => ({ word: w.word, partOfSpeech: w.part_of_speech })),
-          vocabularyIds: subset.map((w: any) => w.id)
+          id: `complete-${i}`,
+          type: "fill_blank",
+          question: "Complete the sentence:",
+          sentence,
+          correctAnswer: targetWord.word,
+          options,
+          word: targetWord.word
+        });
+      } else {
+        // Type 4: Is this correct?
+        const isCorrect = Math.random() > 0.5;
+        const sentence = isCorrect 
+          ? `"She ${targetWord.word}s every morning."`
+          : `"She ${targetWord.word} yesterday."`; // Wrong tense for demo
+        
+        exercises.push({
+          id: `judge-${i}`,
+          type: "true_false",
+          question: "Is this sentence correct?",
+          sentence,
+          correctAnswer: isCorrect ? "true" : "false",
+          word: targetWord.word
         });
       }
     }
@@ -95,12 +206,17 @@ async function regenerateLessons() {
       type: "vocabulary",
       content: JSON.stringify({
         type: "duolingo",
-        vocabulary: vocabularySection,
-        exercises: exercises.filter(e => e)
+        words: words.slice(0, 8).map((w: any) => ({
+          id: w.id,
+          word: w.word,
+          partOfSpeech: w.part_of_speech,
+          definition: getDefinition(w.word, w.part_of_speech)
+        })),
+        exercises
       }),
       vocabulary_ids: words.slice(0, 8).map((w: any) => w.id),
-      xp_reward: 10 * exercises.filter(e => e).length,
-      estimated_minutes: Math.ceil(words.length / 8) * 5,
+      xp_reward: 10 * exercises.length,
+      estimated_minutes: 5,
       difficulty: level === "B1" ? 1 : 2
     };
   };
@@ -108,19 +224,19 @@ async function regenerateLessons() {
   const lessons: any[] = [];
   let lessonId = 1;
   
-  const b1Titles = ["Essential Actions", "Daily Activities", "People & Places", "Objects Around You", "Describing Things", "Communication"];
-  const b2Titles = ["Advanced Actions", "Complex Ideas", "Professional Context", "Abstract Concepts", "Nuanced Expression", "Academic Words"];
+  const b1Titles = ["Essential Words", "Daily Actions", "Common Verbs", "Basic Concepts", "Everyday Use", "Foundation"];
+  const b2Titles = ["Advanced Terms", "Complex Actions", "Professional", "Abstract Ideas", "Nuanced Use", "Expert Level"];
   
   for (let i = 0; i < b1Words.length; i += chunkSize) {
     const group = b1Words.slice(i, i + chunkSize);
     const titleIdx = Math.floor(i / chunkSize);
-    lessons.push(createLesson(group, "B1", lessonId++, `B1 - ${b1Titles[titleIdx]}`, `Learn ${group.length} essential B1 vocabulary words`));
+    lessons.push(createLesson(group, "B1", lessonId++, `B1 - ${b1Titles[titleIdx]}`, `Learn ${group.length} essential B1 words`));
   }
   
   for (let i = 0; i < b2Words.length; i += chunkSize) {
     const group = b2Words.slice(i, i + chunkSize);
     const titleIdx = Math.floor(i / chunkSize);
-    lessons.push(createLesson(group, "B2", lessonId++, `B2 - ${b2Titles[titleIdx]}`, `Master ${group.length} advanced B2 vocabulary words`));
+    lessons.push(createLesson(group, "B2", lessonId++, `B2 - ${b2Titles[titleIdx]}`, `Master ${group.length} advanced B2 words`));
   }
   
   console.log(`Generated ${lessons.length} lessons`);
