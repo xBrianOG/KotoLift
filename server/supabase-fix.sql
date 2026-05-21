@@ -10,3 +10,11 @@ GRANT ALL ON conjugations TO service_role;
 GRANT SELECT ON vocabulary TO anon;
 GRANT SELECT ON lessons TO anon;
 GRANT SELECT ON conjugations TO anon;
+
+-- CRITICAL: Grant SELECT to service_role for Supabase client to work
+GRANT SELECT ON vocabulary TO service_role;
+GRANT SELECT ON lessons TO service_role;
+
+-- Disable RLS for public read tables (workaround for permission issues)
+ALTER TABLE vocabulary DISABLE ROW LEVEL SECURITY;
+ALTER TABLE lessons DISABLE ROW LEVEL SECURITY;

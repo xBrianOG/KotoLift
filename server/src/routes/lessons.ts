@@ -1,52 +1,40 @@
 import { Router } from 'express';
-import { Pool } from 'pg';
+import { createClient } from '@supabase/supabase-js';
 
 const router = Router();
 
-const pool = new Pool({
-  host: process.env.PG_HOST || 'localhost',
-  port: parseInt(process.env.PG_PORT || '5432'),
-  database: process.env.PG_DATABASE || 'postgres',
-  user: process.env.PG_USER || 'postgres',
-  password: process.env.PG_PASSWORD || '',
-  ssl: { rejectUnauthorized: false }
-});
+const supabaseUrl = process.env.SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
 
-function isSupabaseConfigured(): boolean {
-  return !!(process.env.PG_HOST && process.env.PG_USER);
-}
+const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: { persistSession: false }
+});
 
 router.get('/', async (req, res) => {
   try {
     const { level, type, limit } = req.query;
 
-    let query = 'SELECT id, title, description, level, type, vocabulary_ids, grammar_topic, xp_reward, estimated_minutes, content, exercises FROM lessons';
-    const params: any[] = [];
-    const conditions: string[] = [];
+    let query = supabase
+      .from('lessons')
+      .select('id, title, description, level, type, vocabulary_ids, grammar_topic, xp_reward, estimated_minutes, content, exercises')
+      .order('created_at', { ascending: true });
 
     if (level) {
-      conditions.push(`level = $${params.length + 1}`);
-      params.push(level);
+      query = query.eq('level', level);
     }
 
     if (type) {
-      conditions.push(`type = $${params.length + 1}`);
-      params.push(type);
+      query = query.eq('type', type);
     }
-
-    if (conditions.length > 0) {
-      query += ' WHERE ' + conditions.join(' AND ');
-    }
-
-    query += ' ORDER BY created_at ASC';
 
     if (limit) {
-      query += ` LIMIT $${params.length + 1}`;
-      params.push(parseInt(limit as string));
+      query = query.limit(parseInt(limit as string));
     }
 
-    const result = await pool.query(query, params);
-    res.json({ lessons: result.rows });
+    const { data, error } = await query;
+
+    if (error) throw error;
+    res.json({ lessons: data || [] });
   } catch (err: any) {
     console.error('Lessons fetch error:', err);
     res.status(500).json({ error: err.message || 'Failed to fetch lessons' });
@@ -57,15 +45,16 @@ router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const query = `SELECT id, title, description, level, type, vocabulary_ids, grammar_topic, xp_reward, estimated_minutes, content, exercises 
-                   FROM lessons WHERE id = $1`;
-    const result = await pool.query(query, [id]);
+    const { data, error } = await supabase
+      .from('lessons')
+      .select('id, title, description, level, type, vocabulary_ids, grammar_topic, xp_reward, estimated_minutes, content, exercises')
+      .eq('id', id)
+      .single();
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Lesson not found' });
-    }
+    if (error) throw error;
+    if (!data) return res.status(404).json({ error: 'Lesson not found' });
 
-    res.json({ lesson: result.rows[0] });
+    res.json({ lesson: data });
   } catch (err: any) {
     console.error('Lesson detail error:', err);
     res.status(500).json({ error: err.message || 'Failed to fetch lesson' });
