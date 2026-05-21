@@ -72,48 +72,55 @@ function Dropdown({
         {label}: {selectedLabels || 'All'} ▼
       </button>
       {open && (
-        <div className="card" style={{ 
-          position: 'absolute', 
-          top: '100%', 
-          left: 0, 
-          zIndex: 1000, 
-          minWidth: 180, 
-          maxHeight: 250, 
-          overflowY: 'auto',
-          marginTop: 4,
-          padding: 'var(--space-xs)'
-        }}>
+        <div 
+          className="card" 
+          onClick={(e) => e.stopPropagation()}
+          style={{ 
+            position: 'absolute', 
+            top: '100%', 
+            left: 0, 
+            zIndex: 1000, 
+            minWidth: 180, 
+            maxHeight: 250, 
+            overflowY: 'auto',
+            marginTop: 4,
+            padding: '8px'
+          }}>
           {options.map(opt => {
             const isSelected = selected.includes(opt.key);
             return (
-              <button
-                type="button"
+              <div
                 key={opt.key}
-                onClick={(e) => {
-                  e.stopPropagation();
+                role="button"
+                tabIndex={0}
+                onClick={() => {
+                  console.log('[v0] Item clicked:', opt.key);
                   handleSelect(opt.key);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    handleSelect(opt.key);
+                  }
                 }}
                 style={{
                   width: '100%',
-                  padding: '8px 12px',
+                  padding: '10px 12px',
                   cursor: 'pointer',
-                  borderRadius: 4,
+                  borderRadius: 6,
                   background: 'transparent',
-                  border: 'none',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 8,
-                  fontSize: '0.85rem',
-                  textAlign: 'left',
-                  color: 'inherit'
+                  gap: 10,
+                  fontSize: '0.9rem',
+                  userSelect: 'none'
                 }}
                 onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface)'}
                 onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
               >
                 {multiple && (
                   <span style={{ 
-                    width: 18, 
-                    height: 18, 
+                    width: 20, 
+                    height: 20, 
                     border: `2px solid ${isSelected ? 'var(--primary)' : 'var(--border)'}`, 
                     borderRadius: 4,
                     background: isSelected ? 'var(--primary)' : 'transparent',
@@ -121,16 +128,16 @@ function Dropdown({
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: 'white',
-                    fontSize: 12,
+                    fontSize: 14,
                     flexShrink: 0
                   }}>
                     {isSelected && '✓'}
                   </span>
                 )}
-                <span style={{ color: isSelected ? 'var(--primary)' : 'inherit', fontWeight: isSelected ? 500 : 400 }}>
+                <span style={{ color: isSelected ? 'var(--primary)' : 'inherit', fontWeight: isSelected ? 600 : 400 }}>
                   {opt.label}
                 </span>
-              </button>
+              </div>
             );
           })}
         </div>
