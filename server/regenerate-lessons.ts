@@ -102,36 +102,35 @@ const definitions: Record<string, string> = {
   "throw": "to toss or hurl",
   "catch": "to grab in air",
   "hold": "to grasp or keep",
-  "throw": "to fling through air",
   "save": "to rescue or keep safe",
   "protect": "to keep from harm",
   "agree": "to have same opinion",
-  "expect": "to look forward to",
   "fail": "to not succeed",
   "hope": "to wish for something",
-  "seem": "to give impression",
-  "appear": "to become seen",
   "discuss": "to talk about",
   "mention": "to briefly refer to",
   "support": "to help or back",
   "face": "to confront or meet",
   "contain": "to have inside",
-  "agree": "to consent or accept",
   "receive": "to get or accept",
   "visit": "to go see someone",
   "return": "to come back",
   "explain": "to make clear",
-  "hope": "to want something to happen",
   "develop": "to grow or improve",
   "carry": "to hold and move",
   "break": "to split apart",
-  "receive": "to be given something",
   "enjoy": "to take pleasure in",
   "fill": "to make full",
   "cover": "to put something over",
-  "catch": "to grab or intercept",
   "draw": "to create image",
   "choose": "to pick or select",
+  "nod": "to move head up and down",
+  "obey": "to follow rules",
+  "object": "to disagree",
+  "notice": "to observe or see",
+  "number": "to count or label",
+  "normalize": "to make normal",
+  "nest": "to build a nest",
 };
 
 const posLabels: Record<string, string> = {
@@ -139,6 +138,128 @@ const posLabels: Record<string, string> = {
   "noun": "noun",
   "adjective": "adjective",
   "adverb": "adverb"
+};
+
+const sentences: Record<string, string> = {
+  "need": "I ___ more time to finish this.",
+  "want": "She ___ to travel around the world.",
+  "have": "They ___ a beautiful house.",
+  "be": "I ___ a teacher at this school.",
+  "do": "What did you ___ yesterday?",
+  "make": "He ___ to build a new app.",
+  "get": "I ___ a gift for my birthday.",
+  "know": "Do you ___ the answer?",
+  "think": "I ___ this is a good idea.",
+  "say": "What did she ___ to you?",
+  "tell": "Can you ___ me a story?",
+  "find": "I couldn't ___ my keys.",
+  "give": "Please ___ me that book.",
+  "take": "You should ___ your time.",
+  "see": "Can you ___ that bird?",
+  "come": "Please ___ to my party!",
+  "go": "I ___ to the store yesterday.",
+  "become": "She wants to ___ a doctor.",
+  "leave": "I need to ___ early.",
+  "put": "Please ___ the plate on the table.",
+  "keep": "Please ___ your room clean.",
+  "let": "Please ___ me help you.",
+  "begin": "Let's ___ the meeting.",
+  "seem": "You ___ tired today.",
+  "help": "Can you ___ me with this?",
+  "show": "Can you ___ me how to do it?",
+  "hear": "I can't ___ you clearly.",
+  "play": "Let's ___ soccer later.",
+  "run": "I like to ___ in the morning.",
+  "move": "Please ___ your chair.",
+  "live": "Where do you ___?",
+  "believe": "I ___ in you!",
+  "bring": "Please ___ your friends.",
+  "happen": "What happened ___?",
+  "write": "I like to ___ stories.",
+  "provide": "We will ___ food.",
+  "sit": "Please ___ down here.",
+  "stand": "Please ___ up straight.",
+  "lose": "I don't want to ___ this game.",
+  "pay": "Did you ___ the bill?",
+  "meet": "Nice to ___ you!",
+  "include": "Does this ___ tax?",
+  "continue": "Please ___ reading.",
+  "set": "Let's ___ a meeting.",
+  "learn": "I want to ___ English.",
+  "change": "Let's ___ the plan.",
+  "lead": "Who will ___ the team?",
+  "understand": "I don't ___ you.",
+  "watch": "Let's ___ a movie.",
+  "follow": "Please ___ the rules.",
+  "stop": "Please ___ talking!",
+  "create": "Let's ___ something new.",
+  "speak": "Can you ___ English?",
+  "read": "I like to ___ books.",
+  "allow": "They ___ us to leave.",
+  "add": "Please ___ sugar to the mix.",
+  "spend": "I like to ___ time with family.",
+  "grow": "Plants ___ in spring.",
+  "open": "Please ___ the door.",
+  "walk": "Let's ___ to school.",
+  "win": "I hope we ___!",
+  "offer": "I can ___ you some help.",
+  "remember": "Please ___ to call me.",
+  "love": "I ___ chocolate cake.",
+  "consider": "Please ___ my proposal.",
+  "appear": "She will ___ soon.",
+  "buy": "I want to ___ a car.",
+  "wait": "Please ___ for me.",
+  "serve": "We ___ customers daily.",
+  "die": "No one wants to ___.",
+  "send": "Please ___ me an email.",
+  "expect": "I ___ good results.",
+  "build": "They want to ___ a house.",
+  "stay": "Let's ___ here tonight.",
+  "fall": "Leaves ___ in autumn.",
+  "cut": "Please ___ the cake.",
+  "reach": "Call when you ___ home.",
+  "kill": "Don't ___ the plants.",
+  "remain": "Please ___ seated.",
+  "suggest": "I ___ we go now.",
+  "raise": "Please ___ your hand.",
+  "pass": "Please ___ the salt.",
+  "sell": "They want to ___ their car.",
+  "require": "This ___ patience.",
+  "report": "Please ___ the issue.",
+  "decide": "Let's ___ together.",
+  "pull": "Please ___ the door.",
+  "push": "Don't ___ the button.",
+  "throw": "Don't ___ trash here.",
+  "catch": "Can you ___ the ball?",
+  "hold": "Please ___ my hand.",
+  "save": "Let's ___ money.",
+  "protect": "We must ___ the environment.",
+  "agree": "I ___ with you.",
+  "fail": "Don't ___ to try.",
+  "hope": "I ___ you feel better.",
+  "discuss": "Let's ___ this later.",
+  "mention": "Don't ___ my name.",
+  "support": "I ___ your decision.",
+  "face": "Let's ___ the problem.",
+  "contain": "This box ___ books.",
+  "receive": "I ___ many gifts.",
+  "visit": "Let's ___ grandma.",
+  "return": "When will you ___?",
+  "explain": "Please ___ this to me.",
+  "develop": "We need to ___ skills.",
+  "carry": "Please ___ this for me.",
+  "break": "Don't ___ the rules!",
+  "enjoy": "I ___ reading books.",
+  "fill": "Please ___ the form.",
+  "cover": "Please ___ the pot.",
+  "draw": "Can you ___ a picture?",
+  "choose": "You can ___ any one.",
+  "nod": "She ___ in agreement.",
+  "obey": "Children should ___ parents.",
+  "object": "I ___ to this plan.",
+  "notice": "Did you ___ the change?",
+  "number": "Please ___ the items.",
+  "normalize": "We need to ___ relations.",
 };
 
 async function regenerateLessons() {
@@ -156,12 +277,17 @@ async function regenerateLessons() {
   
   console.log(`Found ${b1Words.length} B1 and ${b2Words.length} B2 words`);
   
-  const getDefinition = (word: string, pos: string): string => {
+  const getDefinition = (word: string): string => {
     if (definitions[word]) return definitions[word];
-    return `to ${word}`;
+    return `the meaning of "${word}"`;
   };
 
-  // Group words by part of speech for better distractors
+  const getSentence = (word: string): string => {
+    if (sentences[word]) return sentences[word];
+    return `"The word "${word}" is used in this sentence."`;
+  };
+
+  // Group words by part of speech
   const wordsByPos: Record<string, any[]> = {};
   for (const w of vocabulary) {
     const pos = w.part_of_speech || 'verb';
@@ -169,23 +295,10 @@ async function regenerateLessons() {
     wordsByPos[pos].push(w);
   }
 
-  const getDistractors = (targetWord: any, count: number): string[] => {
-    const pos = targetWord.part_of_speech || 'verb';
-    const samePosWords = wordsByPos[pos] || [];
-    
-    // Get words of same level first, then others
-    let poolWords = samePosWords.filter(w => w.id !== targetWord.id && w.level === targetWord.level);
-    if (poolWords.length < count) {
-      poolWords = [...poolWords, ...samePosWords.filter(w => w.id !== targetWord.id && w.level !== targetLevel)];
-    }
-    
-    // Shuffle and get definitions
-    const shuffled = poolWords.sort(() => Math.random() - 0.5);
-    const distractors = shuffled.slice(0, count).map(w => getDefinition(w.word, w.part_of_speech));
-    
-    // Remove duplicates and near-duplicates
-    const targetDef = getDefinition(targetWord.word, targetWord.part_of_speech);
-    return distractors.filter(d => d !== targetDef && !d.includes(targetWord.word));
+  const getDistractorWords = (targetWord: any, count: number): string[] => {
+    const samePosWords = (wordsByPos[targetWord.part_of_speech] || []).filter((w: any) => w.id !== targetWord.id);
+    const shuffled = samePosWords.sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, count).map((w: any) => w.word);
   };
 
   const chunkSize = 8;
@@ -196,57 +309,43 @@ async function regenerateLessons() {
     
     for (let i = 0; i < numExercises; i++) {
       const targetWord = words[i % words.length];
-      const targetDef = getDefinition(targetWord.word, targetWord.part_of_speech);
+      const targetDef = getDefinition(targetWord.word);
       const targetPos = posLabels[targetWord.part_of_speech] || targetWord.part_of_speech;
-      const example = targetWord.example_sentences?.[0]?.text || `Example: ${targetWord.word}`;
+      const example = getSentence(targetWord.word);
       
-      // Get distractors using actual definitions
-      const otherDefs = getDistractors(targetWord, 3);
+      // Get distractor words (NOT definitions)
+      const distractorWords = getDistractorWords(targetWord, 3);
       
-      if (i % 3 === 0) {
-        // Type: What does this word mean? (show word, pick definition)
-        const options = [targetDef, ...otherDefs].sort(() => Math.random() - 0.5);
+      if (i % 2 === 0) {
+        // Type: See word + definition, pick the word from options
+        const options = [targetWord.word, ...distractorWords].sort(() => Math.random() - 0.5);
         
         exercises.push({
-          id: `mean-${i}`,
-          type: "meaning",
+          id: `pick-${i}`,
+          type: "pick_word",
           word: targetWord.word,
           partOfSpeech: targetPos,
-          question: `What does "${targetWord.word}" mean?`,
-          options,
-          correctAnswer: targetDef,
-          example
-        });
-      } else if (i % 3 === 1) {
-        // Type: Which word means this? (show definition, pick word)
-        const otherWords = words.filter((w: any) => w.id !== targetWord.id).slice(0, 3).map((w: any) => w.word);
-        const options = [targetWord.word, ...otherWords].sort(() => Math.random() - 0.5);
-        
-        exercises.push({
-          id: `word-${i}`,
-          type: "word",
-          word: targetWord.word,
-          partOfSpeech: targetPos,
-          question: `Which word means "${targetDef}"?`,
-          options,
           correctAnswer: targetWord.word,
+          // Show definition so user knows what to pick
+          context: targetDef,
+          sentence: example,
+          options,
           example
         });
       } else {
-        // Type: Complete the sentence
-        const otherWords = words.filter((w: any) => w.id !== targetWord.id).slice(0, 3).map((w: any) => w.word);
-        const options = [targetWord.word, ...otherWords].sort(() => Math.random() - 0.5);
-        const sentence = `"I ___ ${targetWord.word} every morning."`;
+        // Type: See sentence with blank, pick correct word
+        const sentenceWithBlank = example.replace(targetWord.word, "_____");
+        const options = [targetWord.word, ...distractorWords].sort(() => Math.random() - 0.5);
         
         exercises.push({
           id: `fill-${i}`,
-          type: "fill",
+          type: "fill_blank",
           word: targetWord.word,
           partOfSpeech: targetPos,
-          question: "Complete the sentence:",
-          sentence,
-          options,
           correctAnswer: targetWord.word,
+          context: targetDef,
+          sentence: sentenceWithBlank,
+          options,
           example
         });
       }
@@ -264,7 +363,7 @@ async function regenerateLessons() {
           id: w.id,
           word: w.word,
           partOfSpeech: posLabels[w.part_of_speech] || w.part_of_speech,
-          definition: getDefinition(w.word, w.part_of_speech)
+          definition: getDefinition(w.word)
         })),
         exercises
       }),

@@ -116,8 +116,6 @@ function LessonPlayer({ lesson, onBack }: { lesson: Lesson; onBack: () => void }
   const exercises = content?.exercises || [];
   const ex = exercises[current];
 
-  const isCorrect = selected === ex?.correctAnswer;
-
   const handleAnswer = (answer: string) => {
     setSelected(answer);
     setShowResult(true);
@@ -142,15 +140,11 @@ function LessonPlayer({ lesson, onBack }: { lesson: Lesson; onBack: () => void }
     );
   }
 
-  // Determine if this is correct (handles different answer formats)
-  const checkCorrect = () => {
-    if (ex.type === 'meaning') return selected === ex.correctAnswer;
-    if (ex.type === 'word') return selected === ex.correctAnswer;
-    if (ex.type === 'fill') return selected === ex.correctAnswer;
-    return false;
-  };
+  // Check if selected answer is correct
+  const isCorrect = selected === ex.correctAnswer;
 
-  const finalIsCorrect = checkCorrect();
+  // Filter options: remove the target word, shuffle remaining
+  const options = ex.options?.filter((opt: string) => opt !== ex.word).sort(() => Math.random() - 0.5).slice(0, 4) || [];
 
   return (
     <div className="screen animate-fade-in" style={{ padding: 'var(--space-lg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -169,25 +163,34 @@ function LessonPlayer({ lesson, onBack }: { lesson: Lesson; onBack: () => void }
       {/* Main Card */}
       <div className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: 'var(--space-xl)' }}>
         
-        {/* Word Display - always shown */}
-        <div className="text-center mb-lg">
+        {/* Word Display */}
+        <div className="text-center mb-md">
           <div style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: 8 }}>{ex.word}</div>
           <div className="text-secondary">{ex.partOfSpeech}</div>
         </div>
 
-        {/* Question - only shown AFTER answering */}
-        {showResult && (
-          <div className="text-center mb-lg" style={{ padding: 'var(--space-md)', background: 'var(--bg-secondary)', borderRadius: 8 }}>
-            <p className="font-medium">{ex.question}</p>
+        {/* Definition - ALWAYS visible */}
+        {!showResult && (
+          <div className="mb-lg" style={{ padding: 'var(--space-md)', background: 'var(--bg-secondary)', borderRadius: 8 }}>
+            <p className="text-secondary text-sm mb-xs">Meaning:</p>
+            <p className="font-medium" style={{ fontSize: '1.1rem' }}>{ex.correctAnswer}</p>
           </div>
         )}
 
-        {/* Answer Options */}
+        {/* Sentence prompt for fill type - shown as context */}
+        {!showResult && ex.sentence && (
+          <div className="mb-lg" style={{ padding: 'var(--space-md)', background: 'var(--bg-elevated)', borderRadius: 8 }}>
+            <p className="text-secondary text-sm mb-xs">Complete:</p>
+            <p className="font-medium" style={{ fontSize: '1rem' }}>{ex.sentence}</p>
+          </div>
+        )}
+
+        {/* Before answering - show options without target word */}
         {!showResult ? (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            <p className="text-center text-secondary mb-md">{ex.question}</p>
+            <p className="text-center text-secondary mb-md">Select the correct word:</p>
             <div style={{ display: 'grid', gap: 'var(--space-sm)' }}>
-              {ex.options?.map((opt: string, idx: number) => (
+              {options.map((opt: string, idx: number) => (
                 <button
                   key={idx}
                   className="btn btn-secondary"
@@ -200,23 +203,17 @@ function LessonPlayer({ lesson, onBack }: { lesson: Lesson; onBack: () => void }
             </div>
           </div>
         ) : (
+          /* After answering - show result */
           <div style={{ flex: 1 }}>
-            {/* After answering - show result + definition */}
             <div className={`text-center mb-lg`} style={{ 
               padding: 'var(--space-lg)', 
               borderRadius: 12,
-              background: finalIsCorrect ? 'rgba(76, 175, 80, 0.15)' : 'rgba(244, 67, 54, 0.15)'
+              background: isCorrect ? 'rgba(76, 175, 80, 0.15)' : 'rgba(244, 67, 54, 0.15)'
             }}>
-              <div style={{ fontSize: '2rem', marginBottom: 8 }}>{finalIsCorrect ? '✓' : '✗'}</div>
-              <p className={`font-bold ${finalIsCorrect ? 'text-success' : 'text-error'}`} style={{ fontSize: '1.2rem' }}>
-                {finalIsCorrect ? 'Correct!' : `Answer: ${ex.correctAnswer}`}
+              <div style={{ fontSize: '2rem', marginBottom: 8 }}>{isCorrect ? '✓' : '✗'}</div>
+              <p className={`font-bold ${isCorrect ? 'text-success' : 'text-error'}`} style={{ fontSize: '1.2rem' }}>
+                {isCorrect ? 'Correct!' : `The answer was: ${ex.correctAnswer}`}
               </p>
-            </div>
-
-            {/* Show definition AFTER answering */}
-            <div className="mb-lg">
-              <p className="text-secondary text-sm mb-xs">Definition:</p>
-              <p className="font-medium" style={{ fontSize: '1.1rem' }}>{ex.correctAnswer}</p>
             </div>
 
             {ex.example && (
