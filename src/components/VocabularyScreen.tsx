@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getAuthHeaders } from '../services/auth';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'https://kotolift.onrender.com';
@@ -28,18 +28,120 @@ interface VocabularyScreenProps {
 }
 
 const LEVELS = [
-  { key: 'all', label: 'All' },
+  { key: 'all', label: 'All Levels' },
   { key: 'B1', label: 'B1' },
   { key: 'B2', label: 'B2' }
 ];
+
+function Dropdown({ 
+  label, 
+  options, 
+  selected, 
+  onChange, 
+  multiple = true,
+  colorKey = null
+}: { 
+  label: string; 
+  options: { key: string; label: string; color?: string }[]; 
+  selected: string[]; 
+  onChange: (keys: string[]) => void;
+  multiple?: boolean;
+  colorKey?: string | null;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  const toggleOption = (key: string) => {
+    if (!multiple) {
+      onChange([key]);
+      setOpen(false);
+      return;
+    }
+    if (selected.includes(key)) {
+      onChange(selected.filter(k => k !== key));
+    } else {
+      onChange([...selected, key]);
+    }
+  };
+
+  const selectedLabels = options.filter(o => selected.includes(o.key)).map(o => o.label).join(', ');
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button
+        className="btn btn-secondary"
+        onClick={() => setOpen(!open)}
+        style={{ minWidth: 150, textAlign: 'left', justifyContent: 'space-between' }}
+      >
+        <span>{label}: {selectedLabels || 'All'}</span>
+        <span style={{ marginLeft: 8 }}>▼</span>
+      </button>
+      {open && (
+        <div className="card" style={{ 
+          position: 'absolute', 
+          top: '100%', 
+          left: 0, 
+          zIndex: 50, 
+          minWidth: 200, 
+          maxHeight: 250, 
+          overflowY: 'auto',
+          marginTop: 4,
+          padding: 'var(--space-xs)'
+        }}>
+          {options.map(opt => (
+            <div
+              key={opt.key}
+              onClick={() => toggleOption(opt.key)}
+              style={{
+                padding: '8px 12px',
+                cursor: 'pointer',
+                borderRadius: 4,
+                background: selected.includes(opt.key) ? (colorKey && opt.color ? opt.color : 'var(--primary)') : 'transparent',
+                color: selected.includes(opt.key) ? 'white' : 'inherit',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8
+              }}
+            >
+              {multiple && (
+                <span style={{ 
+                  width: 16, 
+                  height: 16, 
+                  border: '2px solid currentColor', 
+                  borderRadius: 3,
+                  background: selected.includes(opt.key) ? 'white' : 'transparent',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 10
+                }}>
+                  {selected.includes(opt.key) && '✓'}
+                </span>
+              )}
+              {opt.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function VocabularyScreen({ onBack }: VocabularyScreenProps) {
   const [vocabulary, setVocabulary] = useState<VocabularyWord[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterLevel, setFilterLevel] = useState('all');
-  const [filterCategory, setFilterCategory] = useState('all');
+  const [filterLevels, setFilterLevels] = useState<string[]>(['all']);
+  const [filterCategories, setFilterCategories] = useState<string[]>(['all']);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [selectedWord, setSelectedWord] = useState<VocabularyWord | null>(null);
@@ -57,11 +159,11 @@ export function VocabularyScreen({ onBack }: VocabularyScreenProps) {
     setPage(0);
     setVocabulary([]);
     setHasMore(true);
-  }, [filterLevel, filterCategory]);
+  }, [filterLevels.join(','), filterCategories.join(',')]);
 
   useEffect(() => {
     fetchVocabulary(true);
-  }, [filterLevel, filterCategory]);
+  }, [filterLevels.join(','), filterCategories.join(',')]);
 
   const fetchCategories = async () => {
     try {
@@ -81,9 +183,24 @@ export function VocabularyScreen({ onBack }: VocabularyScreenProps) {
 
     try {
       const params = new URLSearchParams();
-      if (filterLevel !== 'all') params.append('level', filterLevel);
-      if (filterCategory !== 'all') params.append('category', filterCategory);
-      if (searchQuery) params.append('search', searchQuery);
+      
+      // Handle level filter (exclude 'all')
+      const levels = filterLevels.filter(l => l !== 'all');
+      if (levels.length > 0 && !levels.includes('all')) {
+        params.append('level', levels[0]); // API expects single level for now
+      }
+      
+      // Handle category filter (exclude 'all')
+      const cats = filterCategories.filter(c => c !== 'all');
+      if (cats.length > 0 && !cats.includes('all')) {
+        params.append('category', cats[0]); // API expects single category for now
+      }
+      
+      // Search in both words and categories
+      if (searchQuery) {
+        params.append('search', searchQuery);
+      }
+      
       params.append('limit', String(LIMIT));
       params.append('offset', String(reset ? 0 : page * LIMIT));
 
@@ -141,6 +258,17 @@ export function VocabularyScreen({ onBack }: VocabularyScreenProps) {
     fetchVocabulary(true);
   };
 
+  // Build filter options
+  const levelOptions = [
+    { key: 'all', label: 'All Levels' },
+    ...LEVELS.filter(l => l.key !== 'all').map(l => ({ key: l.key, label: l.label }))
+  ];
+  
+  const categoryOptions = [
+    { key: 'all', label: 'All Categories' },
+    ...categories.map(c => ({ key: c.name, label: c.name, color: c.color }))
+  ];
+
   if (selectedWord) {
     return (
       <WordDetail 
@@ -159,49 +287,38 @@ export function VocabularyScreen({ onBack }: VocabularyScreenProps) {
         <p className="text-secondary text-sm">B1-B2 English vocabulary</p>
       </div>
 
-      {/* Search Bar */}
+      {/* Search Bar - searches words AND categories */}
       <div className="flex gap-sm mb-md">
         <input
           type="text"
           className="input"
-          placeholder="Search words..."
+          placeholder="Search words or categories..."
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleSearch()}
           style={{ flex: 1 }}
         />
         <button className="btn btn-primary" onClick={handleSearch}>Search</button>
+        <button className="btn btn-secondary" onClick={() => setShowCategoryModal(true)}>Manage</button>
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-sm mb-lg" style={{ overflowX: 'auto', paddingBottom: 'var(--space-sm)' }}>
-        {LEVELS.map(lvl => (
-          <button
-            key={lvl.key}
-            className={`chip ${filterLevel === lvl.key ? 'active' : ''}`}
-            onClick={() => setFilterLevel(lvl.key)}
-          >
-            {lvl.label}
-          </button>
-        ))}
-        <span style={{ borderLeft: '1px solid var(--bg-secondary)', margin: '0 8px' }} />
-        <button
-          className={`chip ${filterCategory === 'all' ? 'active' : ''}`}
-          onClick={() => setFilterCategory('all')}
-        >
-          All Categories
-        </button>
-        {categories.map(cat => (
-          <button
-            key={cat.id}
-            className={`chip ${filterCategory === cat.name ? 'active' : ''}`}
-            onClick={() => setFilterCategory(cat.name)}
-            style={filterCategory === cat.name ? { background: cat.color, color: 'white' } : {}}
-          >
-            {cat.name}
-          </button>
-        ))}
-        <button className="chip" onClick={() => setShowCategoryModal(true)}>+ Category</button>
+      {/* Filter Dropdowns */}
+      <div className="flex gap-sm mb-lg" style={{ flexWrap: 'wrap' }}>
+        <Dropdown
+          label="Level"
+          options={levelOptions}
+          selected={filterLevels}
+          onChange={setFilterLevels}
+          multiple={false}
+        />
+        <Dropdown
+          label="Category"
+          options={categoryOptions}
+          selected={filterCategories}
+          onChange={setFilterCategories}
+          multiple={true}
+          colorKey="color"
+        />
       </div>
 
       {/* Word List */}
@@ -231,9 +348,23 @@ export function VocabularyScreen({ onBack }: VocabularyScreenProps) {
                   <span className="text-secondary text-sm ml-sm">({word.part_of_speech})</span>
                   {word.categories && word.categories.length > 0 && (
                     <div className="flex gap-xs mt-xs">
-                      {word.categories.map(cat => (
-                        <span key={cat} className="chip chip--secondary" style={{ fontSize: '0.7rem', padding: '2px 6px' }}>{cat}</span>
-                      ))}
+                      {word.categories.map(cat => {
+                        const catData = categories.find(c => c.name === cat);
+                        return (
+                          <span 
+                            key={cat} 
+                            className="chip chip--secondary" 
+                            style={{ 
+                              fontSize: '0.7rem', 
+                              padding: '2px 6px',
+                              background: catData?.color || 'var(--bg-secondary)',
+                              color: 'white'
+                            }}
+                          >
+                            {cat}
+                          </span>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -301,7 +432,6 @@ function WordDetail({ word, categories, onBack, onUpdate }: { word: VocabularyWo
     
     setSelectedCategories(newCategories);
     
-    // Update on backend
     try {
       await fetch(`${API_BASE}/api/vocabulary/${word.id}/categories`, {
         method: 'POST',
@@ -329,16 +459,19 @@ function WordDetail({ word, categories, onBack, onUpdate }: { word: VocabularyWo
       <div className="card mb-lg">
         <h2 className="font-semibold mb-md">Categories</h2>
         <div className="flex gap-sm" style={{ flexWrap: 'wrap' }}>
-          {categories.map(cat => (
-            <button
-              key={cat.id}
-              className={`chip ${selectedCategories.includes(cat.name) ? 'active' : 'chip--secondary'}`}
-              style={selectedCategories.includes(cat.name) ? { background: cat.color, color: 'white' } : {}}
-              onClick={() => toggleCategory(cat.name)}
-            >
-              {cat.name}
-            </button>
-          ))}
+          {categories.map(cat => {
+            const isSelected = selectedCategories.includes(cat.name);
+            return (
+              <button
+                key={cat.id}
+                className={`chip ${isSelected ? 'active' : 'chip--secondary'}`}
+                style={isSelected ? { background: cat.color, color: 'white' } : {}}
+                onClick={() => toggleCategory(cat.name)}
+              >
+                {cat.name}
+              </button>
+            );
+          })}
         </div>
       </div>
 
