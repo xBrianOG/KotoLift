@@ -2,6 +2,96 @@ import { useState, useEffect, useCallback } from 'react';
 import { getAllCards, deleteCard, updateCard, searchCards, getAllTags } from '../services/cards';
 import type { Card } from '../types';
 import { getCardSourceText, getCardTranslation } from '../types';
+import { getAuthHeaders } from '../services/auth';
+
+const API_BASE = import.meta.env.VITE_API_BASE || 'https://kotolift.onrender.com';
+
+function Dropdown({ 
+  label, 
+  options, 
+  selected, 
+  onChange, 
+  multiple = false,
+  colorKey = null
+}: { 
+  label: string; 
+  options: { key: string; label: string; color?: string }[]; 
+  selected: string[]; 
+  onChange: (keys: string[]) => void;
+  multiple?: boolean;
+  colorKey?: string | null;
+}) {
+  const [open, setOpen] = useState(false);
+
+  const toggleOption = (key: string) => {
+    if (!multiple) {
+      onChange([key]);
+      setOpen(false);
+      return;
+    }
+    if (selected.includes(key)) {
+      onChange(selected.filter(k => k !== key));
+    } else {
+      onChange([...selected, key]);
+    }
+  };
+
+  const selectedLabels = options.filter(o => selected.includes(o.key)).map(o => o.label).join(', ');
+
+  return (
+    <div style={{ position: 'relative', display: 'inline-block' }}>
+      <button
+        type="button"
+        className="btn btn-secondary"
+        onClick={() => setOpen(!open)}
+        style={{ minWidth: 120, fontSize: '0.85rem', padding: '6px 12px' }}
+      >
+        {label}: {selectedLabels || 'All'} ▼
+      </button>
+      {open && (
+        <div className="card" style={{ 
+          position: 'absolute', 
+          top: '100%', 
+          left: 0, 
+          zIndex: 100, 
+          minWidth: 160, 
+          maxHeight: 200, 
+          overflowY: 'auto',
+          marginTop: 4,
+          padding: 'var(--space-xs)'
+        }}>
+          {options.map(opt => (
+            <div
+              key={opt.key}
+              onClick={() => toggleOption(opt.key)}
+              style={{
+                padding: '6px 10px',
+                cursor: 'pointer',
+                borderRadius: 4,
+                background: selected.includes(opt.key) ? (colorKey && opt.color ? opt.color : 'var(--primary)') : 'transparent',
+                color: selected.includes(opt.key) ? 'white' : 'inherit',
+                fontSize: '0.85rem'
+              }}
+            >
+              {multiple && (
+                <span style={{ marginRight: 6 }}>
+                  {selected.includes(opt.key) ? '☑' : '☐'}
+                </span>
+              )}
+              {opt.label}
+            </div>
+          ))}
+        </div>
+      )}
+      {open && (
+        <div 
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 99 }}
+          onClick={() => setOpen(false)}
+        />
+      )}
+    </div>
+  );
+}
 
 export function CardListScreen({ onExplain }: { onExplain?: (card: Card) => void } = {}) {
   const [cards, setCards] = useState<Card[]>([]);
@@ -11,6 +101,16 @@ export function CardListScreen({ onExplain }: { onExplain?: (card: Card) => void
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [editingCard, setEditingCard] = useState<Card | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Card | null>(null);
+  const [filterCategory, setFilterCategory] = useState<string[]>(['all']);
+  const [categories, setCategories] = useState<{name: string}[]>([]);
+
+  // Fetch categories from API
+  useEffect(() => {
+    fetch(`${API_BASE}/api/categories`, { headers: { ...getAuthHeaders() } })
+      .then(res => res.json())
+      .then(data => setCategories(data.categories || []))
+      .catch(console.error);
+  }, []);
 
   // Debounce search input by 300ms
   useEffect(() => {
@@ -61,7 +161,22 @@ export function CardListScreen({ onExplain }: { onExplain?: (card: Card) => void
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search cards..."
           className="mb-md"
+          style={{ width: '100%' }}
         />
+
+        {/* Dropdown Filters */}
+        <div className="flex gap-sm mb-md" style={{ flexWrap: 'wrap' }}>
+          <Dropdown
+            label="Category"
+            options={[
+              { key: 'all', label: 'All Categories' },
+              ...categories.map(c => ({ key: c.name, label: c.name }))
+            ]}
+            selected={filterCategory}
+            onChange={setFilterCategory}
+            multiple={true}
+          />
+        </div>
 
         {tags.length > 0 && (
           <div className="flex-center flex-wrap gap-xs" style={{ justifyContent: 'flex-start' }}>
