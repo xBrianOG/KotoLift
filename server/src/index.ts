@@ -74,20 +74,6 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// Serve static files from Vite build
-const distPath = path.join(__dirname, "../../dist");
-app.use(express.static(distPath));
-
-// SPA Fallback: Serve index.html for all other requests (after API and Static files)
-app.use((req, res) => {
-  // If it's an API request that wasn't caught, return 404
-  if (req.path.startsWith("/api")) {
-    return res.status(404).json({ error: "API route not found" });
-  }
-  // Otherwise, serve the frontend for SPA routing
-  res.sendFile(path.join(distPath, "index.html"));
-});
-
 app.listen(Number(PORT), '0.0.0.0', () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
   console.log(`📹 Video analysis: POST /api/video/analyze`);
