@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import { createCard } from '../services/cards';
+import { createCard, getAllCards } from '../services/cards';
 import { ensureReviewStates } from '../services/review';
 import { translateText, type SupportedLang } from '../services/api';
-import { db } from '../db';
 
 export interface TranscriptSegment {
   id: string;
@@ -87,9 +86,9 @@ export function VideoPlayerScreen({ data, onBack }: VideoPlayerScreenProps) {
     }
   };
 
-  const checkDuplicate = async (url: string, startMs: number, text: string): Promise<boolean> => {
-    const existing = await db.cards.where('sourceUrl').equals(url).toArray();
-    return existing.some(c => c.startMs === startMs && c.sourceText === text);
+  const checkDuplicate = async (_url: string, _startMs: number, text: string): Promise<boolean> => {
+    const cards = await getAllCards();
+    return cards.some(c => c.sourceText === text);
   };
 
   const handleSegmentClick = (seg: TranscriptSegment) => {

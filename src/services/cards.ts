@@ -1,6 +1,33 @@
-import { db } from '../db';
 import type { Card } from '../types';
-import { v4 as uuidv4 } from 'uuid';
+import { getStoredUser } from './auth';
+
+const API_BASE = import.meta.env.VITE_API_BASE || 'https://kotolift.onrender.com';
+
+function getUserId(): string {
+  const user = getStoredUser();
+  if (!user?.id) throw new Error('Not authenticated');
+  return user.id;
+}
+
+async function apiCall(endpoint: string, options: RequestInit = {}) {
+  const userId = getUserId();
+  const url = `${API_BASE}${endpoint}${endpoint.includes('?') ? '&' : '?'}user_id=${userId}`;
+  
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+  
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Request failed' }));
+    throw new Error(error.error || 'Request failed');
+  }
+  
+  return response.json();
+}
 
 export async function createCard(
   sourceText: string,
@@ -16,71 +43,94 @@ export async function createCard(
 ): Promise<Card> {
   const lang = sourceLang || 'ja';
   
+  const front = sourceText;
+  const back = JSON.stringify({
+    en: enText || undefined,
+    es: esText || undefined,
+    ja: jaText || undefined,
+  });
+  
+  const result = await apiCall('/api/flashcards', {
+    method: 'POST',
+    body: JSON.stringify({
+      front,
+      back,
+      tags,
+      category: tags[0] || null,
+    }),
+  });
+  
   const card: Card = {
-    id: uuidv4(),
-    sourceText,
+    id: result.flashcard.id,
+    sourceText: result.flashcard.front,
     sourceLang: lang,
-    translations: {
-      en: enText || undefined,
-      es: esText || undefined,
-      ja: jaText || undefined,
-    },
-    jaText: lang === 'ja' ? sourceText : (jaText || ''),
-    enText: lang === 'en' ? sourceText : enText,
-    esText: lang === 'es' ? sourceText : esText,
-    tags,
+    translations: JSON.parse(result.flashcard.back || '{}'),
+    tags: result.flashcard.tags || [],
     notes,
     sourceUrl,
     startMs,
     endMs,
-    createdAt: Date.now()
+    createdAt: new Date(result.flashcard.created_at).getTime(),
   };
-  await db.cards.add(card);
+  
   return card;
-}
-
-// Legacy overload for backward compatibility
-export async function createCardLegacy(
-  jaText: string,
-  enText: string,
-  esText: string,
-  tags: string[],
-  notes?: string
-): Promise<Card> {
-  return createCard(jaText, enText, esText, tags, notes, 'ja');
 }
 
 export async function updateCard(
   id: string,
   updates: Partial<Omit<Card, 'id' | 'createdAt'>>
 ): Promise<void> {
-  await db.cards.update(id, updates);
+  const { sourceText, sourceLang, translations, tags, notes, sourceUrl, startMs, endMs, jaText, enText, esText } = updates;
+  
+  const front = sourceText || jaText;
+  const back = JSON.stringify({
+    en: enText || translations?.en,
+    es: esText || translations?.es,
+    ja: jaText || translations?.ja,
+  });
+  
+  await apiCall(`/api/flashcards/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      front,
+      back,
+      tags,
+      category: tags?.[0] || null,
+    }),
+  });
 }
 
 export async function deleteCard(id: string): Promise<void> {
-  await db.transaction('rw', [db.cards, db.reviewStates], async () => {
-    await db.cards.delete(id);
-    await db.reviewStates.where('cardId').equals(id).delete();
+  await apiCall(`/api/flashcards/${id}`, {
+    method: 'DELETE',
   });
 }
 
 export async function getAllCards(): Promise<Card[]> {
-  return db.cards.orderBy('createdAt').reverse().toArray();
+  const result = await apiCall('/api/flashcards');
+  
+  return (result.flashcards || []).map((fc: any) => ({
+    id: fc.id,
+    sourceText: fc.front,
+    sourceLang: 'ja',
+    translations: JSON.parse(fc.back || '{}'),
+    tags: fc.tags || [],
+    createdAt: new Date(fc.created_at).getTime(),
+  }));
 }
 
 export async function searchCards(
   query: string,
   tags: string[] = []
 ): Promise<Card[]> {
-  let cards = await db.cards.toArray();
+  let cards = await getAllCards();
   
   if (query) {
     const lowerQuery = query.toLowerCase();
     cards = cards.filter(card =>
       (card.sourceText?.toLowerCase().includes(lowerQuery)) ||
-      (card.jaText?.toLowerCase().includes(lowerQuery)) ||
-      (card.enText?.toLowerCase().includes(lowerQuery)) ||
-      (card.esText?.toLowerCase().includes(lowerQuery)) ||
+      (card.translations?.en?.toLowerCase().includes(lowerQuery)) ||
+      (card.translations?.es?.toLowerCase().includes(lowerQuery)) ||
       (card.notes?.toLowerCase().includes(lowerQuery) ?? false)
     );
   }
@@ -95,8 +145,8 @@ export async function searchCards(
 }
 
 export async function getAllTags(): Promise<string[]> {
-  const cards = await db.cards.toArray();
+  const cards = await getAllCards();
   const tagSet = new Set<string>();
-  cards.forEach(card => card.tags.forEach(tag => tagSet.add(tag)));
+  cards.forEach(card => card.tags?.forEach(tag => tagSet.add(tag)));
   return Array.from(tagSet).sort();
 }

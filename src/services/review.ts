@@ -1,4 +1,5 @@
 import { db } from '../db';
+import { getAllCards } from './cards';
 import type { Card, ReviewState, Rating, Language } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -44,7 +45,8 @@ export async function getDueReviewStates(
     .slice(0, limit);
 
   const cardIds = [...new Set(sortedStates.map(s => s.cardId))];
-  const cards = await db.cards.where('id').anyOf(cardIds).toArray();
+  const allCards = await getAllCards();
+  const cards = allCards.filter(c => cardIds.includes(c.id));
   const cardMap = new Map(cards.map(c => [c.id, c]));
 
   return sortedStates
@@ -67,7 +69,8 @@ export async function getMixedReviewStates(
       .toArray();
 
     const cardIds = [...new Set(due.map(s => s.cardId))];
-    const cards = await db.cards.where('id').anyOf(cardIds).toArray();
+    const allCards = await getAllCards();
+    const cards = allCards.filter(c => cardIds.includes(c.id));
     const cardMap = new Map(cards.map(c => [c.id, c]));
 
     for (const state of due) {
@@ -94,7 +97,8 @@ export async function getPracticeReviewStates(
   const shuffled = allStates.sort(() => Math.random() - 0.5).slice(0, limit);
 
   const cardIds = [...new Set(shuffled.map(s => s.cardId))];
-  const cards = await db.cards.where('id').anyOf(cardIds).toArray();
+  const allCards = await getAllCards();
+  const cards = allCards.filter(c => cardIds.includes(c.id));
   const cardMap = new Map(cards.map(c => [c.id, c]));
 
   return shuffled
@@ -114,7 +118,8 @@ export async function getMixedPracticeReviewStates(
   const shuffled = filtered.sort(() => Math.random() - 0.5).slice(0, limit);
 
   const cardIds = [...new Set(shuffled.map(s => s.cardId))];
-  const cards = await db.cards.where('id').anyOf(cardIds).toArray();
+  const allCards = await getAllCards();
+  const cards = allCards.filter(c => cardIds.includes(c.id));
   const cardMap = new Map(cards.map(c => [c.id, c]));
 
   return shuffled

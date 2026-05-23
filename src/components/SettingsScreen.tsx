@@ -10,6 +10,7 @@ import {
   type LearningMode,
   type LearningSettings,
 } from '../services/settings'
+import { getAllCards, createCard } from '../services/cards'
 
 export function SettingsScreen({ onBack, onSignOut }: { onBack?: () => void; onSignOut?: () => void } = {}) {
   const [settings, setSettings] = useState<LearningSettings | null>(null)
@@ -191,8 +192,7 @@ function DataSection() {
   const handleExport = async () => {
     setExporting(true)
     try {
-      const { db } = await import('../db')
-      const cards = await db.cards.toArray()
+      const cards = await getAllCards()
       const json = JSON.stringify(cards, null, 2)
       const blob = new Blob([json], { type: 'application/json' })
       const url = URL.createObjectURL(blob)
@@ -215,15 +215,26 @@ function DataSection() {
       const text = await file.text()
       const cards = JSON.parse(text)
       if (!Array.isArray(cards)) throw new Error('Invalid format')
-      const { db } = await import('../db')
       const { ensureReviewStates } = await import('../services/review')
       let added = 0
       for (const card of cards) {
-        const exists = await db.cards.get(card.id)
-        if (!exists) {
-          await db.cards.add(card)
-          await ensureReviewStates(card)
+        try {
+          const savedCard = await createCard(
+            card.sourceText || card.jaText || '',
+            card.translations?.en || card.enText || '',
+            card.translations?.es || card.esText || '',
+            card.tags || [],
+            card.notes,
+            card.sourceLang,
+            card.sourceUrl,
+            card.startMs,
+            card.endMs,
+            card.translations?.ja || card.jaText
+          )
+          await ensureReviewStates(savedCard)
           added++
+        } catch (err) {
+          console.error('Failed to import card:', err)
         }
       }
       setImportMsg(`✓ Imported ${added} new cards`)

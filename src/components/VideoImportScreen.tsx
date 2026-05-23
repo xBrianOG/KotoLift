@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { VideoSegment, translateText, type SupportedLang } from '../services/api';
+import { createCard } from '../services/cards';
 import { ensureReviewStates } from '../services/review';
 import { fetchTranscript } from '../services/transcript';
-import { v4 as uuidv4 } from 'uuid';
 
 interface VideoImportScreenProps {
   onComplete: (createdCount: number) => void;
@@ -125,34 +125,27 @@ export function VideoImportScreen({ onComplete, onCancel, onViewTranscript, onOp
         })
       );
 
-      // Build card objects
-      const now = Date.now();
-      const cards = translatedSegments.map(({ seg, translations }, i) => ({
-        id: uuidv4(),
-        sourceText: seg.text,
-        sourceLang,
-        translations: {
-          en: translations.en || undefined,
-          es: translations.es || undefined,
-          ja: translations.ja || undefined,
-        },
-        jaText: sourceLang === 'ja' ? seg.text : (translations.ja || ''),
-        enText: sourceLang === 'en' ? seg.text : (translations.en || ''),
-        esText: sourceLang === 'es' ? seg.text : (translations.es || ''),
-        tags: ['imported'],
-        notes: `Imported from video`,
-        sourceUrl: url,
-        startMs: seg.startMs,
-        endMs: seg.endMs,
-        createdAt: now + i,
-      }));
+      // Create cards via API
+      const savedCards = [];
+      for (const { seg, translations } of translatedSegments) {
+        const card = await createCard(
+          seg.text,
+          translations.en || '',
+          translations.es || '',
+          ['imported'],
+          `Imported from video`,
+          sourceLang,
+          url,
+          seg.startMs,
+          seg.endMs,
+          translations.ja || ''
+        );
+        savedCards.push(card);
+      }
+      
+      await Promise.all(savedCards.map(card => ensureReviewStates(card)));
 
-      // Bulk write cards, then set up review states
-      const { db } = await import('../db');
-      await db.cards.bulkAdd(cards);
-      await Promise.all(cards.map(card => ensureReviewStates(card as any)));
-
-      onComplete(cards.length);
+      onComplete(savedCards.length);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to create cards';
       setError(message);
