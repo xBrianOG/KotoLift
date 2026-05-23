@@ -11,10 +11,22 @@ function getUserId(): string {
 
 async function apiCall(endpoint: string, options: RequestInit = {}) {
   const userId = getUserId();
-  const url = `${API_BASE}${endpoint}${endpoint.includes('?') ? '&' : '?'}user_id=${userId}`;
+  
+  // For GET requests, pass user_id as query param
+  // For POST/PUT/DELETE, pass user_id in body
+  const isGet = !options.method || options.method === 'GET';
+  const url = isGet 
+    ? `${API_BASE}${endpoint}${endpoint.includes('?') ? '&' : '?'}user_id=${userId}`
+    : `${API_BASE}${endpoint}`;
+  
+  const body = options.body ? JSON.parse(options.body as string) : {};
+  if (!isGet) {
+    body.user_id = userId;
+  }
   
   const response = await fetch(url, {
     ...options,
+    body: JSON.stringify(body),
     headers: {
       'Content-Type': 'application/json',
       ...options.headers,
