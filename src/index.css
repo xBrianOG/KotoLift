@@ -615,16 +615,18 @@ input[type="checkbox"], input[type="radio"] {
 /* Main content */
 .app-layout {
   display: flex;
-  min-height: 100dvh;
+  height: 100dvh;
+  overflow: hidden;
   background: var(--bg);
 }
 
 .main-content-minimal {
   flex: 1;
   margin-left: 3.5rem;
-  min-height: 100dvh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   transition: margin-left 0.2s ease;
 }
 
@@ -632,6 +634,7 @@ input[type="checkbox"], input[type="radio"] {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
+  height: 0; /* forces flex child to respect parent height */
 }
 
 /* Mobile header */
