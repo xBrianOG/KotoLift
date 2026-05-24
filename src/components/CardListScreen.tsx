@@ -29,15 +29,22 @@ function Dropdown({
       setOpen(false);
       return;
     }
-    if (selected.includes(key)) {
-      onChange(selected.filter(k => k !== key));
+    // 'all' signals a clear — pass it up so parent can reset
+    if (key === 'all') {
+      onChange(['all']);
+      return;
+    }
+    // Toggle the clicked key, stripping any stale 'all' entries
+    const current = selected.filter(k => k !== 'all');
+    if (current.includes(key)) {
+      onChange(current.filter(k => k !== key));
     } else {
-      onChange([...selected, key]);
+      onChange([...current, key]);
     }
   };
 
   const selectedLabels = options
-    .filter(o => selected.includes(o.key) && o.key !== 'all')
+    .filter(o => selected.includes(o.key))
     .map(o => o.label)
     .join(', ');
 
@@ -248,12 +255,13 @@ export function CardListScreen({ onExplain }: { onExplain?: (card: Card) => void
               { key: 'all', label: 'All Categories' },
               ...tags.map(t => ({ key: t, label: t }))
             ]}
-            selected={selectedTags.length === 0 ? ['all'] : selectedTags}
+            selected={selectedTags}
             onChange={(newVals) => {
-              if (newVals.includes('all') && !selectedTags.includes('all')) {
+              // 'all' clears selection; otherwise toggle the clicked tag
+              if (newVals.includes('all')) {
                 setSelectedTags([]);
               } else {
-                setSelectedTags(newVals.filter(v => v !== 'all'));
+                setSelectedTags(newVals);
               }
             }}
             multiple={true}
