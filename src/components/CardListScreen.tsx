@@ -2,10 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { getAllCards, deleteCard, updateCard, searchCards, getAllTags } from '../services/cards';
 import type { Card } from '../types';
 import { getCardSourceText, getCardTranslation } from '../types';
-import { getAuthHeaders } from '../services/auth';
 import { Search, ChevronDown, Edit2, Trash2, Info, X } from 'lucide-react';
-
-const API_BASE = import.meta.env.VITE_API_BASE || 'https://kotolift.onrender.com';
 
 function Dropdown({ 
   label, 

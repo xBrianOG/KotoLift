@@ -8,7 +8,6 @@ import {
   Plus,
   BookOpen,
   Settings,
-  LogOut,
   ChevronDown,
 } from 'lucide-react'
 

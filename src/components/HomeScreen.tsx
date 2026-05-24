@@ -8,7 +8,6 @@ type HomeScreenProps = {
 
 export function HomeScreen({ onNavigate }: HomeScreenProps) {
   const [streak, setStreak] = useState(0);
-  const [stars, setStars] = useState(0);
   const [loading, setLoading] = useState(true);
   const [greeting, setGreeting] = useState('Good morning');
 
@@ -20,7 +19,6 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
 
     getStats().then(stats => {
       setStreak(stats.streak);
-      setStars(stats.stars);
       setLoading(false);
     });
   }, []);
