@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getStats } from '../services/stats';
-import { BookOpen, Plus, Video, ArrowRight } from 'lucide-react';
+import { BookOpen, Plus, Video, ArrowRight, Lightbulb } from 'lucide-react';
 
 type HomeScreenProps = {
   onNavigate: (to: string) => void
@@ -198,6 +198,32 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
           >
             <Plus size={18} style={{ color: 'var(--text-tertiary)' }} />
             <span style={{ fontWeight: 500, color: 'var(--text)', fontSize: 'var(--font-sm)' }}>Add New Card</span>
+          </button>
+
+          <button
+            onClick={() => onNavigate('explain')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--space-md)',
+              padding: 'var(--space-md)',
+              background: 'transparent',
+              border: 'none',
+              borderRadius: 'var(--radius-md)',
+              cursor: 'pointer',
+              textAlign: 'left',
+              transition: 'background 0.15s ease',
+              width: '100%'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--bg)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent';
+            }}
+          >
+            <Lightbulb size={18} style={{ color: 'var(--text-tertiary)' }} />
+            <span style={{ fontWeight: 500, color: 'var(--text)', fontSize: 'var(--font-sm)' }}>Explain a Sentence</span>
           </button>
 
           <button
