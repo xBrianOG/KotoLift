@@ -17,24 +17,22 @@ export function getFrontBack(card: Card, settings?: { nativeLang?: NativeLanguag
   const { learningMode: userMode } = settings || getLearningSettings();
   const learningMode = userMode || 'mixed';
   
-  const sourceLang = card.sourceLang || 'ja';
+  const sourceLang = card.sourceLang || 'en';
+  
+  // Get all language texts - from explicit fields (new schema) or translations object (legacy)
+  const jaContent = card.jaText || card.translations?.ja || '';
+  const enContent = card.enText || card.translations?.en || '';
+  const esContent = card.esText || card.translations?.es || '';
   
   // Get source text based on sourceLang
   let sourceText = '';
-  if (card.sourceText) {
-    sourceText = card.sourceText;
-  } else if (sourceLang === 'ja') {
-    sourceText = card.jaText || '';
+  if (sourceLang === 'ja') {
+    sourceText = card.sourceText || jaContent;
   } else if (sourceLang === 'en') {
-    sourceText = card.enText || '';
+    sourceText = card.sourceText || enContent;
   } else if (sourceLang === 'es') {
-    sourceText = card.esText || '';
+    sourceText = card.sourceText || esContent;
   }
-  
-  // Get all translations - ONLY from translations object (not legacy fields which contain source)
-  const enText = card.translations?.en || '';
-  const esText = card.translations?.es || '';
-  const jaText = card.translations?.ja || '';
   
   let mode = learningMode;
   
@@ -44,50 +42,63 @@ export function getFrontBack(card: Card, settings?: { nativeLang?: NativeLanguag
   }
   
   if (mode === 'passive') {
-    // Source → Native: show translations on back (no labels)
+    // Source → Native: show translations on back
     const backLines: string[] = [];
     
-    // Add Japanese translation (unless source is Japanese)
-    if (sourceLang !== 'ja' && jaText) {
-      backLines.push(jaText);
-    } else if (sourceLang !== 'ja') {
-      backLines.push('(translation missing)');
+    // Add Japanese (unless source is Japanese)
+    if (sourceLang !== 'ja' && jaContent) {
+      backLines.push(jaContent);
     }
     
-    // Add English translation (unless source is English)
-    if (sourceLang !== 'en' && enText) {
-      backLines.push(enText);
-    } else if (sourceLang !== 'en') {
-      backLines.push('(translation missing)');
+    // Add English (unless source is English)
+    if (sourceLang !== 'en' && enContent) {
+      backLines.push(enContent);
     }
     
-    // Add Spanish translation (unless source is Spanish)
-    if (sourceLang !== 'es' && esText) {
-      backLines.push(esText);
+    // Add Spanish (unless source is Spanish)
+    if (sourceLang !== 'es' && esContent) {
+      backLines.push(esContent);
     }
     
     return {
       front: sourceText || '(no text)',
-      back: backLines.join('\n\n')
+      back: backLines.join('\n\n') || '(no translations)'
     };
   } else {
     // Active: Native → Source
-    // Show Japanese on front (since user is Japanese learner), source on back
-    const front = jaText || sourceText || '(no text)';
-    const back = sourceText || '(no text)';
+    // Show translation on front, source on back
     
-    // Add other translations on back too (without labels)
-    let backWithTranslations = back;
-    if (sourceLang !== 'ja' && enText) {
-      backWithTranslations += `\n\n${enText}`;
+    // Determine front content based on sourceLang
+    // Default: show the translation that's NOT the source language
+    let front = '';
+    if (sourceLang === 'ja') {
+      // If source is Japanese, show English on front
+      front = enContent || esContent || jaContent || '(no text)';
+    } else if (sourceLang === 'en') {
+      // If source is English, show Japanese on front
+      front = jaContent || esContent || enContent || '(no text)';
+    } else if (sourceLang === 'es') {
+      // If source is Spanish, show Japanese or English on front
+      front = jaContent || enContent || esContent || '(no text)';
     }
-    if (sourceLang !== 'ja' && esText) {
-      backWithTranslations += `\n\n${esText}`;
+    
+    // Build back with source text and other translations
+    let back = sourceText || '(no text)';
+    
+    // Add other translations on back (only if different from source to avoid duplicates)
+    if (sourceLang !== 'ja' && jaContent && jaContent !== sourceText) {
+      back += `\n\n${jaContent}`;
+    }
+    if (sourceLang !== 'en' && enContent && enContent !== sourceText) {
+      back += `\n\n${enContent}`;
+    }
+    if (sourceLang !== 'es' && esContent && esContent !== sourceText) {
+      back += `\n\n${esContent}`;
     }
     
     return {
       front,
-      back: backWithTranslations
+      back
     };
   }
 }

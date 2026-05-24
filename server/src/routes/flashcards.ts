@@ -20,7 +20,6 @@ router.get('/', async (req, res) => {
     }
 
     let query = supabase
-      .from('user_flashcards')
       .select('*')
       .eq('user_id', user_id)
       .order('created_at', { ascending: false });
@@ -30,13 +29,27 @@ router.get('/', async (req, res) => {
     }
 
     if (search) {
-      query = query.or(`front.ilike.%${search}%,back.ilike.%${search}%`);
+      query = query.or(`ja.ilike.%${search}%,en.ilike.%${search}%,es.ilike.%${search}%`);
     }
 
     const { data, error } = await query;
 
     if (error) throw error;
-    res.json({ flashcards: data || [] });
+    
+    // Transform data to include translations object for backward compatibility
+    const flashcards = (data || []).map(card => ({
+      ...card,
+      front: card.source_lang 
+        ? (card[card.source_lang] || card.front || '') 
+        : (card.front || ''),
+      back: JSON.stringify({
+        ja: card.ja || null,
+        en: card.en || null,
+        es: card.es || null
+      })
+    }));
+    
+    res.json({ flashcards });
   } catch (err: any) {
     console.error('Flashcards fetch error:', err);
     res.status(500).json({ error: err.message || 'Failed to fetch flashcards' });
@@ -61,7 +74,21 @@ router.get('/:id', async (req, res) => {
       .single();
 
     if (error) throw error;
-    res.json({ flashcard: data });
+    
+    // Transform to include translations object for backward compatibility
+    const card = {
+      ...data,
+      front: data.source_lang 
+        ? (data[data.source_lang] || data.front || '') 
+        : (data.front || ''),
+      back: JSON.stringify({
+        ja: data.ja || null,
+        en: data.en || null,
+        es: data.es || null
+      })
+    };
+    
+    res.json({ flashcard: card });
   } catch (err: any) {
     console.error('Flashcard fetch error:', err);
     res.status(500).json({ error: err.message || 'Failed to fetch flashcard' });
@@ -71,24 +98,55 @@ router.get('/:id', async (req, res) => {
 // Create flashcard
 router.post('/', async (req, res) => {
   try {
-    const { user_id, front, back, category, tags } = req.body;
+    const { user_id, ja, en, es, source_lang, category, tags } = req.body;
 
-    if (!user_id || !front || !back) {
-      return res.status(400).json({ error: 'user_id, front, and back are required' });
+    // Accept either new schema (ja/en/es/source_lang) or old schema (front/back)
+    const { front, back } = req.body;
+
+    if (!user_id) {
+      return res.status(400).json({ error: 'user_id is required' });
+    }
+
+    // If new fields are provided, use them; otherwise fall back to old format
+    let cardData: any = {
+      category: category || null,
+      tags: tags || [],
+      source_lang: source_lang || 'en'
+    };
+
+    if (ja !== undefined || en !== undefined || es !== undefined) {
+      // New schema
+      cardData.ja = ja || null;
+      cardData.en = en || null;
+      cardData.es = es || null;
+      // Set front based on source_lang
+      const lang = source_lang || 'en';
+      cardData.front = cardData[lang] || '';
+      cardData.back = JSON.stringify({ ja: ja || null, en: en || null, es: es || null });
+    } else if (front && back) {
+      // Old schema - migrate it
+      cardData.front = front;
+      cardData.back = back;
+      // Try to detect from back JSON
+      try {
+        const backObj = typeof back === 'string' ? JSON.parse(back) : back;
+        cardData.ja = backObj.ja || null;
+        cardData.en = backObj.en || null;
+        cardData.es = backObj.es || null;
+      } catch (e) {
+        // If back is not valid JSON, leave it
+      }
+    } else {
+      return res.status(400).json({ error: 'Either provide ja/en/es/source_lang or front/back' });
     }
 
     const id = `fc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    cardData.id = id;
+    cardData.user_id = user_id;
 
     const { data, error } = await supabase
       .from('user_flashcards')
-      .insert({ 
-        id, 
-        user_id, 
-        front, 
-        back, 
-        category: category || null,
-        tags: tags || []
-      })
+      .insert(cardData)
       .select()
       .single();
 
@@ -104,21 +162,45 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { user_id, front, back, category, tags } = req.body;
+    const { user_id, ja, en, es, source_lang, category, tags, front, back } = req.body;
 
     if (!user_id) {
       return res.status(400).json({ error: 'user_id is required' });
     }
 
+    const updateData: any = {
+      updated_at: new Date().toISOString()
+    };
+
+    // Handle new schema fields
+    if (ja !== undefined) updateData.ja = ja;
+    if (en !== undefined) updateData.en = en;
+    if (es !== undefined) updateData.es = es;
+    if (source_lang !== undefined) {
+      updateData.source_lang = source_lang;
+      // Update front based on new source_lang
+      const lang = source_lang;
+      updateData.front = req.body[lang] || '';
+    }
+    if (category !== undefined) updateData.category = category;
+    if (tags !== undefined) updateData.tags = tags;
+    
+    // Handle old schema for backward compatibility
+    if (front !== undefined) updateData.front = front;
+    if (back !== undefined) {
+      updateData.back = back;
+      // Also update individual language columns if back is valid JSON
+      try {
+        const backObj = typeof back === 'string' ? JSON.parse(back) : back;
+        if (backObj.ja && updateData.ja === undefined) updateData.ja = backObj.ja;
+        if (backObj.en && updateData.en === undefined) updateData.en = backObj.en;
+        if (backObj.es && updateData.es === undefined) updateData.es = backObj.es;
+      } catch (e) {}
+    }
+
     const { data, error } = await supabase
       .from('user_flashcards')
-      .update({ 
-        front, 
-        back, 
-        category, 
-        tags,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', id)
       .eq('user_id', user_id)
       .select()

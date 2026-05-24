@@ -53,20 +53,25 @@ export async function createCard(
   endMs?: number,
   jaText?: string
 ): Promise<Card> {
-  const lang = sourceLang || 'ja';
+  const lang = sourceLang || 'en';
   
-  const front = sourceText;
-  const back = JSON.stringify({
-    en: enText || undefined,
-    es: esText || undefined,
-    ja: jaText || undefined,
-  });
+  // Determine which language field is the source
+  let ja = jaText || '';
+  let en = enText || '';
+  let es = esText || '';
+  
+  // If source text is provided, put it in the right field based on sourceLang
+  if (lang === 'ja' && sourceText) ja = sourceText;
+  else if (lang === 'en' && sourceText) en = sourceText;
+  else if (lang === 'es' && sourceText) es = sourceText;
   
   const result = await apiCall('/api/flashcards', {
     method: 'POST',
     body: JSON.stringify({
-      front,
-      back,
+      ja,
+      en,
+      es,
+      source_lang: lang,
       tags,
       category: tags[0] || null,
     }),
@@ -74,8 +79,11 @@ export async function createCard(
   
   const card: Card = {
     id: result.flashcard.id,
-    sourceText: result.flashcard.front,
-    sourceLang: lang,
+    sourceText: result.flashcard.front || sourceText,
+    sourceLang: result.flashcard.source_lang || lang,
+    jaText: result.flashcard.ja || ja,
+    enText: result.flashcard.en || en,
+    esText: result.flashcard.es || es,
     translations: JSON.parse(result.flashcard.back || '{}'),
     tags: result.flashcard.tags || [],
     notes,
@@ -123,8 +131,11 @@ export async function getAllCards(): Promise<Card[]> {
   
   return (result.flashcards || []).map((fc: any) => ({
     id: fc.id,
-    sourceText: fc.front,
-    sourceLang: 'ja',
+    sourceText: fc.front || '',
+    sourceLang: fc.source_lang || 'en',
+    jaText: fc.ja || '',
+    enText: fc.en || '',
+    esText: fc.es || '',
     translations: JSON.parse(fc.back || '{}'),
     tags: fc.tags || [],
     createdAt: new Date(fc.created_at).getTime(),
