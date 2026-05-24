@@ -85,7 +85,7 @@ export function AppShell({ current, onNavigate, children, userName = 'User' }: A
               variants={textVariants}
               transition={transitionProps}
             >
-              KotoLift
+              住友勉強
             </motion.span>
           </div>
 
