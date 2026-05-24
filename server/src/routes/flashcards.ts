@@ -20,6 +20,7 @@ router.get('/', async (req, res) => {
     }
 
     let query = supabase
+      .from('user_flashcards')
       .select('*')
       .eq('user_id', user_id)
       .order('created_at', { ascending: false });
@@ -37,7 +38,7 @@ router.get('/', async (req, res) => {
     if (error) throw error;
     
     // Transform data to include translations object for backward compatibility
-    const flashcards = (data || []).map(card => ({
+    const flashcards = (data || []).map((card: any) => ({
       ...card,
       front: card.source_lang 
         ? (card[card.source_lang] || card.front || '') 
