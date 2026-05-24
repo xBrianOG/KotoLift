@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getStats } from '../services/stats';
+import { BookOpen, Plus, Video, ArrowRight } from 'lucide-react';
 
 type HomeScreenProps = {
   onNavigate: (to: string) => void
@@ -28,115 +29,94 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
     <div className="screen animate-fade-in" style={{ 
       display: 'flex', 
       flexDirection: 'column',
-      paddingTop: 'var(--space-2xl)'
+      paddingTop: 'var(--space-3xl)',
+      maxWidth: 640
     }}>
-      {/* Hero Section */}
-      <div style={{ marginBottom: 'var(--space-2xl)' }}>
+      {/* Header */}
+      <div style={{ marginBottom: 'var(--space-3xl)' }}>
         <p style={{ 
           fontSize: 'var(--font-sm)', 
-          color: 'var(--text-secondary)',
-          marginBottom: 'var(--space-xs)',
-          fontWeight: 500,
-          letterSpacing: '0.5px',
-          textTransform: 'uppercase'
+          color: 'var(--text-tertiary)',
+          marginBottom: 'var(--space-sm)',
+          fontWeight: 500
         }}>
           {greeting}
         </p>
         <h1 style={{ 
-          fontSize: '2.5rem', 
-          fontWeight: 700, 
+          fontSize: 'var(--font-3xl)', 
+          fontWeight: 600, 
           color: 'var(--text)',
-          lineHeight: 1.1,
-          letterSpacing: '-0.5px',
-          marginBottom: 'var(--space-md)'
+          lineHeight: 1.2,
+          letterSpacing: '-0.5px'
         }}>
           Ready to learn?
         </h1>
-        
-        {/* Streak indicator */}
-        {!loading && streak > 0 && (
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 'var(--space-sm)',
-            padding: 'var(--space-sm) var(--space-md)',
-            background: 'var(--accent-light)',
-            borderRadius: 'var(--radius-round)',
-            color: 'var(--accent)'
-          }}>
-            <span style={{ fontSize: '1.25rem' }}>🔥</span>
-            <span style={{ fontWeight: 600, fontSize: 'var(--font-sm)' }}>
-              {streak} day streak
-            </span>
-          </div>
-        )}
       </div>
 
-      {/* Primary CTA */}
-      <div style={{ marginBottom: 'var(--space-2xl)' }}>
-        <button
-          onClick={() => onNavigate('review')}
-          style={{
-            width: '100%',
-            padding: 'var(--space-xl) var(--space-lg)',
-            background: 'var(--sidebar-bg)',
-            border: 'none',
-            borderRadius: 'var(--radius-lg)',
-            cursor: 'pointer',
+      {/* Primary Action */}
+      <button
+        onClick={() => onNavigate('review')}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: 'var(--space-lg)',
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-lg)',
+          cursor: 'pointer',
+          marginBottom: 'var(--space-lg)',
+          transition: 'all 0.15s ease',
+          width: '100%',
+          textAlign: 'left'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.borderColor = 'var(--accent)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.borderColor = 'var(--border)';
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
+          <div style={{
+            width: 40,
+            height: 40,
+            borderRadius: 'var(--radius-md)',
+            background: 'var(--accent-light)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
-            transition: 'transform 0.2s ease, box-shadow 0.2s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-2px)';
-            e.currentTarget.style.boxShadow = 'var(--shadow-lg)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = 'none';
-          }}
-        >
-          <div style={{ textAlign: 'left' }}>
+            justifyContent: 'center',
+            color: 'var(--accent)'
+          }}>
+            <BookOpen size={20} />
+          </div>
+          <div>
             <div style={{ 
-              fontSize: 'var(--font-xl)', 
-              fontWeight: 600, 
-              color: 'white',
-              marginBottom: 'var(--space-xs)'
+              fontSize: 'var(--font-base)', 
+              fontWeight: 500, 
+              color: 'var(--text)'
             }}>
               Start Review
             </div>
             <div style={{ 
               fontSize: 'var(--font-sm)', 
-              color: 'var(--sidebar-text)'
+              color: 'var(--text-tertiary)'
             }}>
-              5 cards ready to review
+              5 cards ready
             </div>
           </div>
-          <div style={{
-            width: 48,
-            height: 48,
-            borderRadius: '50%',
-            background: 'var(--accent)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <path d="M4 10H16M16 10L11 5M16 10L11 15" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
-        </button>
-      </div>
+        </div>
+        <ArrowRight size={20} style={{ color: 'var(--text-tertiary)' }} />
+      </button>
 
-      {/* Stats Row */}
+      {/* Stats */}
       <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: '1fr 1fr', 
+        display: 'flex', 
         gap: 'var(--space-md)',
-        marginBottom: 'var(--space-2xl)'
+        marginBottom: 'var(--space-3xl)'
       }}>
         <div style={{
+          flex: 1,
           padding: 'var(--space-lg)',
           background: 'var(--surface)',
           borderRadius: 'var(--radius-lg)',
@@ -144,16 +124,14 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
         }}>
           <div style={{ 
             fontSize: 'var(--font-xs)', 
-            color: 'var(--text-secondary)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
+            color: 'var(--text-tertiary)',
             marginBottom: 'var(--space-xs)'
           }}>
             Total Cards
           </div>
           <div style={{ 
-            fontSize: '1.75rem', 
-            fontWeight: 700, 
+            fontSize: 'var(--font-2xl)', 
+            fontWeight: 600, 
             color: 'var(--text)'
           }}>
             {loading ? '—' : '24'}
@@ -161,6 +139,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
         </div>
         
         <div style={{
+          flex: 1,
           padding: 'var(--space-lg)',
           background: 'var(--surface)',
           borderRadius: 'var(--radius-lg)',
@@ -168,19 +147,17 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
         }}>
           <div style={{ 
             fontSize: 'var(--font-xs)', 
-            color: 'var(--text-secondary)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
+            color: 'var(--text-tertiary)',
             marginBottom: 'var(--space-xs)'
           }}>
-            Stars Earned
+            Day Streak
           </div>
           <div style={{ 
-            fontSize: '1.75rem', 
-            fontWeight: 700, 
+            fontSize: 'var(--font-2xl)', 
+            fontWeight: 600, 
             color: 'var(--text)'
           }}>
-            {loading ? '—' : stars}
+            {loading ? '—' : streak}
           </div>
         </div>
       </div>
@@ -188,58 +165,41 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
       {/* Quick Actions */}
       <div>
         <h2 style={{ 
-          fontSize: 'var(--font-sm)', 
-          fontWeight: 600, 
-          color: 'var(--text-secondary)',
+          fontSize: 'var(--font-xs)', 
+          fontWeight: 500, 
+          color: 'var(--text-tertiary)',
+          marginBottom: 'var(--space-md)',
           textTransform: 'uppercase',
-          letterSpacing: '0.5px',
-          marginBottom: 'var(--space-md)'
+          letterSpacing: '0.5px'
         }}>
           Quick Actions
         </h2>
         
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xs)' }}>
           <button
             onClick={() => onNavigate('add')}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: 'var(--space-md)',
-              padding: 'var(--space-md) var(--space-lg)',
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
+              padding: 'var(--space-md)',
+              background: 'transparent',
+              border: 'none',
               borderRadius: 'var(--radius-md)',
               cursor: 'pointer',
               textAlign: 'left',
-              transition: 'border-color 0.2s ease, background 0.2s ease'
+              transition: 'background 0.15s ease',
+              width: '100%'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = 'var(--accent)';
-              e.currentTarget.style.background = 'var(--accent-light)';
+              e.currentTarget.style.background = 'var(--bg)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'var(--border)';
-              e.currentTarget.style.background = 'var(--surface)';
+              e.currentTarget.style.background = 'transparent';
             }}
           >
-            <div style={{
-              width: 36,
-              height: 36,
-              borderRadius: 'var(--radius-md)',
-              background: 'var(--accent-light)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--accent)'
-            }}>
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path d="M9 3V15M3 9H15" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-            </div>
-            <div>
-              <div style={{ fontWeight: 500, color: 'var(--text)' }}>Add New Card</div>
-              <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-secondary)' }}>Create a custom flashcard</div>
-            </div>
+            <Plus size={18} style={{ color: 'var(--text-tertiary)' }} />
+            <span style={{ fontWeight: 500, color: 'var(--text)', fontSize: 'var(--font-sm)' }}>Add New Card</span>
           </button>
 
           <button
@@ -248,42 +208,24 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
               display: 'flex',
               alignItems: 'center',
               gap: 'var(--space-md)',
-              padding: 'var(--space-md) var(--space-lg)',
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
+              padding: 'var(--space-md)',
+              background: 'transparent',
+              border: 'none',
               borderRadius: 'var(--radius-md)',
               cursor: 'pointer',
               textAlign: 'left',
-              transition: 'border-color 0.2s ease, background 0.2s ease'
+              transition: 'background 0.15s ease',
+              width: '100%'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = 'var(--accent)';
-              e.currentTarget.style.background = 'var(--accent-light)';
+              e.currentTarget.style.background = 'var(--bg)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'var(--border)';
-              e.currentTarget.style.background = 'var(--surface)';
+              e.currentTarget.style.background = 'transparent';
             }}
           >
-            <div style={{
-              width: 36,
-              height: 36,
-              borderRadius: 'var(--radius-md)',
-              background: 'var(--accent-light)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--accent)'
-            }}>
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <rect x="2" y="4" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-                <path d="M7 7L11 9L7 11V7Z" fill="currentColor"/>
-              </svg>
-            </div>
-            <div>
-              <div style={{ fontWeight: 500, color: 'var(--text)' }}>Import from Video</div>
-              <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-secondary)' }}>Extract vocabulary from YouTube</div>
-            </div>
+            <Video size={18} style={{ color: 'var(--text-tertiary)' }} />
+            <span style={{ fontWeight: 500, color: 'var(--text)', fontSize: 'var(--font-sm)' }}>Import from Video</span>
           </button>
         </div>
       </div>

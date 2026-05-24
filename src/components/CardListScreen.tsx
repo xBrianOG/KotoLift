@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { getAllCards, deleteCard, updateCard, searchCards, getAllTags } from '../services/cards';
 import type { Card } from '../types';
 import { getCardSourceText, getCardTranslation } from '../types';
 import { getAuthHeaders } from '../services/auth';
+import { Search, ChevronDown, Edit2, Trash2, Info, X } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'https://kotolift.onrender.com';
 
@@ -14,13 +15,13 @@ function Dropdown({
   multiple = false
 }: { 
   label: string; 
-  options: { key: string; label: string; color?: string }[]; 
+  options: { key: string; label: string }[]; 
   selected: string[]; 
   onChange: (keys: string[]) => void;
   multiple?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const dropdownRef = React.useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleSelect = (key: string) => {
     if (!multiple) {
@@ -28,7 +29,6 @@ function Dropdown({
       setOpen(false);
       return;
     }
-    // For multiple selection, toggle the item
     if (selected.includes(key)) {
       onChange(selected.filter(k => k !== key));
     } else {
@@ -36,13 +36,11 @@ function Dropdown({
     }
   };
 
-  // Show selected labels or "All" if nothing selected
   const selectedLabels = options
     .filter(o => selected.includes(o.key) && o.key !== 'all')
     .map(o => o.label)
     .join(', ');
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     if (!open) return;
     
@@ -52,7 +50,6 @@ function Dropdown({
       }
     };
     
-    // Add listener on next tick to avoid catching the opening click
     const timeoutId = setTimeout(() => {
       document.addEventListener('mousedown', handleClickOutside);
     }, 0);
@@ -64,29 +61,37 @@ function Dropdown({
   }, [open]);
 
   return (
-    <div ref={dropdownRef} style={{ position: 'relative', display: 'inline-block' }}>
+    <div ref={dropdownRef} style={{ position: 'relative' }}>
       <button
         type="button"
         className="btn btn-secondary"
         onClick={() => setOpen(!open)}
-        style={{ minWidth: 120, fontSize: '0.85rem', padding: '6px 12px' }}
+        style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: 'var(--space-sm)',
+          padding: 'var(--space-xs) var(--space-md)'
+        }}
       >
-        {label}: {selectedLabels || 'All'} ▼
+        <span style={{ fontSize: 'var(--font-sm)' }}>
+          {label}: {selectedLabels || 'All'}
+        </span>
+        <ChevronDown size={14} />
       </button>
       {open && (
-        <div 
-          className="card" 
-          style={{ 
-            position: 'absolute', 
-            top: '100%', 
-            left: 0, 
-            zIndex: 1000, 
-            minWidth: 180, 
-            maxHeight: 250, 
-            overflowY: 'auto',
-            marginTop: 4,
-            padding: '8px'
-          }}>
+        <div style={{ 
+          position: 'absolute', 
+          top: 'calc(100% + 4px)', 
+          left: 0, 
+          zIndex: 1000, 
+          minWidth: 180, 
+          maxHeight: 250, 
+          overflowY: 'auto',
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-md)',
+          padding: 'var(--space-xs)'
+        }}>
           {options.map(opt => {
             const isSelected = selected.includes(opt.key);
             return (
@@ -99,41 +104,45 @@ function Dropdown({
                 }}
                 style={{
                   width: '100%',
-                  padding: '10px 12px',
+                  padding: 'var(--space-sm) var(--space-md)',
                   cursor: 'pointer',
-                  borderRadius: 6,
-                  background: 'transparent',
+                  borderRadius: 'var(--radius-sm)',
+                  background: isSelected ? 'var(--bg)' : 'transparent',
                   border: 'none',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 10,
-                  fontSize: '0.9rem',
+                  gap: 'var(--space-sm)',
+                  fontSize: 'var(--font-sm)',
                   textAlign: 'left',
-                  color: 'inherit'
+                  color: isSelected ? 'var(--text)' : 'var(--text-secondary)',
+                  fontWeight: isSelected ? 500 : 400,
+                  transition: 'background 0.15s ease'
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface)'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                onMouseEnter={(e) => {
+                  if (!isSelected) e.currentTarget.style.background = 'var(--bg)';
+                }}
+                onMouseLeave={(e) => {
+                  if (!isSelected) e.currentTarget.style.background = 'transparent';
+                }}
               >
                 {multiple && (
                   <span style={{ 
-                    width: 20, 
-                    height: 20, 
-                    border: `2px solid ${isSelected ? 'var(--primary)' : 'var(--border)'}`, 
-                    borderRadius: 4,
-                    background: isSelected ? 'var(--primary)' : 'transparent',
+                    width: 16, 
+                    height: 16, 
+                    border: `1.5px solid ${isSelected ? 'var(--accent)' : 'var(--border)'}`, 
+                    borderRadius: 3,
+                    background: isSelected ? 'var(--accent)' : 'transparent',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: 'white',
-                    fontSize: 14,
+                    fontSize: 10,
                     flexShrink: 0
                   }}>
                     {isSelected && '✓'}
                   </span>
                 )}
-                <span style={{ color: isSelected ? 'var(--primary)' : 'inherit', fontWeight: isSelected ? 600 : 400 }}>
-                  {opt.label}
-                </span>
+                {opt.label}
               </button>
             );
           })}
@@ -151,18 +160,7 @@ export function CardListScreen({ onExplain }: { onExplain?: (card: Card) => void
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [editingCard, setEditingCard] = useState<Card | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Card | null>(null);
-  const [filterCategory, setFilterCategory] = useState<string[]>(['all']);
-  const [categories, setCategories] = useState<{name: string}[]>([]);
 
-  // Fetch categories from API
-  useEffect(() => {
-    fetch(`${API_BASE}/api/categories`, { headers: { ...getAuthHeaders() } })
-      .then(res => res.json())
-      .then(data => setCategories(data.categories || []))
-      .catch(console.error);
-  }, []);
-
-  // Debounce search input by 300ms
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300);
     return () => clearTimeout(timer);
@@ -189,82 +187,91 @@ export function CardListScreen({ onExplain }: { onExplain?: (card: Card) => void
     loadCards();
   };
 
-  const toggleTag = (tag: string) => {
-    setSelectedTags(prev =>
-      prev.includes(tag)
-        ? prev.filter(t => t !== tag)
-        : [...prev, tag]
-    );
-  };
-
   const handleEditSave = async () => {
     setEditingCard(null);
     loadCards();
   };
 
   return (
-    <div className="screen animate-fade-in" style={{ paddingBottom: '120px' }}>
-      <div className="mb-md">
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search cards..."
-          className="mb-md"
-          style={{ width: '100%' }}
-        />
+    <div className="screen animate-fade-in" style={{ maxWidth: 720 }}>
+      {/* Header */}
+      <div style={{ marginBottom: 'var(--space-xl)' }}>
+        <h1 style={{ 
+          fontSize: 'var(--font-xl)', 
+          fontWeight: 600, 
+          color: 'var(--text)',
+          marginBottom: 'var(--space-xs)'
+        }}>
+          My Cards
+        </h1>
+        <p style={{ 
+          fontSize: 'var(--font-sm)', 
+          color: 'var(--text-tertiary)' 
+        }}>
+          {cards.length} cards
+        </p>
+      </div>
 
-{/* Dropdown Filters */}
-        <div className="flex gap-sm mb-md" style={{ flexWrap: 'wrap' }}>
-          <Dropdown
-            label="Category"
-            options={[
-              { key: 'all', label: 'All Categories' },
-              ...tags.map(c => ({ key: c, label: c }))
-            ]}
-            selected={selectedTags.length === 0 ? ['all'] : selectedTags}
-            onChange={(newVals) => {
-              // If "All Categories" is clicked, clear selection
-              if (newVals.includes('all') && !selectedTags.includes('all')) {
-                setSelectedTags([]);
-              } else {
-                // Remove 'all' from selection and set the tags
-                const withoutAll = newVals.filter(v => v !== 'all');
-                setSelectedTags(withoutAll);
-              }
+      {/* Search & Filters */}
+      <div style={{ marginBottom: 'var(--space-lg)' }}>
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center',
+          gap: 'var(--space-sm)',
+          padding: 'var(--space-sm) var(--space-md)',
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-md)',
+          marginBottom: 'var(--space-md)'
+        }}>
+          <Search size={16} style={{ color: 'var(--text-tertiary)' }} />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search cards..."
+            style={{
+              flex: 1,
+              border: 'none',
+              background: 'transparent',
+              padding: 'var(--space-xs)',
+              fontSize: 'var(--font-sm)',
+              outline: 'none'
             }}
-            multiple={true}
           />
         </div>
 
         {tags.length > 0 && (
-          <div className="flex-center flex-wrap gap-xs" style={{ justifyContent: 'flex-start' }}>
-            {tags.map(tag => (
-              <button
-                key={tag}
-                className={`tag ${selectedTags.includes(tag) ? 'active' : ''}`}
-                onClick={() => toggleTag(tag)}
-                style={{
-                  cursor: 'pointer',
-                  background: selectedTags.includes(tag) ? 'var(--text)' : 'var(--surface)',
-                  color: selectedTags.includes(tag) ? 'white' : 'var(--text-secondary)',
-                  borderColor: selectedTags.includes(tag) ? 'var(--text)' : 'var(--border)'
-                }}
-              >
-                {tag}
-              </button>
-            ))}
-          </div>
+          <Dropdown
+            label="Category"
+            options={[
+              { key: 'all', label: 'All Categories' },
+              ...tags.map(t => ({ key: t, label: t }))
+            ]}
+            selected={selectedTags.length === 0 ? ['all'] : selectedTags}
+            onChange={(newVals) => {
+              if (newVals.includes('all') && !selectedTags.includes('all')) {
+                setSelectedTags([]);
+              } else {
+                setSelectedTags(newVals.filter(v => v !== 'all'));
+              }
+            }}
+            multiple={true}
+          />
         )}
       </div>
 
+      {/* Card List */}
       {cards.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-state-icon">📭</div>
-          <p className="font-medium">No cards found</p>
+        <div style={{ 
+          textAlign: 'center', 
+          padding: 'var(--space-3xl)',
+          color: 'var(--text-tertiary)'
+        }}>
+          <p style={{ fontSize: 'var(--font-base)' }}>No cards found</p>
         </div>
       ) : (
-        <div className="flex-col gap-sm">
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
           {cards.map(card => {
             const langLabel = (card.sourceLang || 'ja').toUpperCase();
             const sourceText = getCardSourceText(card);
@@ -274,71 +281,109 @@ export function CardListScreen({ onExplain }: { onExplain?: (card: Card) => void
             const showEs = esText && card.sourceLang !== 'es';
 
             return (
-              <div key={card.id} className="card card-clickable" style={{ padding: 'var(--space-md) var(--space-lg)' }}>
-                <div className="flex-between" style={{ alignItems: 'flex-start' }}>
-                  <div>
-                    <span className="lang-badge" style={{ padding: '2px 6px' }}>{langLabel}</span>
-                    <p className="font-medium mt-sm text-lg">{sourceText}</p>
+              <div 
+                key={card.id} 
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  justifyContent: 'space-between',
+                  padding: 'var(--space-md) var(--space-sm)',
+                  borderBottom: '1px solid var(--border)',
+                  transition: 'background 0.15s ease',
+                  cursor: 'default'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'var(--bg)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', marginBottom: 'var(--space-xs)' }}>
+                    <span className="lang-badge">{langLabel}</span>
+                    <span style={{ 
+                      fontWeight: 500, 
+                      color: 'var(--text)',
+                      fontSize: 'var(--font-base)'
+                    }}>
+                      {sourceText}
+                    </span>
                   </div>
-                  <div className="flex-center gap-xs">
-                    {onExplain && (
-                      <button
-                        onClick={() => onExplain(card)}
-                        className="btn-subtle"
-                        style={{ padding: '6px', borderRadius: 'var(--radius-sm)' }}
-                        title="Explain"
-                      >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 16, height: 16 }}>
-                          <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      </button>
-                    )}
-                    <button
-                      onClick={() => setEditingCard(card)}
-                      className="btn-subtle"
-                      style={{ padding: '6px', borderRadius: 'var(--radius-sm)' }}
-                      title="Edit"
-                    >
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 16, height: 16 }}>
-                        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={() => setDeleteTarget(card)}
-                      className="btn-subtle"
-                      style={{ padding: '6px', borderRadius: 'var(--radius-sm)', color: 'var(--danger)' }}
-                      title="Delete"
-                    >
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 16, height: 16 }}>
-                        <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
-                      </svg>
-                    </button>
-                  </div>
+                  
+                  {showEn && (
+                    <p style={{ 
+                      fontSize: 'var(--font-sm)', 
+                      color: 'var(--text-secondary)',
+                      marginBottom: 'var(--space-xs)'
+                    }}>
+                      {enText}
+                    </p>
+                  )}
+                  
+                  {showEs && (
+                    <p style={{ 
+                      fontSize: 'var(--font-sm)', 
+                      color: 'var(--text-tertiary)'
+                    }}>
+                      {esText}
+                    </p>
+                  )}
+
+                  {card.tags.length > 0 && (
+                    <div style={{ 
+                      display: 'flex', 
+                      gap: 'var(--space-xs)', 
+                      marginTop: 'var(--space-sm)',
+                      flexWrap: 'wrap'
+                    }}>
+                      {card.tags.map(tag => (
+                        <span key={tag} className="tag">{tag}</span>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                {showEn && (
-                  <p className="text-secondary text-base mt-sm">
-                    <span className="lang-badge" style={{ fontSize: '10px', marginRight: 6, padding: '2px 4px' }}>EN</span> {enText}
-                  </p>
-                )}
-                {showEs && (
-                  <p className="text-secondary text-base mt-xs">
-                    <span className="lang-badge" style={{ fontSize: '10px', marginRight: 6, padding: '2px 4px' }}>ES</span> {esText}
-                  </p>
-                )}
-                {card.tags.length > 0 && (
-                  <div className="mt-md flex-center flex-wrap" style={{ justifyContent: 'flex-start' }}>
-                    {card.tags.map(tag => (
-                      <span key={tag} className="tag" style={{ margin: '0 6px 6px 0', padding: '2px 8px' }}>{tag}</span>
-                    ))}
-                  </div>
-                )}
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 'var(--space-xs)',
+                  marginLeft: 'var(--space-md)'
+                }}>
+                  {onExplain && (
+                    <button
+                      onClick={() => onExplain(card)}
+                      className="btn btn-subtle"
+                      style={{ padding: 'var(--space-xs)' }}
+                      title="Explain"
+                    >
+                      <Info size={16} />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setEditingCard(card)}
+                    className="btn btn-subtle"
+                    style={{ padding: 'var(--space-xs)' }}
+                    title="Edit"
+                  >
+                    <Edit2 size={16} />
+                  </button>
+                  <button
+                    onClick={() => setDeleteTarget(card)}
+                    className="btn btn-subtle"
+                    style={{ padding: 'var(--space-xs)', color: 'var(--danger)' }}
+                    title="Delete"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </div>
             );
           })}
         </div>
       )}
 
+      {/* Edit Modal */}
       {editingCard && (
         <EditCardModal
           card={editingCard}
@@ -347,25 +392,52 @@ export function CardListScreen({ onExplain }: { onExplain?: (card: Card) => void
         />
       )}
 
-      {/* Custom delete confirmation dialog */}
+      {/* Delete Confirmation */}
       {deleteTarget && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, zIndex: 100 }}>
-          <div className="card animate-slide-down" style={{ width: '100%', maxWidth: 340, textAlign: 'center' }}>
-            <div style={{ fontSize: 32, marginBottom: 12 }}>🗑��</div>
-            <h3 className="font-bold text-lg mb-sm">Delete this card?</h3>
-            <p className="text-secondary text-sm mb-xl">"{getCardSourceText(deleteTarget)}"</p>
-            <div style={{ display: 'flex', gap: 12 }}>
+        <div style={{ 
+          position: 'fixed', 
+          inset: 0, 
+          background: 'rgba(0,0,0,0.4)', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          padding: 'var(--space-lg)', 
+          zIndex: 100 
+        }}>
+          <div style={{
+            background: 'var(--surface)',
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid var(--border)',
+            padding: 'var(--space-xl)',
+            maxWidth: 340,
+            width: '100%',
+            textAlign: 'center'
+          }}>
+            <h3 style={{ 
+              fontWeight: 600, 
+              fontSize: 'var(--font-lg)', 
+              marginBottom: 'var(--space-sm)',
+              color: 'var(--text)'
+            }}>
+              Delete card?
+            </h3>
+            <p style={{ 
+              color: 'var(--text-secondary)', 
+              fontSize: 'var(--font-sm)', 
+              marginBottom: 'var(--space-xl)' 
+            }}>
+              "{getCardSourceText(deleteTarget)}"
+            </p>
+            <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
               <button
-                className="btn btn-secondary"
+                className="btn btn-secondary btn-full"
                 onClick={() => setDeleteTarget(null)}
-                style={{ flex: 1 }}
               >
                 Cancel
               </button>
               <button
-                className="btn"
+                className="btn btn-danger btn-full"
                 onClick={() => handleDelete(deleteTarget)}
-                style={{ flex: 1, background: 'var(--danger)', color: 'white', border: 'none' }}
               >
                 Delete
               </button>
@@ -385,8 +457,6 @@ interface EditCardModalProps {
 
 function EditCardModal({ card, onSave, onClose }: EditCardModalProps) {
   const sourceLang = card.sourceLang || 'ja';
-
-  // Initialize from flexible model, falling back to legacy fields
   const [sourceText, setSourceText] = useState(getCardSourceText(card));
   const [enText, setEnText] = useState(getCardTranslation(card, 'en') || '');
   const [esText, setEsText] = useState(getCardTranslation(card, 'es') || '');
@@ -403,7 +473,6 @@ function EditCardModal({ card, onSave, onClose }: EditCardModalProps) {
     await updateCard(card.id, {
       sourceText,
       translations: { ...card.translations, ...translationsUpdate },
-      // Keep legacy fields in sync for backward compatibility
       jaText: sourceLang === 'ja' ? sourceText : (jaText || undefined),
       enText: sourceLang === 'en' ? sourceText : (enText || undefined),
       esText: sourceLang === 'es' ? sourceText : (esText || undefined),
@@ -413,82 +482,160 @@ function EditCardModal({ card, onSave, onClose }: EditCardModalProps) {
     onSave();
   };
 
-  const fieldLabel = (lang: string) => lang.toUpperCase();
-
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, zIndex: 100 }}>
-      <div className="card animate-slide-down" style={{ width: '100%', maxWidth: 500, maxHeight: '90vh', overflow: 'auto' }}>
-        <h2 className="font-bold text-xl mb-lg">Edit Card</h2>
-
-        <label className="block mb-xs text-sm font-semibold text-secondary">
-          {fieldLabel(sourceLang)} (Source)
-        </label>
-        <textarea
-          value={sourceText}
-          onChange={(e) => setSourceText(e.target.value)}
-          rows={2}
-          style={{ width: '100%', marginBottom: 12 }}
-        />
-
-        {sourceLang !== 'en' && (
-          <>
-            <label className="block mb-xs text-sm font-semibold text-secondary">EN</label>
-            <textarea
-              value={enText}
-              onChange={(e) => setEnText(e.target.value)}
-              rows={2}
-              style={{ width: '100%', marginBottom: 12 }}
-            />
-          </>
-        )}
-
-        {sourceLang !== 'es' && (
-          <>
-            <label className="block mb-xs text-sm font-semibold text-secondary">ES</label>
-            <textarea
-              value={esText}
-              onChange={(e) => setEsText(e.target.value)}
-              rows={2}
-              style={{ width: '100%', marginBottom: 12 }}
-            />
-          </>
-        )}
-
-        {sourceLang !== 'ja' && (
-          <>
-            <label className="block mb-xs text-sm font-semibold text-secondary">JA</label>
-            <textarea
-              value={jaText}
-              onChange={(e) => setJaText(e.target.value)}
-              rows={2}
-              style={{ width: '100%', marginBottom: 12 }}
-            />
-          </>
-        )}
-
-        <label className="block mb-xs text-sm font-semibold text-secondary">Tags</label>
-        <input
-          type="text"
-          value={tags}
-          onChange={(e) => setTags(e.target.value)}
-          placeholder="grammar, n5, verbs…"
-          style={{ width: '100%', marginBottom: 12 }}
-        />
-
-        <label className="block mb-xs text-sm font-semibold text-secondary">Notes</label>
-        <textarea
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          rows={2}
-          style={{ width: '100%', marginBottom: 16 }}
-        />
-
-        <div style={{ display: 'flex', gap: 12 }}>
-          <button className="btn btn-primary" onClick={handleSave} style={{ flex: 1 }}>
-            Save
+    <div style={{ 
+      position: 'fixed', 
+      inset: 0, 
+      background: 'rgba(0,0,0,0.4)', 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      padding: 'var(--space-lg)', 
+      zIndex: 100 
+    }}>
+      <div style={{
+        background: 'var(--surface)',
+        borderRadius: 'var(--radius-lg)',
+        border: '1px solid var(--border)',
+        padding: 'var(--space-xl)',
+        maxWidth: 480,
+        width: '100%',
+        maxHeight: '90vh',
+        overflow: 'auto'
+      }}>
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          marginBottom: 'var(--space-xl)'
+        }}>
+          <h2 style={{ fontWeight: 600, fontSize: 'var(--font-lg)' }}>Edit Card</h2>
+          <button className="btn btn-subtle" onClick={onClose} style={{ padding: 'var(--space-xs)' }}>
+            <X size={20} />
           </button>
-          <button className="btn" onClick={onClose} style={{ flex: 1, background: 'var(--border)' }}>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+          <div>
+            <label style={{ 
+              display: 'block', 
+              fontSize: 'var(--font-xs)', 
+              color: 'var(--text-secondary)',
+              marginBottom: 'var(--space-xs)'
+            }}>
+              {sourceLang.toUpperCase()} (Source)
+            </label>
+            <textarea
+              value={sourceText}
+              onChange={(e) => setSourceText(e.target.value)}
+              rows={2}
+              style={{ width: '100%' }}
+            />
+          </div>
+
+          {sourceLang !== 'en' && (
+            <div>
+              <label style={{ 
+                display: 'block', 
+                fontSize: 'var(--font-xs)', 
+                color: 'var(--text-secondary)',
+                marginBottom: 'var(--space-xs)'
+              }}>
+                EN
+              </label>
+              <textarea
+                value={enText}
+                onChange={(e) => setEnText(e.target.value)}
+                rows={2}
+                style={{ width: '100%' }}
+              />
+            </div>
+          )}
+
+          {sourceLang !== 'es' && (
+            <div>
+              <label style={{ 
+                display: 'block', 
+                fontSize: 'var(--font-xs)', 
+                color: 'var(--text-secondary)',
+                marginBottom: 'var(--space-xs)'
+              }}>
+                ES
+              </label>
+              <textarea
+                value={esText}
+                onChange={(e) => setEsText(e.target.value)}
+                rows={2}
+                style={{ width: '100%' }}
+              />
+            </div>
+          )}
+
+          {sourceLang !== 'ja' && (
+            <div>
+              <label style={{ 
+                display: 'block', 
+                fontSize: 'var(--font-xs)', 
+                color: 'var(--text-secondary)',
+                marginBottom: 'var(--space-xs)'
+              }}>
+                JA
+              </label>
+              <textarea
+                value={jaText}
+                onChange={(e) => setJaText(e.target.value)}
+                rows={2}
+                style={{ width: '100%' }}
+              />
+            </div>
+          )}
+
+          <div>
+            <label style={{ 
+              display: 'block', 
+              fontSize: 'var(--font-xs)', 
+              color: 'var(--text-secondary)',
+              marginBottom: 'var(--space-xs)'
+            }}>
+              Tags
+            </label>
+            <input
+              type="text"
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
+              placeholder="grammar, n5, verbs..."
+              style={{ width: '100%' }}
+            />
+          </div>
+
+          <div>
+            <label style={{ 
+              display: 'block', 
+              fontSize: 'var(--font-xs)', 
+              color: 'var(--text-secondary)',
+              marginBottom: 'var(--space-xs)'
+            }}>
+              Notes
+            </label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={2}
+              style={{ width: '100%' }}
+            />
+          </div>
+        </div>
+
+        <div style={{ 
+          display: 'flex', 
+          gap: 'var(--space-sm)', 
+          marginTop: 'var(--space-xl)' 
+        }}>
+          <button className="btn btn-secondary btn-full" onClick={onClose}>
             Cancel
+          </button>
+          <button className="btn btn-primary btn-full" onClick={handleSave}>
+            Save
           </button>
         </div>
       </div>

@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { getAuthHeaders } from '../services/auth';
+import { Search, ChevronDown, ChevronLeft, X, Plus } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'https://kotolift.onrender.com';
 
@@ -41,13 +42,13 @@ function Dropdown({
   multiple = false
 }: { 
   label: string; 
-  options: { key: string; label: string; color?: string }[]; 
+  options: { key: string; label: string }[]; 
   selected: string[]; 
   onChange: (keys: string[]) => void;
   multiple?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const dropdownRef = React.useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleSelect = (key: string) => {
     if (!multiple) {
@@ -55,7 +56,6 @@ function Dropdown({
       setOpen(false);
       return;
     }
-    // For multiple selection, toggle the item
     if (selected.includes(key)) {
       onChange(selected.filter(k => k !== key));
     } else {
@@ -63,27 +63,21 @@ function Dropdown({
     }
   };
 
-  // Show selected labels or "All" if nothing selected
   const selectedLabels = options
     .filter(o => selected.includes(o.key) && o.key !== 'all')
     .map(o => o.label)
     .join(', ');
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     if (!open) return;
-    
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setOpen(false);
       }
     };
-    
-    // Add listener on next tick to avoid catching the opening click
     const timeoutId = setTimeout(() => {
       document.addEventListener('mousedown', handleClickOutside);
     }, 0);
-    
     return () => {
       clearTimeout(timeoutId);
       document.removeEventListener('mousedown', handleClickOutside);
@@ -91,7 +85,7 @@ function Dropdown({
   }, [open]);
 
   return (
-    <div ref={dropdownRef} style={{ position: 'relative', display: 'inline-block' }}>
+    <div ref={dropdownRef} style={{ position: 'relative' }}>
       <button
         type="button"
         className="btn btn-secondary"
@@ -99,24 +93,32 @@ function Dropdown({
           e.preventDefault();
           setOpen(!open);
         }}
-        style={{ minWidth: 140, textAlign: 'left' }}
+        style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: 'var(--space-sm)',
+          padding: 'var(--space-xs) var(--space-md)'
+        }}
       >
-        {label}: {selectedLabels || 'All'} ▼
+        <span style={{ fontSize: 'var(--font-sm)' }}>
+          {label}: {selectedLabels || 'All'}
+        </span>
+        <ChevronDown size={14} />
       </button>
       {open && (
-        <div 
-          className="card" 
-          style={{ 
-            position: 'absolute', 
-            top: '100%', 
-            left: 0, 
-            zIndex: 1000, 
-            minWidth: 180, 
-            maxHeight: 250, 
-            overflowY: 'auto',
-            marginTop: 4,
-            padding: '8px'
-          }}>
+        <div style={{ 
+          position: 'absolute', 
+          top: 'calc(100% + 4px)', 
+          left: 0, 
+          zIndex: 1000, 
+          minWidth: 180, 
+          maxHeight: 250, 
+          overflowY: 'auto',
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-md)',
+          padding: 'var(--space-xs)'
+        }}>
           {options.map(opt => {
             const isSelected = selected.includes(opt.key);
             return (
@@ -130,41 +132,45 @@ function Dropdown({
                 }}
                 style={{
                   width: '100%',
-                  padding: '10px 12px',
+                  padding: 'var(--space-sm) var(--space-md)',
                   cursor: 'pointer',
-                  borderRadius: 6,
-                  background: 'transparent',
+                  borderRadius: 'var(--radius-sm)',
+                  background: isSelected ? 'var(--bg)' : 'transparent',
                   border: 'none',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 10,
-                  fontSize: '0.9rem',
+                  gap: 'var(--space-sm)',
+                  fontSize: 'var(--font-sm)',
                   textAlign: 'left',
-                  color: 'inherit'
+                  color: isSelected ? 'var(--text)' : 'var(--text-secondary)',
+                  fontWeight: isSelected ? 500 : 400,
+                  transition: 'background 0.15s ease'
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface)'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                onMouseEnter={(e) => {
+                  if (!isSelected) e.currentTarget.style.background = 'var(--bg)';
+                }}
+                onMouseLeave={(e) => {
+                  if (!isSelected) e.currentTarget.style.background = 'transparent';
+                }}
               >
                 {multiple && (
                   <span style={{ 
-                    width: 20, 
-                    height: 20, 
-                    border: `2px solid ${isSelected ? 'var(--primary)' : 'var(--border)'}`, 
-                    borderRadius: 4,
-                    background: isSelected ? 'var(--primary)' : 'transparent',
+                    width: 16, 
+                    height: 16, 
+                    border: `1.5px solid ${isSelected ? 'var(--accent)' : 'var(--border)'}`, 
+                    borderRadius: 3,
+                    background: isSelected ? 'var(--accent)' : 'transparent',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: 'white',
-                    fontSize: 14,
+                    fontSize: 10,
                     flexShrink: 0
                   }}>
                     {isSelected && '✓'}
                   </span>
                 )}
-                <span style={{ color: isSelected ? 'var(--primary)' : 'inherit', fontWeight: isSelected ? 600 : 400 }}>
-                  {opt.label}
-                </span>
+                {opt.label}
               </button>
             );
           })}
@@ -209,12 +215,11 @@ export function VocabularyScreen({ onBack }: VocabularyScreenProps) {
     try {
       const res = await fetch(`${API_BASE}/api/categories`, { headers: { ...getAuthHeaders() } });
       const data = await res.json();
-      // Always preserve existing categories and add new ones
       const newCats = data.categories || [];
       setCategories(prev => {
         const existingNames = prev.map(c => c.name);
         const merged = [...prev];
-        newCats.forEach((c: any) => {
+        newCats.forEach((c: Category) => {
           if (!existingNames.includes(c.name)) {
             merged.push(c);
           }
@@ -228,37 +233,22 @@ export function VocabularyScreen({ onBack }: VocabularyScreenProps) {
 
   const fetchVocabulary = async (reset = false) => {
     if (!hasMore && !reset && !searchQuery) return;
-
     setLoading(true);
     setError(null);
 
     try {
       const params = new URLSearchParams();
-      
-      // Handle level filter (exclude 'all')
       const levels = filterLevels.filter(l => l !== 'all');
-      if (levels.length > 0 && !levels.includes('all')) {
-        params.append('level', levels[0]); // API expects single level for now
-      }
-      
-      // Handle category filter (exclude 'all')
+      if (levels.length > 0) params.append('level', levels[0]);
       const cats = filterCategories.filter(c => c !== 'all');
-      if (cats.length > 0 && !cats.includes('all')) {
-        params.append('category', cats[0]); // API expects single category for now
-      }
-      
-      // Search in both words and categories
-      if (searchQuery) {
-        params.append('search', searchQuery);
-      }
-      
+      if (cats.length > 0) params.append('category', cats[0]);
+      if (searchQuery) params.append('search', searchQuery);
       params.append('limit', String(LIMIT));
       params.append('offset', String(reset ? 0 : page * LIMIT));
 
       const res = await fetch(`${API_BASE}/api/vocabulary?${params}`, {
         headers: { ...getAuthHeaders() }
       });
-
       const data = await res.json();
       const newWords = data.vocabulary || [];
 
@@ -277,7 +267,6 @@ export function VocabularyScreen({ onBack }: VocabularyScreenProps) {
 
   const createCategory = async () => {
     if (!newCategoryName.trim()) return;
-    
     try {
       const res = await fetch(`${API_BASE}/api/categories`, {
         method: 'POST',
@@ -309,13 +298,8 @@ export function VocabularyScreen({ onBack }: VocabularyScreenProps) {
     fetchVocabulary(true);
   };
 
-  // Build filter options - get from vocabulary in DB
   const vocabularyCategories = [...new Set(vocabulary.flatMap((w: VocabularyWord) => w.categories || []))];
-  const levelOptions = [
-    { key: 'all', label: 'All Levels' },
-    ...LEVELS.filter(l => l.key !== 'all').map(l => ({ key: l.key, label: l.label }))
-  ];
-  
+  const levelOptions = LEVELS.map(l => ({ key: l.key, label: l.label }));
   const categoryOptions = [
     { key: 'all', label: 'All Categories' },
     ...vocabularyCategories.map((name: string) => ({ key: name, label: name }))
@@ -327,35 +311,68 @@ export function VocabularyScreen({ onBack }: VocabularyScreenProps) {
         word={selectedWord} 
         categories={categories}
         onBack={() => setSelectedWord(null)} 
-        onUpdate={fetchVocabulary}
+        onUpdate={() => fetchVocabulary(true)}
       />
     );
   }
 
   return (
-    <div className="screen animate-fade-in" style={{ padding: 'var(--space-xl)' }}>
-      <div className="mb-lg">
-        <h1 className="text-2xl font-bold mb-xs">Vocabulary</h1>
-        <p className="text-secondary text-sm">B1-B2 English vocabulary</p>
+    <div className="screen animate-fade-in" style={{ maxWidth: 720 }}>
+      {/* Header */}
+      <div style={{ marginBottom: 'var(--space-xl)' }}>
+        <h1 style={{ 
+          fontSize: 'var(--font-xl)', 
+          fontWeight: 600, 
+          color: 'var(--text)',
+          marginBottom: 'var(--space-xs)'
+        }}>
+          Vocabulary
+        </h1>
+        <p style={{ fontSize: 'var(--font-sm)', color: 'var(--text-tertiary)' }}>
+          B1-B2 English vocabulary
+        </p>
       </div>
 
-      {/* Search Bar - searches words AND categories */}
-      <div className="flex gap-sm mb-md">
-        <input
-          type="text"
-          className="input"
-          placeholder="Search words or categories..."
-          value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && handleSearch()}
-          style={{ flex: 1 }}
-        />
+      {/* Search */}
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center',
+        gap: 'var(--space-sm)',
+        marginBottom: 'var(--space-md)'
+      }}>
+        <div style={{ 
+          flex: 1,
+          display: 'flex', 
+          alignItems: 'center',
+          gap: 'var(--space-sm)',
+          padding: 'var(--space-sm) var(--space-md)',
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-md)'
+        }}>
+          <Search size={16} style={{ color: 'var(--text-tertiary)' }} />
+          <input
+            type="text"
+            placeholder="Search words..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSearch()}
+            style={{
+              flex: 1,
+              border: 'none',
+              background: 'transparent',
+              padding: 'var(--space-xs)',
+              fontSize: 'var(--font-sm)',
+              outline: 'none'
+            }}
+          />
+        </div>
         <button className="btn btn-primary" onClick={handleSearch}>Search</button>
         <button className="btn btn-secondary" onClick={() => setShowCategoryModal(true)}>Manage</button>
       </div>
 
-      {/* Filter Dropdowns */}
-      <div className="flex gap-sm mb-lg" style={{ flexWrap: 'wrap' }}>
+      {/* Filters */}
+      <div style={{ display: 'flex', gap: 'var(--space-sm)', marginBottom: 'var(--space-lg)' }}>
         <Dropdown
           label="Level"
           options={levelOptions}
@@ -366,13 +383,11 @@ export function VocabularyScreen({ onBack }: VocabularyScreenProps) {
         <Dropdown
           label="Category"
           options={categoryOptions}
-          selected={filterCategories.length === 0 || filterCategories.includes('all') ? ['all'] : filterCategories}
+          selected={filterCategories.includes('all') ? ['all'] : filterCategories}
           onChange={(newVals) => {
-            // If "All Categories" is clicked, clear selection
             if (newVals.includes('all') && !filterCategories.includes('all')) {
               setFilterCategories(['all']);
             } else {
-              // Remove 'all' from selection and set the categories
               const withoutAll = newVals.filter(v => v !== 'all');
               setFilterCategories(withoutAll.length > 0 ? withoutAll : ['all']);
             }
@@ -383,57 +398,61 @@ export function VocabularyScreen({ onBack }: VocabularyScreenProps) {
 
       {/* Word List */}
       {loading && vocabulary.length === 0 ? (
-        <div className="text-center" style={{ padding: 'var(--space-xl)' }}>
-          <p>Loading vocabulary...</p>
+        <div style={{ textAlign: 'center', padding: 'var(--space-3xl)', color: 'var(--text-tertiary)' }}>
+          Loading...
         </div>
       ) : error ? (
-        <div className="text-center" style={{ padding: 'var(--space-xl)' }}>
-          <p className="text-error">{error}</p>
+        <div style={{ textAlign: 'center', padding: 'var(--space-3xl)', color: 'var(--danger)' }}>
+          {error}
         </div>
       ) : vocabulary.length === 0 ? (
-        <div className="text-center" style={{ padding: 'var(--space-xl)' }}>
-          <p className="text-secondary">No vocabulary found</p>
+        <div style={{ textAlign: 'center', padding: 'var(--space-3xl)', color: 'var(--text-tertiary)' }}>
+          No vocabulary found
         </div>
       ) : (
-        <div style={{ display: 'grid', gap: 'var(--space-sm)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
           {vocabulary.map(word => (
             <div
               key={word.id}
-              className="card card-clickable"
               onClick={() => setSelectedWord(word)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: 'var(--space-md) var(--space-sm)',
+                borderBottom: '1px solid var(--border)',
+                cursor: 'pointer',
+                transition: 'background 0.15s ease'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
             >
-              <div className="flex-between">
-                <div>
-                  <span className="font-semibold">{word.word}</span>
-                  <span className="text-secondary text-sm ml-sm">({word.part_of_speech})</span>
-                  {word.categories && word.categories.length > 0 && (
-                    <div className="flex gap-xs mt-xs">
-                      {word.categories.map(cat => {
-                        const catData = categories.find(c => c.name === cat);
-                        return (
-                          <span 
-                            key={cat} 
-                            className="chip chip--secondary" 
-                            style={{ 
-                              fontSize: '0.7rem', 
-                              padding: '2px 6px',
-                              background: catData?.color || 'var(--bg-secondary)',
-                              color: 'white'
-                            }}
-                          >
-                            {cat}
-                          </span>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-                <span className="chip">{word.level}</span>
+              <div>
+                <span style={{ fontWeight: 500, color: 'var(--text)' }}>{word.word}</span>
+                <span style={{ 
+                  fontSize: 'var(--font-sm)', 
+                  color: 'var(--text-tertiary)',
+                  marginLeft: 'var(--space-sm)'
+                }}>
+                  {word.part_of_speech}
+                </span>
+                {word.categories && word.categories.length > 0 && (
+                  <div style={{ display: 'flex', gap: 'var(--space-xs)', marginTop: 'var(--space-xs)' }}>
+                    {word.categories.map(cat => (
+                      <span key={cat} className="tag">{cat}</span>
+                    ))}
+                  </div>
+                )}
               </div>
+              <span className="chip">{word.level}</span>
             </div>
           ))}
           {hasMore && (
-            <button className="btn btn-secondary" onClick={() => { setPage(p => p + 1); fetchVocabulary(false); }}>
+            <button 
+              className="btn btn-secondary" 
+              onClick={() => { setPage(p => p + 1); fetchVocabulary(false); }}
+              style={{ marginTop: 'var(--space-lg)', alignSelf: 'center' }}
+            >
               Load More
             </button>
           )}
@@ -443,38 +462,84 @@ export function VocabularyScreen({ onBack }: VocabularyScreenProps) {
       {/* Category Modal */}
       {showCategoryModal && (
         <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 100
+          position: 'fixed', 
+          inset: 0,
+          background: 'rgba(0,0,0,0.4)', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          zIndex: 100,
+          padding: 'var(--space-lg)'
         }}>
-          <div className="card" style={{ margin: 'var(--space-lg)', maxWidth: 400, width: '100%' }}>
-            <h2 className="font-bold mb-md">Manage Categories</h2>
+          <div style={{
+            background: 'var(--surface)',
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid var(--border)',
+            padding: 'var(--space-xl)',
+            maxWidth: 400,
+            width: '100%'
+          }}>
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'space-between',
+              marginBottom: 'var(--space-lg)'
+            }}>
+              <h2 style={{ fontWeight: 600, fontSize: 'var(--font-lg)' }}>Manage Categories</h2>
+              <button 
+                className="btn btn-subtle" 
+                onClick={() => setShowCategoryModal(false)}
+                style={{ padding: 'var(--space-xs)' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
             
-            <div className="flex gap-sm mb-lg">
+            <div style={{ display: 'flex', gap: 'var(--space-sm)', marginBottom: 'var(--space-lg)' }}>
               <input
                 type="text"
-                className="input"
-                placeholder="New category name..."
+                placeholder="New category..."
                 value={newCategoryName}
                 onChange={e => setNewCategoryName(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && createCategory()}
+                style={{ flex: 1 }}
               />
-              <button className="btn btn-primary" onClick={createCategory}>Add</button>
+              <button className="btn btn-primary" onClick={createCategory}>
+                <Plus size={16} />
+              </button>
             </div>
 
-            <div style={{ maxHeight: 300, overflowY: 'auto' }}>
+            <div style={{ maxHeight: 250, overflowY: 'auto' }}>
               {categories.map(cat => (
-                <div key={cat.id} className="flex-between" style={{ padding: 'var(--space-sm)', borderBottom: '1px solid var(--bg-secondary)' }}>
-                  <div className="flex gap-sm" style={{ alignItems: 'center' }}>
-                    <div style={{ width: 12, height: 12, borderRadius: '50%', background: cat.color }} />
-                    <span>{cat.name}</span>
+                <div 
+                  key={cat.id} 
+                  style={{ 
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: 'var(--space-sm)',
+                    borderBottom: '1px solid var(--border)'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
+                    <div style={{ 
+                      width: 10, 
+                      height: 10, 
+                      borderRadius: '50%', 
+                      background: cat.color 
+                    }} />
+                    <span style={{ fontSize: 'var(--font-sm)' }}>{cat.name}</span>
                   </div>
-                  <button className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '0.8rem' }} onClick={() => deleteCategory(cat.id)}>Delete</button>
+                  <button 
+                    className="btn btn-subtle" 
+                    style={{ padding: 'var(--space-xs)', color: 'var(--danger)' }}
+                    onClick={() => deleteCategory(cat.id)}
+                  >
+                    <X size={14} />
+                  </button>
                 </div>
               ))}
             </div>
-
-            <button className="btn btn-secondary mt-lg" onClick={() => setShowCategoryModal(false)}>Close</button>
           </div>
         </div>
       )}
@@ -482,7 +547,17 @@ export function VocabularyScreen({ onBack }: VocabularyScreenProps) {
   );
 }
 
-function WordDetail({ word, categories, onBack, onUpdate }: { word: VocabularyWord; categories: Category[]; onBack: () => void; onUpdate: () => void }) {
+function WordDetail({ 
+  word, 
+  categories, 
+  onBack, 
+  onUpdate 
+}: { 
+  word: VocabularyWord; 
+  categories: Category[]; 
+  onBack: () => void; 
+  onUpdate: () => void 
+}) {
   const [selectedCategories, setSelectedCategories] = useState<string[]>(word.categories || []);
 
   const toggleCategory = async (catName: string) => {
@@ -505,27 +580,63 @@ function WordDetail({ word, categories, onBack, onUpdate }: { word: VocabularyWo
   };
 
   return (
-    <div className="screen animate-fade-in" style={{ padding: 'var(--space-xl)' }}>
-      <div className="flex-between mb-lg">
-        <button onClick={onBack} className="btn btn-secondary">Back</button>
+    <div className="screen animate-fade-in" style={{ maxWidth: 560 }}>
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between',
+        marginBottom: 'var(--space-xl)'
+      }}>
+        <button onClick={onBack} className="btn btn-subtle" style={{ padding: 'var(--space-xs)' }}>
+          <ChevronLeft size={20} />
+          <span>Back</span>
+        </button>
         <span className="chip">{word.level}</span>
       </div>
 
-      <div className="card mb-lg">
-        <h1 className="text-2xl font-bold mb-sm">{word.word}</h1>
-        <p className="text-secondary">({word.part_of_speech})</p>
+      <div style={{ 
+        padding: 'var(--space-xl)',
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius-lg)',
+        marginBottom: 'var(--space-lg)'
+      }}>
+        <h1 style={{ 
+          fontSize: 'var(--font-2xl)', 
+          fontWeight: 600, 
+          marginBottom: 'var(--space-xs)',
+          color: 'var(--text)'
+        }}>
+          {word.word}
+        </h1>
+        <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--font-sm)' }}>
+          {word.part_of_speech}
+        </p>
       </div>
 
-      <div className="card mb-lg">
-        <h2 className="font-semibold mb-md">Categories</h2>
-        <div className="flex gap-sm" style={{ flexWrap: 'wrap' }}>
+      <div style={{ 
+        padding: 'var(--space-lg)',
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius-lg)',
+        marginBottom: 'var(--space-lg)'
+      }}>
+        <h2 style={{ 
+          fontSize: 'var(--font-sm)', 
+          fontWeight: 500, 
+          color: 'var(--text-secondary)',
+          marginBottom: 'var(--space-md)'
+        }}>
+          Categories
+        </h2>
+        <div style={{ display: 'flex', gap: 'var(--space-xs)', flexWrap: 'wrap' }}>
           {categories.map(cat => {
             const isSelected = selectedCategories.includes(cat.name);
             return (
               <button
                 key={cat.id}
-                className={`chip ${isSelected ? 'active' : 'chip--secondary'}`}
-                style={isSelected ? { background: cat.color, color: 'white' } : {}}
+                className={`tag ${isSelected ? 'active' : ''}`}
+                style={isSelected ? { background: cat.color, borderColor: cat.color, color: 'white' } : {}}
                 onClick={() => toggleCategory(cat.name)}
               >
                 {cat.name}
@@ -536,11 +647,31 @@ function WordDetail({ word, categories, onBack, onUpdate }: { word: VocabularyWo
       </div>
 
       {word.example_sentences && word.example_sentences.length > 0 && (
-        <div className="card mb-lg">
-          <h2 className="font-semibold mb-md">Example Sentences</h2>
+        <div style={{ 
+          padding: 'var(--space-lg)',
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-lg)'
+        }}>
+          <h2 style={{ 
+            fontSize: 'var(--font-sm)', 
+            fontWeight: 500, 
+            color: 'var(--text-secondary)',
+            marginBottom: 'var(--space-md)'
+          }}>
+            Examples
+          </h2>
           {word.example_sentences.map((sent, idx) => (
-            <p key={idx} className="text-secondary mb-sm" style={{ fontStyle: 'italic' }}>
-              {typeof sent === 'string' ? sent : sent.text}
+            <p 
+              key={idx} 
+              style={{ 
+                color: 'var(--text-secondary)', 
+                fontSize: 'var(--font-sm)',
+                fontStyle: 'italic',
+                marginBottom: idx < word.example_sentences.length - 1 ? 'var(--space-sm)' : 0
+              }}
+            >
+              {typeof sent === 'string' ? sent : (sent as any).text}
             </p>
           ))}
         </div>

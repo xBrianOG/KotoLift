@@ -231,68 +231,77 @@ input[type="checkbox"], input[type="radio"] {
 /* ==================
    Components
    ================== */
-/* Card */
+/* Card - Premium Minimal */
 .card {
   background: var(--surface);
-  border-radius: var(--radius-xl);
-  border: 1px solid var(--border-light);
-  padding: var(--space-xl);
-  box-shadow: var(--shadow-sm);
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  padding: var(--space-lg);
+  transition: all var(--transition-fast);
+}
+
+.card-clickable {
+  cursor: pointer;
 }
 
 .card-clickable:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--border);
+  border-color: var(--text-tertiary);
+  background: var(--surface);
 }
 
 .card:active {
-  transform: scale(0.98);
+  transform: scale(0.995);
 }
 
 .card--elevated {
-  background: linear-gradient(145deg, #ffffff 0%, #FAFAFC 100%);
-  border: 1px solid rgba(0,0,0,0.03);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-sm);
 }
 
-/* Button */
+/* Button - Premium Ghost Style */
 .btn {
-  padding: var(--space-md) var(--space-xl);
-  border-radius: var(--radius-round);
-  font-size: var(--font-base);
-  font-weight: 600;
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
+  font-weight: 500;
   transition: all var(--transition-fast);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-sm);
-  height: 52px;
+  height: 40px;
   cursor: pointer;
   user-select: none;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.btn:hover {
+  background: var(--bg);
+  color: var(--text);
 }
 
 .btn:active {
-  transform: scale(0.96);
+  transform: scale(0.98);
 }
 
+/* Primary - filled accent for main CTAs only */
 .btn-primary {
   background: var(--accent);
   color: white;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+  border-color: var(--accent);
 }
 
 .btn-primary:hover {
   background: var(--accent-hover);
-  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.35);
-  transform: translateY(-1px);
+  border-color: var(--accent-hover);
 }
 
+/* Secondary - ghost outline */
 .btn-secondary {
-  background: var(--surface);
+  background: transparent;
   color: var(--text);
-  border: 1.5px solid var(--border);
+  border: 1px solid var(--border);
 }
 
 .btn-secondary:hover {
@@ -300,33 +309,75 @@ input[type="checkbox"], input[type="radio"] {
   border-color: var(--text-tertiary);
 }
 
+/* Subtle - minimal ghost */
 .btn-subtle {
-  background: var(--bg);
+  background: transparent;
   color: var(--text-secondary);
+  border: none;
 }
 
 .btn-subtle:hover {
-  background: var(--border-light);
+  background: var(--bg);
   color: var(--text);
 }
 
-.btn-success { background: var(--accent); color: white; }
-.btn-success:hover { background: var(--accent-hover); }
+/* Accent ghost - for review actions */
+.btn-accent {
+  background: var(--accent-light);
+  color: var(--accent);
+  border-color: transparent;
+}
 
-.btn-warning { background: var(--warning); color: white; }
-.btn-warning:hover { background: var(--warning-hover); }
+.btn-accent:hover {
+  background: var(--accent);
+  color: white;
+}
 
-.btn-danger { background: var(--danger); color: white; }
-.btn-danger:hover { background: var(--danger-hover); }
+/* Status buttons - ghost style */
+.btn-success { 
+  background: transparent;
+  color: var(--accent); 
+  border: 1px solid var(--accent);
+}
+.btn-success:hover { 
+  background: var(--accent); 
+  color: white; 
+}
+
+.btn-warning { 
+  background: transparent;
+  color: var(--warning); 
+  border: 1px solid var(--warning);
+}
+.btn-warning:hover { 
+  background: var(--warning); 
+  color: white; 
+}
+
+.btn-danger { 
+  background: transparent;
+  color: var(--danger); 
+  border: 1px solid var(--danger);
+}
+.btn-danger:hover { 
+  background: var(--danger); 
+  color: white; 
+}
 
 .btn-full {
   width: 100%;
 }
 
+.btn-lg {
+  height: 48px;
+  padding: var(--space-md) var(--space-xl);
+  font-size: var(--font-base);
+}
+
 .btn-group {
   display: flex;
-  gap: var(--space-md);
-  margin-top: var(--space-xl);
+  gap: var(--space-sm);
+  margin-top: var(--space-lg);
 }
 
 .btn-group .btn {
@@ -336,46 +387,48 @@ input[type="checkbox"], input[type="radio"] {
 .chip {
   display: inline-flex;
   align-items: center;
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--radius-round);
-  background: var(--accent-light);
-  color: var(--accent-hover);
-  font-size: var(--font-sm);
-  font-weight: 600;
-  gap: 6px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.02) inset;
-}
-
-.lang-badge {
-  display: inline-block;
-  padding: 4px 8px;
+  padding: var(--space-xs) var(--space-sm);
   border-radius: var(--radius-sm);
   background: var(--bg);
   color: var(--text-secondary);
   font-size: var(--font-xs);
-  font-weight: 700;
+  font-weight: 500;
+  border: 1px solid var(--border);
+}
+
+.lang-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border: 1px solid var(--border-light);
+  letter-spacing: 0.3px;
 }
 
 .tag {
   display: inline-block;
-  padding: 6px 12px;
-  border-radius: var(--radius-round);
-  background: var(--bg);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  background: transparent;
   border: 1px solid var(--border);
   color: var(--text-secondary);
   font-size: var(--font-xs);
   font-weight: 500;
-  margin-right: 8px;
-  margin-bottom: 8px;
   transition: all var(--transition-fast);
 }
 
 .tag:hover {
-  background: var(--border-light);
+  border-color: var(--text-tertiary);
   color: var(--text);
+}
+
+.tag.active {
+  background: var(--text);
+  border-color: var(--text);
+  color: white;
 }
 
 .empty-state {
