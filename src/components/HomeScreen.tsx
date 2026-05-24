@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getStats } from '../services/stats';
+import { BookOpen, Plus, Video, ArrowRight } from 'lucide-react';
 
 type HomeScreenProps = {
   onNavigate: (to: string) => void
@@ -7,91 +8,223 @@ type HomeScreenProps = {
 
 export function HomeScreen({ onNavigate }: HomeScreenProps) {
   const [streak, setStreak] = useState(0);
-  const [stars, setStars] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [greeting, setGreeting] = useState('Good morning');
 
   useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) setGreeting('Good morning');
+    else if (hour < 17) setGreeting('Good afternoon');
+    else setGreeting('Good evening');
+
     getStats().then(stats => {
       setStreak(stats.streak);
-      setStars(stats.stars);
       setLoading(false);
     });
   }, []);
 
   return (
-    <div className="screen animate-fade-in">
+    <div className="screen animate-fade-in" style={{ 
+      display: 'flex', 
+      flexDirection: 'column',
+      paddingTop: 'var(--space-3xl)',
+      maxWidth: 640
+    }}>
       {/* Header */}
-      <div className="mb-xl">
-        <h1 className="text-3xl font-bold mb-xs">Today</h1>
-        <p className="text-secondary text-base">Ready to practice?</p>
+      <div style={{ marginBottom: 'var(--space-3xl)' }}>
+        <p style={{ 
+          fontSize: 'var(--font-sm)', 
+          color: 'var(--text-tertiary)',
+          marginBottom: 'var(--space-sm)',
+          fontWeight: 500
+        }}>
+          {greeting}
+        </p>
+        <h1 style={{ 
+          fontSize: 'var(--font-3xl)', 
+          fontWeight: 600, 
+          color: 'var(--text)',
+          lineHeight: 1.2,
+          letterSpacing: '-0.5px'
+        }}>
+          Ready to learn?
+        </h1>
       </div>
 
-      {/* Stats chips */}
-      <div className="flex-center gap-sm mb-xl" style={{ justifyContent: 'flex-start' }}>
-        {loading ? (
-          <>
-            <span className="chip skeleton" style={{ width: 90, height: 28 }} />
-            <span className="chip skeleton" style={{ width: 60, height: 28 }} />
-          </>
-        ) : (
-          <>
-            <span className="chip">🔥 {streak} days</span>
-            <span className="chip">⭐ {stars}</span>
-          </>
-        )}
-      </div>
-
-      {/* Main CTA Card */}
-      <div
-        className="card card--elevated card-clickable mb-lg text-center"
+      {/* Primary Action */}
+      <button
         onClick={() => onNavigate('review')}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: 'var(--space-lg)',
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-lg)',
+          cursor: 'pointer',
+          marginBottom: 'var(--space-lg)',
+          transition: 'all 0.15s ease',
+          width: '100%',
+          textAlign: 'left'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.borderColor = 'var(--accent)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.borderColor = 'var(--border)';
+        }}
       >
-        <h2 className="text-xl font-semibold mb-sm text-primary">Daily Quiz</h2>
-        <p className="text-secondary text-sm mb-xl">5 questions • ~2 min</p>
-        <button className="btn btn-primary btn-full animate-pulse delay-200" onClick={(e) => { e.stopPropagation(); onNavigate('review') }}>
-          Start Quiz
-        </button>
-      </div>
-
-      {/* Learn Section */}
-      <div className="mb-lg">
-        <h2 className="text-lg font-semibold mb-md">Learn</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--space-md)' }}>
-          <div className="card card-clickable text-center" style={{ padding: 'var(--space-lg)' }} onClick={() => onNavigate('assessment')}>
-            <div className="mb-xs" style={{ fontSize: 28 }}>📝</div>
-            <div className="font-semibold text-sm text-primary">Assess</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
+          <div style={{
+            width: 40,
+            height: 40,
+            borderRadius: 'var(--radius-md)',
+            background: 'var(--accent-light)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--accent)'
+          }}>
+            <BookOpen size={20} />
           </div>
-
-          <div className="card card-clickable text-center" style={{ padding: 'var(--space-lg)' }} onClick={() => onNavigate('lessons')}>
-            <div className="mb-xs" style={{ fontSize: 28 }}>📖</div>
-            <div className="font-semibold text-sm text-primary">Lessons</div>
+          <div>
+            <div style={{ 
+              fontSize: 'var(--font-base)', 
+              fontWeight: 500, 
+              color: 'var(--text)'
+            }}>
+              Start Review
+            </div>
+            <div style={{ 
+              fontSize: 'var(--font-sm)', 
+              color: 'var(--text-tertiary)'
+            }}>
+              5 cards ready
+            </div>
           </div>
+        </div>
+        <ArrowRight size={20} style={{ color: 'var(--text-tertiary)' }} />
+      </button>
 
-          <div className="card card-clickable text-center" style={{ padding: 'var(--space-lg)' }} onClick={() => onNavigate('vocabulary')}>
-            <div className="mb-xs" style={{ fontSize: 28 }}>💬</div>
-            <div className="font-semibold text-sm text-primary">Vocabulary</div>
+      {/* Stats */}
+      <div style={{ 
+        display: 'flex', 
+        gap: 'var(--space-md)',
+        marginBottom: 'var(--space-3xl)'
+      }}>
+        <div style={{
+          flex: 1,
+          padding: 'var(--space-lg)',
+          background: 'var(--surface)',
+          borderRadius: 'var(--radius-lg)',
+          border: '1px solid var(--border)'
+        }}>
+          <div style={{ 
+            fontSize: 'var(--font-xs)', 
+            color: 'var(--text-tertiary)',
+            marginBottom: 'var(--space-xs)'
+          }}>
+            Total Cards
+          </div>
+          <div style={{ 
+            fontSize: 'var(--font-2xl)', 
+            fontWeight: 600, 
+            color: 'var(--text)'
+          }}>
+            {loading ? '—' : '24'}
+          </div>
+        </div>
+        
+        <div style={{
+          flex: 1,
+          padding: 'var(--space-lg)',
+          background: 'var(--surface)',
+          borderRadius: 'var(--radius-lg)',
+          border: '1px solid var(--border)'
+        }}>
+          <div style={{ 
+            fontSize: 'var(--font-xs)', 
+            color: 'var(--text-tertiary)',
+            marginBottom: 'var(--space-xs)'
+          }}>
+            Day Streak
+          </div>
+          <div style={{ 
+            fontSize: 'var(--font-2xl)', 
+            fontWeight: 600, 
+            color: 'var(--text)'
+          }}>
+            {loading ? '—' : streak}
           </div>
         </div>
       </div>
 
-      {/* My Cards Section */}
-      <div className="mb-lg">
-        <h2 className="text-lg font-semibold mb-md">My Cards</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--space-md)' }}>
-          <div className="card card-clickable text-center" style={{ padding: 'var(--space-lg)' }} onClick={() => onNavigate('cards')}>
-            <div className="mb-xs" style={{ fontSize: 28 }}>📚</div>
-            <div className="font-semibold text-sm text-primary">My Cards</div>
-          </div>
+      {/* Quick Actions */}
+      <div>
+        <h2 style={{ 
+          fontSize: 'var(--font-xs)', 
+          fontWeight: 500, 
+          color: 'var(--text-tertiary)',
+          marginBottom: 'var(--space-md)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.5px'
+        }}>
+          Quick Actions
+        </h2>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xs)' }}>
+          <button
+            onClick={() => onNavigate('add')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--space-md)',
+              padding: 'var(--space-md)',
+              background: 'transparent',
+              border: 'none',
+              borderRadius: 'var(--radius-md)',
+              cursor: 'pointer',
+              textAlign: 'left',
+              transition: 'background 0.15s ease',
+              width: '100%'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--bg)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent';
+            }}
+          >
+            <Plus size={18} style={{ color: 'var(--text-tertiary)' }} />
+            <span style={{ fontWeight: 500, color: 'var(--text)', fontSize: 'var(--font-sm)' }}>Add New Card</span>
+          </button>
 
-          <div className="card card-clickable text-center" style={{ padding: 'var(--space-lg)' }} onClick={() => onNavigate('add')}>
-            <div className="mb-xs" style={{ fontSize: 28 }}>➕</div>
-            <div className="font-semibold text-sm text-primary">Add New</div>
-          </div>
-
-          <div className="card card-clickable text-center" style={{ padding: 'var(--space-lg)' }} onClick={() => onNavigate('videoImport')}>
-            <div className="mb-xs" style={{ fontSize: 28 }}>🎬</div>
-            <div className="font-semibold text-sm text-primary">Import</div>
-          </div>
+          <button
+            onClick={() => onNavigate('videoImport')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--space-md)',
+              padding: 'var(--space-md)',
+              background: 'transparent',
+              border: 'none',
+              borderRadius: 'var(--radius-md)',
+              cursor: 'pointer',
+              textAlign: 'left',
+              transition: 'background 0.15s ease',
+              width: '100%'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--bg)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent';
+            }}
+          >
+            <Video size={18} style={{ color: 'var(--text-tertiary)' }} />
+            <span style={{ fontWeight: 500, color: 'var(--text)', fontSize: 'var(--font-sm)' }}>Import from Video</span>
+          </button>
         </div>
       </div>
     </div>
