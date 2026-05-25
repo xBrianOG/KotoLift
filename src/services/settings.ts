@@ -12,6 +12,7 @@ export interface LearningSettings {
   dailyReminderTime: string;
   customBackground: string | null;
   glassEnabled: boolean;
+  avatar: string | null;
 }
 
 const DEFAULTS: LearningSettings = {
@@ -23,6 +24,7 @@ const DEFAULTS: LearningSettings = {
   dailyReminderTime: '19:00',
   customBackground: null,
   glassEnabled: true,
+  avatar: null,
 };
 
 async function readSettings(): Promise<LearningSettings> {
@@ -37,6 +39,7 @@ async function readSettings(): Promise<LearningSettings> {
       dailyReminderTime: stored.dailyReminderTime,
       customBackground: stored.customBackground || null,
       glassEnabled: stored.glassEnabled ?? true,
+      avatar: stored.avatar || null,
     };
   }
   // Migrate from legacy localStorage
@@ -87,6 +90,7 @@ export function getLearningSettings(): LearningSettings {
     dailyReminderTime: localStorage.getItem('dailyQuiz.time') || DEFAULTS.dailyReminderTime,
     customBackground: null,
     glassEnabled: true,
+    avatar: null,
   };
 }
 
@@ -139,4 +143,10 @@ export async function setGlassEnabled(enabled: boolean): Promise<void> {
   await ensureCache();
   await patchSettings({ glassEnabled: enabled });
   if (_cache) _cache.glassEnabled = enabled;
+}
+
+export async function setAvatar(avatar: string | null): Promise<void> {
+  await ensureCache();
+  await patchSettings({ avatar: avatar });
+  if (_cache) _cache.avatar = avatar;
 }

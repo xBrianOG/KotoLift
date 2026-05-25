@@ -6,6 +6,7 @@ import { ExplainScreen } from "./components/ExplainScreen";
 import { DrillScreen } from "./components/DrillScreen";
 import { HomeScreen } from "./components/HomeScreen";
 import { SettingsScreen } from "./components/SettingsScreen";
+import { ProfileScreen } from "./components/ProfileScreen";
 import { VideoImportScreen } from "./components/VideoImportScreen";
 import { TranscriptViewerScreen } from "./components/TranscriptViewerScreen";
 import { VideoPlayerScreen } from "./components/VideoPlayerScreen";
@@ -15,14 +16,14 @@ import { LoginScreen } from "./components/LoginScreen";
 import { LessonsScreen } from "./components/LessonsScreen";
 import { VocabularyScreen } from "./components/VocabularyScreen";
 import { AssessmentScreen } from "./components/AssessmentScreen";
-import { isLoggedIn, clearAuth, devLogin, isDevMode } from "./services/auth";
+import { isLoggedIn, clearAuth, devLogin, isDevMode, getStoredUser } from "./services/auth";
 import { initSettings, getLearningSettings, type LearningSettings } from "./services/settings";
 import type { Card } from "./types";
 import type { TranscriptData } from "./components/TranscriptViewerScreen";
 import type { VideoPlayerData } from "./components/VideoPlayerScreen";
 import "./types";
 
-type Screen = "home" | "review" | "cards" | "add" | "explain" | "drill" | "settings" | "videoImport" | "transcript" | "videoPlayer" | "lessons" | "vocabulary" | "assessment";
+type Screen = "home" | "review" | "cards" | "add" | "explain" | "drill" | "settings" | "profile" | "videoImport" | "transcript" | "videoPlayer" | "lessons" | "vocabulary" | "assessment";
 
 function App() {
   const [history, setHistory] = useState<Screen[]>(["home"]);
@@ -57,7 +58,7 @@ function App() {
   }, []);
 
   const navigate = (to: string) => {
-    const valid = ["home", "review", "drill", "cards", "add", "explain", "settings", "videoImport", "transcript", "videoPlayer", "lessons", "vocabulary", "assessment"] as const;
+    const valid = ["home", "review", "drill", "cards", "add", "explain", "settings", "profile", "videoImport", "transcript", "videoPlayer", "lessons", "vocabulary", "assessment"] as const;
     if ((valid as readonly string[]).includes(to)) {
       setHistory(h => [...h, to as Screen]);
     }
@@ -116,6 +117,7 @@ function App() {
         onNavigate={navigate} 
         onBack={history.length > 1 ? goBack : undefined}
         settings={settings}
+        userName={getStoredUser()?.name || 'User'}
       >
       {screen === "home" && <HomeScreen onNavigate={navigate} />}
       {screen === "review" && (
@@ -152,7 +154,8 @@ function App() {
         />
       )}
       {screen === "explain" && <ExplainScreen />}
-      {screen === "settings" && <SettingsScreen settings={settings} onBack={goBack} onSignOut={handleLogout} />}
+      {screen === "settings" && <SettingsScreen settings={settings} onBack={goBack} onSignOut={handleLogout} userName={getStoredUser()?.name} />}
+      {screen === "profile" && <ProfileScreen onBack={goBack} />}
       {screen === "lessons" && <LessonsScreen onBack={goBack} />}
       {screen === "vocabulary" && <VocabularyScreen onBack={goBack} />}
       {screen === "assessment" && <AssessmentScreen onBack={goBack} />}

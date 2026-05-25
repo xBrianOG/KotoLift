@@ -8,6 +8,7 @@ type HomeScreenProps = {
 
 export function HomeScreen({ onNavigate }: HomeScreenProps) {
   const [streak, setStreak] = useState(0);
+  const [totalCards, setTotalCards] = useState(0);
   const [loading, setLoading] = useState(true);
   const [greeting, setGreeting] = useState('Good morning');
 
@@ -19,6 +20,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
 
     getStats().then(stats => {
       setStreak(stats.streak);
+      setTotalCards(stats.totalCards);
       setLoading(false);
     });
   }, []);
@@ -132,7 +134,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
             fontWeight: 600, 
             color: 'var(--text)'
           }}>
-            {loading ? '—' : '24'}
+            {loading ? '—' : totalCards}
           </div>
         </div>
         

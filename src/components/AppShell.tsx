@@ -20,6 +20,7 @@ type AppShellProps = {
   settings?: {
     customBackground: string | null;
     glassEnabled: boolean;
+    avatar: string | null;
   } | null
 }
 
@@ -60,6 +61,7 @@ export function AppShell({ current, onNavigate, children, userName = 'User', set
   const isPreset = hasBg && hasBg.startsWith('bg-')
   const mainClass = hasBg ? `main-content-minimal custom-bg ${isPreset ? hasBg : ''}`.trim() : 'main-content-minimal'
   const bgStyle = hasBg && !isPreset ? { backgroundImage: `url(${hasBg})` } : undefined
+  const avatar = settings?.avatar
 
   return (
     <div className="app-layout">
@@ -176,8 +178,17 @@ export function AppShell({ current, onNavigate, children, userName = 'User', set
             </button>
 
             {/* User */}
-            <div className="sidebar-user-minimal">
-              <div className="sidebar-avatar-minimal">{userInitial}</div>
+            <div className="sidebar-user-minimal" onClick={() => onNavigate('profile')}>
+              {avatar ? (
+                <img 
+                  src={avatar} 
+                  alt="Avatar" 
+                  className="sidebar-avatar-minimal"
+                  style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }}
+                />
+              ) : (
+                <div className="sidebar-avatar-minimal">{userInitial}</div>
+              )}
               <motion.div
                 className="sidebar-user-info-minimal"
                 variants={textVariants}

@@ -24,7 +24,7 @@ const PRESET_BACKGROUNDS = [
   { id: 'preset-6', name: 'Peach', class: 'bg-preset-6' },
 ]
 
-export function SettingsScreen({ onBack, onSignOut, settings: initialSettings }: { onBack?: () => void; onSignOut?: () => void; settings?: LearningSettings | null } = {}) {
+export function SettingsScreen({ onBack, onSignOut, settings: initialSettings, userName }: { onBack?: () => void; onSignOut?: () => void; settings?: LearningSettings | null; userName?: string } = {}) {
   const [settings, setSettings] = useState<LearningSettings | null>(initialSettings ?? getLearningSettings())
 
   useEffect(() => {

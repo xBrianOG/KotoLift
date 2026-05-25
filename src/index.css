@@ -594,6 +594,7 @@ input[type="checkbox"], input[type="radio"] {
 
 .sidebar-user-minimal:hover {
   background: var(--bg);
+  cursor: pointer;
 }
 
 .sidebar-avatar-minimal {

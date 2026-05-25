@@ -43,6 +43,14 @@ export function getStoredUser(): User | null {
   return null;
 }
 
+export async function updateUserName(name: string): Promise<void> {
+  const user = getStoredUser();
+  if (user) {
+    const updatedUser = { ...user, name };
+    localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
+  }
+}
+
 export function isLoggedIn(): boolean {
   if (DEV_AUTH) {
     return true;

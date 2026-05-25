@@ -19,6 +19,7 @@ export interface StoredUserSettings {
   dailyReminderTime: string;
   customBackground: string | null;
   glassEnabled: boolean;
+  avatar: string | null;
 }
 
 export class SumitomoBenkyoDB extends Dexie {

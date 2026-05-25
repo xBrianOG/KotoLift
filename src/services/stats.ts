@@ -1,5 +1,7 @@
 import { db } from '../db';
 import type { StoredUserStats } from '../db';
+import { getStoredUser } from './auth';
+import { getAllCards } from './cards';
 
 const DEFAULT_STATS: StoredUserStats = {
   id: 'singleton',
@@ -13,13 +15,23 @@ export type { StoredUserStats as UserStats };
 
 /* ── helpers ── */
 
-async function readStats(): Promise<StoredUserStats> {
+async function readStats(): Promise<StoredUserStats & { totalCards: number }> {
   const stored = await db.userStats.get('singleton');
-  if (stored) return stored;
+  
+  // Get card count using existing function
+  let totalCards = 0;
+  try {
+    const cards = await getAllCards();
+    totalCards = cards.length;
+  } catch (e) {
+    console.error('Failed to fetch card count:', e);
+  }
+  
+  if (stored) return { ...stored, totalCards: totalCards };
   // Migrate from legacy localStorage if present
   const legacy = migrateLegacyStats();
   await db.userStats.put(legacy);
-  return legacy;
+  return { ...legacy, totalCards: totalCards };
 }
 
 function migrateLegacyStats(): StoredUserStats {
@@ -35,7 +47,7 @@ function migrateLegacyStats(): StoredUserStats {
 
 /* ── public API ── */
 
-export async function getStats(): Promise<StoredUserStats> {
+export async function getStats(): Promise<StoredUserStats & { totalCards: number }> {
   return readStats();
 }
 
