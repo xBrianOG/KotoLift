@@ -17,6 +17,10 @@ type AppShellProps = {
   onBack?: () => void
   children: React.ReactNode
   userName?: string
+  settings?: {
+    customBackground: string | null;
+    glassEnabled: boolean;
+  } | null
 }
 
 const sidebarVariants = {
@@ -47,11 +51,15 @@ const libraryItems = [
   { key: 'vocabulary', label: 'Vocabulary', icon: BookOpen },
 ]
 
-export function AppShell({ current, onNavigate, children, userName = 'User' }: AppShellProps) {
+export function AppShell({ current, onNavigate, children, userName = 'User', settings }: AppShellProps) {
   const [isCollapsed, setIsCollapsed] = useState(true)
   const [mobileOpen, setMobileOpen] = useState(false)
   
   const userInitial = userName.charAt(0).toUpperCase()
+  const hasBg = settings?.customBackground
+  const isPreset = hasBg && hasBg.startsWith('bg-')
+  const mainClass = hasBg ? `main-content-minimal custom-bg ${isPreset ? hasBg : ''}`.trim() : 'main-content-minimal'
+  const bgStyle = hasBg && !isPreset ? { backgroundImage: `url(${hasBg})` } : undefined
 
   return (
     <div className="app-layout">
@@ -184,7 +192,10 @@ export function AppShell({ current, onNavigate, children, userName = 'User' }: A
       </motion.aside>
 
       {/* Main Content */}
-      <div className="main-content-minimal">
+      <div 
+        className={mainClass}
+        style={bgStyle}
+      >
         {/* Mobile header */}
         <header className="mobile-header">
           <button
@@ -199,7 +210,7 @@ export function AppShell({ current, onNavigate, children, userName = 'User' }: A
           <div style={{ width: 40 }} />
         </header>
 
-        <main className="main-scroll">
+        <main className={`main-scroll ${settings?.glassEnabled && settings?.customBackground ? 'glass' : ''}`}>
           {children}
         </main>
       </div>

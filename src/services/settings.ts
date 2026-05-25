@@ -10,6 +10,8 @@ export interface LearningSettings {
   quizSize: number;
   dailyReminderEnabled: boolean;
   dailyReminderTime: string;
+  customBackground: string | null;
+  glassEnabled: boolean;
 }
 
 const DEFAULTS: LearningSettings = {
@@ -19,6 +21,8 @@ const DEFAULTS: LearningSettings = {
   quizSize: 10,
   dailyReminderEnabled: true,
   dailyReminderTime: '19:00',
+  customBackground: null,
+  glassEnabled: true,
 };
 
 async function readSettings(): Promise<LearningSettings> {
@@ -31,6 +35,8 @@ async function readSettings(): Promise<LearningSettings> {
       quizSize: stored.quizSize,
       dailyReminderEnabled: stored.dailyReminderEnabled,
       dailyReminderTime: stored.dailyReminderTime,
+      customBackground: stored.customBackground || null,
+      glassEnabled: stored.glassEnabled ?? true,
     };
   }
   // Migrate from legacy localStorage
@@ -79,6 +85,8 @@ export function getLearningSettings(): LearningSettings {
     quizSize: parseInt(localStorage.getItem('settings.quizSize') || String(DEFAULTS.quizSize), 10),
     dailyReminderEnabled: localStorage.getItem('dailyQuiz.enabled') !== 'false',
     dailyReminderTime: localStorage.getItem('dailyQuiz.time') || DEFAULTS.dailyReminderTime,
+    customBackground: null,
+    glassEnabled: true,
   };
 }
 
@@ -119,4 +127,16 @@ export async function setDailyReminder(enabled: boolean, time: string): Promise<
     _cache.dailyReminderEnabled = enabled;
     _cache.dailyReminderTime = time;
   }
+}
+
+export async function setCustomBackground(background: string | null): Promise<void> {
+  await ensureCache();
+  await patchSettings({ customBackground: background });
+  if (_cache) _cache.customBackground = background;
+}
+
+export async function setGlassEnabled(enabled: boolean): Promise<void> {
+  await ensureCache();
+  await patchSettings({ glassEnabled: enabled });
+  if (_cache) _cache.glassEnabled = enabled;
 }

@@ -16,7 +16,7 @@ import { LessonsScreen } from "./components/LessonsScreen";
 import { VocabularyScreen } from "./components/VocabularyScreen";
 import { AssessmentScreen } from "./components/AssessmentScreen";
 import { isLoggedIn, clearAuth, devLogin, isDevMode } from "./services/auth";
-import { initSettings } from "./services/settings";
+import { initSettings, getLearningSettings, type LearningSettings } from "./services/settings";
 import type { Card } from "./types";
 import type { TranscriptData } from "./components/TranscriptViewerScreen";
 import type { VideoPlayerData } from "./components/VideoPlayerScreen";
@@ -30,12 +30,15 @@ function App() {
   const [transcriptData, setTranscriptData] = useState<TranscriptData | null>(null);
   const [videoPlayerData, setVideoPlayerData] = useState<VideoPlayerData | null>(null);
   const [pendingExplainCard, setPendingExplainCard] = useState<Card | null>(null);
+  const [settings, setSettings] = useState<LearningSettings | null>(null);
 
   const screen = history[history.length - 1];
 
   useEffect(() => {
     // Prime Dexie settings cache on startup
-    initSettings().catch(console.error);
+    initSettings().then(s => {
+      setSettings(s);
+    }).catch(console.error);
     // Auth check
     if (isDevMode() && !isLoggedIn()) {
       devLogin().then(() => setAuthenticated(true)).catch(console.error);
@@ -108,7 +111,12 @@ function App() {
   }
 
   return (
-    <AppShell current={screen} onNavigate={navigate} onBack={history.length > 1 ? goBack : undefined}>
+    <AppShell 
+        current={screen} 
+        onNavigate={navigate} 
+        onBack={history.length > 1 ? goBack : undefined}
+        settings={settings}
+      >
       {screen === "home" && <HomeScreen onNavigate={navigate} />}
       {screen === "review" && (
         <ReviewScreen
@@ -144,7 +152,7 @@ function App() {
         />
       )}
       {screen === "explain" && <ExplainScreen />}
-      {screen === "settings" && <SettingsScreen onBack={goBack} onSignOut={handleLogout} />}
+      {screen === "settings" && <SettingsScreen settings={settings} onBack={goBack} onSignOut={handleLogout} />}
       {screen === "lessons" && <LessonsScreen onBack={goBack} />}
       {screen === "vocabulary" && <VocabularyScreen onBack={goBack} />}
       {screen === "assessment" && <AssessmentScreen onBack={goBack} />}

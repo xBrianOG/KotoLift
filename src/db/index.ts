@@ -17,6 +17,8 @@ export interface StoredUserSettings {
   preferWhisper: boolean;
   dailyReminderEnabled: boolean;
   dailyReminderTime: string;
+  customBackground: string | null;
+  glassEnabled: boolean;
 }
 
 export class SumitomoBenkyoDB extends Dexie {

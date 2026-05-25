@@ -1,23 +1,39 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   initSettings,
+  getLearningSettings,
   setNativeLang,
   setLearningMode,
   setPreferWhisper,
   setQuizSize,
   setDailyReminder,
+  setCustomBackground,
+  setGlassEnabled,
   type NativeLanguage,
   type LearningMode,
   type LearningSettings,
 } from '../services/settings'
 import { getAllCards, createCard } from '../services/cards'
 
-export function SettingsScreen({ onBack, onSignOut }: { onBack?: () => void; onSignOut?: () => void } = {}) {
-  const [settings, setSettings] = useState<LearningSettings | null>(null)
+const PRESET_BACKGROUNDS = [
+  { id: 'preset-1', name: 'Purple Dream', class: 'bg-preset-1' },
+  { id: 'preset-2', name: 'Sunset', class: 'bg-preset-2' },
+  { id: 'preset-3', name: 'Ocean', class: 'bg-preset-3' },
+  { id: 'preset-4', name: 'Forest', class: 'bg-preset-4' },
+  { id: 'preset-5', name: 'Sunrise', class: 'bg-preset-5' },
+  { id: 'preset-6', name: 'Peach', class: 'bg-preset-6' },
+]
+
+export function SettingsScreen({ onBack, onSignOut, settings: initialSettings }: { onBack?: () => void; onSignOut?: () => void; settings?: LearningSettings | null } = {}) {
+  const [settings, setSettings] = useState<LearningSettings | null>(initialSettings ?? getLearningSettings())
 
   useEffect(() => {
-    initSettings().then(setSettings)
-  }, [])
+    if (initialSettings) {
+      setSettings(initialSettings)
+    } else {
+      initSettings().then(setSettings)
+    }
+  }, [initialSettings])
 
   if (!settings) {
     return <div className="screen flex-center" style={{ minHeight: '60vh' }}><p className="text-secondary">Loading settings…</p></div>
@@ -52,6 +68,33 @@ export function SettingsScreen({ onBack, onSignOut }: { onBack?: () => void; onS
   const handleReminderTimeChange = async (time: string) => {
     await setDailyReminder(settings.dailyReminderEnabled, time)
     setSettings(s => s ? { ...s, dailyReminderTime: time } : s)
+  }
+
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleBackgroundSelect = async (background: string | null) => {
+    await setCustomBackground(background)
+    setSettings(s => s ? { ...s, customBackground: background } : s)
+  }
+
+  const handleGlassToggle = async () => {
+    const next = !settings.glassEnabled
+    await setGlassEnabled(next)
+    setSettings(s => s ? { ...s, glassEnabled: next } : s)
+  }
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Convert to base64
+    const reader = new FileReader()
+    reader.onload = async () => {
+      const base64 = reader.result as string
+      await setCustomBackground(base64)
+      setSettings(s => s ? { ...s, customBackground: base64 } : s)
+    }
+    reader.readAsDataURL(file)
   }
 
   return (
@@ -164,6 +207,107 @@ export function SettingsScreen({ onBack, onSignOut }: { onBack?: () => void; onS
               <option value="whisper">Always use Whisper</option>
             </select>
           </div>
+        </div>
+      </div>
+
+      {/* Background Section */}
+      <div className="card mb-xl p-0 overflow-hidden">
+        <div className="px-md py-sm bg-surface font-semibold text-sm text-secondary border-b border-border">Custom Background</div>
+        <div className="p-md flex-col gap-md">
+          {/* Preview */}
+          <div 
+            className={`rounded-xl p-lg flex-center ${settings.customBackground ? (settings.glassEnabled ? 'glass' : 'bg-surface') : 'bg-surface'}`}
+            style={{ 
+              minHeight: '100px',
+              background: settings.customBackground 
+                ? (settings.customBackground.startsWith('bg-') 
+                  ? undefined 
+                  : `url(${settings.customBackground}) center/cover`)
+                : undefined,
+              border: settings.customBackground ? '2px solid var(--accent)' : '2px dashed var(--border)'
+            }}
+          >
+            {settings.customBackground ? (
+              <span className="font-semibold" style={{ color: settings.glassEnabled ? 'var(--text)' : 'var(--text)' }}>
+                Background Active
+              </span>
+            ) : (
+              <span className="text-secondary">No background selected</span>
+            )}
+          </div>
+
+          {/* Glass Toggle */}
+          <div className="flex-between items-center">
+            <div>
+              <span className="font-medium">Glass Effect</span>
+              <p className="text-xs text-secondary mt-xs">Frosted glass on cards</p>
+            </div>
+            <button
+              onClick={handleGlassToggle}
+              className={`w-12 h-6 rounded-full transition-fast ${settings.glassEnabled ? 'bg-accent' : 'bg-border'}`}
+              style={{ position: 'relative' }}
+            >
+              <div 
+                className="absolute top-1 w-4 h-4 bg-white rounded-full transition-fast"
+                style={{ 
+                  left: settings.glassEnabled ? '26px' : '4px',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                }}
+              />
+            </button>
+          </div>
+
+          {/* Preset Backgrounds */}
+          <div>
+            <span className="font-medium block mb-sm">Presets</span>
+            <div className="flex gap-sm flex-wrap">
+              {PRESET_BACKGROUNDS.map(preset => (
+                <button
+                  key={preset.id}
+                  onClick={() => handleBackgroundSelect(preset.class)}
+                  className={`w-14 h-10 rounded-lg transition-fast border-2 ${settings.customBackground === preset.class ? 'border-accent scale-110' : 'border-transparent hover:scale-105'}`}
+                  style={{ background: 'none' }}
+                  title={preset.name}
+                >
+                  <div className={`w-full h-full rounded-md ${preset.class}`} />
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Upload Custom Image */}
+          <div>
+            <span className="font-medium block mb-sm">Custom</span>
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept="image/*"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="btn btn-secondary btn-full"
+            >
+              Choose from Device
+            </button>
+            {settings.customBackground && !settings.customBackground.startsWith('bg-') && (
+              <button
+                onClick={() => handleBackgroundSelect(null)}
+                className="btn btn-subtle btn-full mt-sm"
+              >
+                Remove
+              </button>
+            )}
+          </div>
+
+          {/* None / Default */}
+          <button
+            onClick={() => handleBackgroundSelect(null)}
+            className={`btn w-full ${!settings.customBackground ? 'bg-accent text-white' : 'bg-surface text-secondary'}`}
+          >
+            No Background
+          </button>
         </div>
       </div>
 
