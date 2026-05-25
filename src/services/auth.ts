@@ -105,7 +105,7 @@ export async function signInWithApple(): Promise<AuthResult> {
   return authResult;
 }
 
-export async function signInWithEmail(email: string, password: string): Promise<AuthResult> {
+export async function signInWithEmail(email: string, password: string, rememberMe?: boolean): Promise<AuthResult> {
   if (DEV_AUTH) {
     return devLogin();
   }
@@ -115,7 +115,7 @@ export async function signInWithEmail(email: string, password: string): Promise<
     headers: {
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ email, password })
+    body: JSON.stringify({ email, password, rememberMe })
   });
 
   if (!response.ok) {
@@ -128,7 +128,7 @@ export async function signInWithEmail(email: string, password: string): Promise<
   return authResult;
 }
 
-export async function registerWithEmail(email: string, password: string, name?: string): Promise<AuthResult> {
+export async function registerWithEmail(email: string, password: string, name?: string, rememberMe?: boolean): Promise<AuthResult> {
   if (DEV_AUTH) {
     return devLogin();
   }
@@ -138,7 +138,7 @@ export async function registerWithEmail(email: string, password: string, name?: 
     headers: {
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ email, password, name })
+    body: JSON.stringify({ email, password, name, rememberMe })
   });
 
   if (!response.ok) {
@@ -149,6 +149,110 @@ export async function registerWithEmail(email: string, password: string, name?: 
   const authResult: AuthResult = await response.json();
   storeAuth(authResult);
   return authResult;
+}
+
+export async function signInWithGoogle(): Promise<AuthResult> {
+  if (DEV_AUTH) {
+    return devLogin();
+  }
+
+  try {
+    // Get OAuth URL from backend
+    const response = await fetch(`${API_BASE}/api/auth/google`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Google sign in failed' }));
+      throw new Error(error.error || 'Failed to start Google sign in');
+    }
+
+    const { authUrl } = await response.json();
+
+    // Return a promise that resolves when the user completes auth
+    // The frontend should open authUrl in a browser and handle the redirect
+    // For now, we'll use a simple approach - open in same window (for web)
+    // and check for token in URL after redirect
+    
+    return new Promise((resolve, reject) => {
+      // Open Google OAuth in a popup or redirect
+      const width = 500;
+      const height = 600;
+      const left = window.screenX + (window.outerWidth - width) / 2;
+      const top = window.screenY + (window.outerHeight - height) / 2;
+      
+      const authWindow = window.open(
+        authUrl, 
+        'Google Sign In',
+        `width=${width},height=${height},left=${left},top=${top},scrollbars=yes`
+      );
+
+      if (!authWindow) {
+        reject(new Error('Popup blocked. Please allow popups for this site.'));
+        return;
+      }
+
+      // Listen for messages from the popup
+      const checkAuth = setInterval(() => {
+        try {
+          if (authWindow.closed) {
+            clearInterval(checkAuth);
+            // Try to check if there's a token in localStorage (set by the callback)
+            const token = localStorage.getItem('google_auth_token');
+            const userStr = localStorage.getItem('google_auth_user');
+            
+            if (token && userStr) {
+              localStorage.removeItem('google_auth_token');
+              localStorage.removeItem('google_auth_user');
+              const user = JSON.parse(userStr);
+              storeAuth({ token, user });
+              resolve({ token, user });
+            } else {
+              reject(new Error('Sign in was cancelled'));
+            }
+          }
+        } catch (e) {
+          // Cross-origin access - ignore
+        }
+      }, 500);
+
+      // Also check for token in current URL (fallback for redirect flow)
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('auth_token');
+      const name = urlParams.get('auth_name');
+      const email = urlParams.get('auth_email');
+      const error = urlParams.get('auth_error');
+
+      if (error) {
+        clearInterval(checkAuth);
+        authWindow.close();
+        reject(new Error(decodeURIComponent(error)));
+      }
+
+      if (token) {
+        clearInterval(checkAuth);
+        authWindow.close();
+        
+        // Clean URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+        
+        const user: User = {
+          id: `google-${Date.now()}`,
+          email: email || undefined,
+          name: name || undefined
+        };
+        
+        storeAuth({ token, user });
+        resolve({ token, user });
+      }
+    });
+  } catch (err: any) {
+    console.error('Google sign in error:', err);
+    throw err;
+  }
 }
 
 export async function devLogin(): Promise<AuthResult> {

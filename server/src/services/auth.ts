@@ -124,6 +124,21 @@ export async function createSessionToken(user: AppleUser): Promise<string> {
     .sign(secret);
 }
 
+interface AnyUser {
+  id: string;
+  email?: string;
+  name?: string;
+}
+
+export async function createGenericSessionToken(user: AnyUser): Promise<string> {
+  const secret = new TextEncoder().encode(JWT_SECRET);
+  return new jose.SignJWT({ sub: user.id, email: user.email, name: user.name })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('30d')
+    .sign(secret);
+}
+
 export async function verifySessionToken(token: string): Promise<{ sub: string; email?: string; name?: string } | null> {
   try {
     const secret = new TextEncoder().encode(JWT_SECRET);
@@ -142,7 +157,7 @@ export async function registerEmailUser(email: string, password: string, name?: 
 
   console.log(`[Auth] Registering user: ${cleanEmail} (via ${isSupabaseConfigured() ? 'Supabase' : 'file'})`);
 
-  const passwordHash = await bcrypt.hash(password.trim(), 10);
+  const passwordHash = await bcrypt.hash(password.trim(), 8);
 
   if (isSupabaseConfigured()) {
     try {
@@ -267,11 +282,122 @@ export async function verifyEmailUser(email: string, password: string): Promise<
   return user;
 }
 
-export async function createEmailSessionToken(user: EmailUser): Promise<string> {
+export async function createEmailSessionToken(user: EmailUser, rememberMe?: boolean): Promise<string> {
   const secret = new TextEncoder().encode(JWT_SECRET);
+  const expirationTime = rememberMe ? '30d' : '1d';
+  
   return new jose.SignJWT({ sub: user.id, email: user.email, name: user.name, type: 'email' })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime('30d')
+    .setExpirationTime(expirationTime)
     .sign(secret);
+}
+
+// --- Google OAuth ---
+
+interface GoogleUserData {
+  googleId: string;
+  email: string;
+  name?: string;
+  picture?: string;
+}
+
+export async function findOrCreateGoogleUser(googleData: GoogleUserData) {
+  const cleanEmail = googleData.email.trim().toLowerCase();
+  const cleanName = googleData.name?.trim() || undefined;
+
+  console.log(`[Auth] Google user: ${cleanEmail}`);
+
+  if (isSupabaseConfigured()) {
+    try {
+      const client = getSupabaseClient();
+
+      // Try to find existing user by email (Google users can also login via email)
+      const { data: existing } = await client
+        .from('email_users')
+        .select('*')
+        .eq('email', cleanEmail)
+        .single();
+
+      if (existing) {
+        // Update with Google info if not already set
+        const { data, error } = await client
+          .from('email_users')
+          .update({ 
+            name: existing.name || cleanName || null,
+            google_id: googleData.googleId,
+            google_picture: googleData.picture || null,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existing.id)
+          .select()
+          .single();
+
+        if (error) {
+          console.error('[Auth] Google user update error:', error);
+        }
+
+        return {
+          id: existing.id,
+          email: existing.email,
+          name: existing.name || cleanName,
+          googleId: googleData.googleId,
+          picture: googleData.picture
+        };
+      }
+
+      // Create new user
+      const { data, error } = await client
+        .from('email_users')
+        .insert({ 
+          email: cleanEmail, 
+          name: cleanName || null,
+          google_id: googleData.googleId,
+          google_picture: googleData.picture || null,
+          password_hash: 'google-oauth' // Placeholder for OAuth users
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('[Auth] Google user insert error:', error);
+        throw new Error(`Failed to create Google user: ${error.message}`);
+      }
+
+      console.log(`[Auth] Created Google user via Supabase: ${cleanEmail}`);
+      return {
+        id: data.id,
+        email: data.email,
+        name: data.name,
+        googleId: googleData.googleId,
+        picture: googleData.picture
+      };
+    } catch (err) {
+      console.error('[Auth] Google auth error:', err);
+      throw err;
+    }
+  }
+
+  // File-based fallback (not recommended for Google OAuth in production)
+  const users = readUsersFile();
+  let user = users[cleanEmail];
+
+  if (!user) {
+    user = {
+      id: `google-${Date.now()}`,
+      email: cleanEmail,
+      passwordHash: 'google-oauth',
+      name: cleanName,
+      createdAt: Date.now()
+    };
+    users[cleanEmail] = user;
+    writeUsersFile(users);
+    console.log(`[Auth] Created Google user via file: ${cleanEmail}`);
+  }
+
+  return user;
+}
+
+export async function createGoogleUser(googleData: GoogleUserData) {
+  return findOrCreateGoogleUser(googleData);
 }
