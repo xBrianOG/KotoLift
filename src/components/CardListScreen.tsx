@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { getAllCards, deleteCard, updateCard, searchCards, getAllTags } from '../services/cards';
 import type { Card } from '../types';
 import { getCardSourceText, getCardTranslation } from '../types';
@@ -186,9 +187,14 @@ export function CardListScreen({ onExplain }: { onExplain?: (card: Card) => void
   }, [loadCards]);
 
   const handleDelete = async (card: Card) => {
-    await deleteCard(card.id);
-    setDeleteTarget(null);
-    loadCards();
+    try {
+      await deleteCard(card.id);
+      setDeleteTarget(null);
+      loadCards();
+    } catch (err) {
+      console.error('Failed to delete card:', err);
+      setDeleteTarget(null);
+    }
   };
 
   const handleEditSave = async () => {
@@ -389,16 +395,17 @@ export function CardListScreen({ onExplain }: { onExplain?: (card: Card) => void
       )}
 
       {/* Edit Modal */}
-      {editingCard && (
+      {editingCard && createPortal(
         <EditCardModal
           card={editingCard}
           onSave={handleEditSave}
           onClose={() => setEditingCard(null)}
-        />
+        />,
+        document.body
       )}
 
       {/* Delete Confirmation */}
-      {deleteTarget && (
+      {deleteTarget && createPortal(
         <div style={{ 
           position: 'fixed', 
           inset: 0, 
@@ -406,8 +413,11 @@ export function CardListScreen({ onExplain }: { onExplain?: (card: Card) => void
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'center', 
-          padding: 'var(--space-lg)', 
-          zIndex: 100 
+          padding: 'var(--space-lg)',
+          paddingTop: 'calc(env(safe-area-inset-top) + var(--space-lg))',
+          paddingBottom: 'calc(env(safe-area-inset-bottom) + var(--space-lg))',
+          zIndex: 100,
+          overflowY: 'auto'
         }}>
           <div style={{
             background: 'var(--surface)',
@@ -448,7 +458,8 @@ export function CardListScreen({ onExplain }: { onExplain?: (card: Card) => void
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
@@ -493,20 +504,24 @@ function EditCardModal({ card, onSave, onClose }: EditCardModalProps) {
       inset: 0, 
       background: 'rgba(0,0,0,0.4)', 
       display: 'flex', 
-      alignItems: 'center', 
+      alignItems: 'flex-start', 
       justifyContent: 'center', 
-      padding: 'var(--space-lg)', 
-      zIndex: 100 
+      padding: 'var(--space-lg)',
+      paddingTop: 'calc(env(safe-area-inset-top) + var(--space-lg))',
+      paddingBottom: 'calc(env(safe-area-inset-bottom) + var(--space-lg))',
+      zIndex: 100,
+      overflowY: 'auto'
     }}>
       <div style={{
         background: 'var(--surface)',
         borderRadius: 'var(--radius-lg)',
         border: '1px solid var(--border)',
         padding: 'var(--space-xl)',
+        paddingTop: 'var(--space-lg)',
         maxWidth: 480,
         width: '100%',
-        maxHeight: '90vh',
-        overflow: 'auto'
+        marginTop: 'var(--space-xl)',
+        marginBottom: 'var(--space-xl)'
       }}>
         <div style={{ 
           display: 'flex', 

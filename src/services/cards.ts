@@ -12,10 +12,11 @@ function getUserId(): string {
 async function apiCall(endpoint: string, options: RequestInit = {}) {
   const userId = getUserId();
   const isGet = !options.method || options.method === 'GET';
+  const isDelete = options.method === 'DELETE';
   
-  // For GET requests, pass user_id as query param
-  // For POST/PUT/DELETE, pass user_id in body
-  const url = isGet 
+  // For GET and DELETE requests, pass user_id as query param
+  // For POST/PUT, pass user_id in body
+  const url = (isGet || isDelete) 
     ? `${API_BASE}${endpoint}${endpoint.includes('?') ? '&' : '?'}user_id=${userId}`
     : `${API_BASE}${endpoint}`;
   
