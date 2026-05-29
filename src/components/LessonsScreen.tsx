@@ -66,7 +66,7 @@ export function LessonsScreen({ onBack }: LessonsScreenProps) {
       </div>
 
       {/* My Decks Section */}
-      <div className="card p-md mb-lg" style={{ cursor: 'pointer' }} onClick={() => alert('Coming soon!')}>
+      <div className="card p-md mb-lg" style={{ cursor: 'pointer' }} onClick={() => onNavigate?.('deckList')}>
         <div className="flex-center gap-md">
           <div className="flex-center" style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--accent-light)' }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2">

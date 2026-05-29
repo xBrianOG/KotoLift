@@ -229,7 +229,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
           </button>
 
           <button
-            onClick={() => alert('Coming soon!')}
+            onClick={() => onNavigate('videoImport')}
             style={{
               display: 'flex',
               alignItems: 'center',
