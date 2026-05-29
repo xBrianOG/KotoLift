@@ -31,11 +31,16 @@ export function AddCardScreen({ onSave, onNavigateToVideoImport }: AddCardScreen
 
       console.log('[AddCard] Creating card...');
       const card = await createCard(
-        jaText.trim(),
+        '',
         enText.trim(),
         esText.trim(),
         tagList,
-        notes.trim() || undefined
+        notes.trim() || undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        jaText.trim()
       );
 
       console.log('[AddCard] Card created:', card.id);
