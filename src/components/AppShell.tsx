@@ -163,10 +163,14 @@ export function AppShell({ current, onNavigate, children, userName = 'User', set
             
             <button
               className={`sidebar-item-minimal ${current === 'settings' ? 'active' : ''}`}
-              onClick={() => {
-                onNavigate('settings')
-                setMobileOpen(false)
-              }}
+onClick={() => {
+                    if (item.key === 'deckList') {
+                      alert('Coming soon!')
+                    } else {
+                      onNavigate(item.key)
+                    }
+                    setMobileOpen(false)
+                  }}
             >
               <Settings size={18} strokeWidth={1.5} />
               <motion.span
