@@ -252,6 +252,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
           >
             <Video size={18} style={{ color: 'var(--text-tertiary)' }} />
             <span style={{ fontWeight: 500, color: 'var(--text)', fontSize: 'var(--font-sm)' }}>Import from Video</span>
+            <span style={{ fontSize: 9, background: 'var(--accent)', color: 'white', padding: '2px 6px', borderRadius: 4, fontWeight: 600 }}>Coming Soon</span>
           </button>
         </div>
       </div>
