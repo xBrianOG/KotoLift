@@ -7,10 +7,11 @@
     "dev": "concurrently \"vite\" \"cd server && npm run dev\"",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
+    "preview": "pnpm run build && wrangler dev",
     "test": "vitest run --passWithNoTests",
     "ios:build": "npm run build && npx cap sync ios",
-    "ios:open": "npx cap open ios"
+    "ios:open": "npx cap open ios",
+    "deploy": "pnpm run build && wrangler deploy"
   },
   "dependencies": {
     "@capacitor-community/apple-sign-in": "^6.0.0",
@@ -39,6 +40,7 @@
   "devDependencies": {
     "@capacitor/cli": "^6.0.0",
     "@capacitor/ios": "^6.0.0",
+    "@cloudflare/vite-plugin": "^1.39.0",
     "@eslint/js": "^9.39.4",
     "@types/bcrypt": "^6.0.0",
     "@types/cors": "^2.8.19",
@@ -58,6 +60,7 @@
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.57.1",
     "vite": "^6.3.5",
-    "vitest": "^0.34.0"
+    "vitest": "^0.34.0",
+    "wrangler": "^4.95.0"
   }
 }
