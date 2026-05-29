@@ -3,7 +3,8 @@ import { createPortal } from 'react-dom';
 import { getAllCards, deleteCard, updateCard, searchCards, getAllTags } from '../services/cards';
 import type { Card } from '../types';
 import { getCardSourceText, getCardTranslation } from '../types';
-import { Search, ChevronDown, Edit2, Trash2, Info, X } from 'lucide-react';
+import { Search, ChevronDown, Edit2, Trash2, Info, X, Globe } from 'lucide-react';
+import { getSecondaryLang, setSecondaryLang, type SecondaryLanguage } from '../services/settings';
 
 function Dropdown({ 
   label, 
@@ -165,6 +166,12 @@ export function CardListScreen({ onExplain }: { onExplain?: (card: Card) => void
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [editingCard, setEditingCard] = useState<Card | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Card | null>(null);
+  const [secondaryLang, setSecondaryLangState] = useState<SecondaryLanguage>(() => getSecondaryLang());
+
+  const handleSecondaryLangChange = async (lang: SecondaryLanguage) => {
+    setSecondaryLangState(lang);
+    await setSecondaryLang(lang);
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300);
@@ -252,23 +259,36 @@ export function CardListScreen({ onExplain }: { onExplain?: (card: Card) => void
         </div>
 
         {tags.length > 0 && (
-          <Dropdown
-            label="Category"
+          <>
+            <Dropdown
+              label="Category"
+              options={[
+                { key: 'all', label: 'All Categories' },
+                ...tags.map(t => ({ key: t, label: t }))
+              ]}
+              selected={selectedTags}
+              onChange={(newVals) => {
+                // 'all' clears selection; otherwise toggle the clicked tag
+                if (newVals.includes('all')) {
+                  setSelectedTags([]);
+                } else {
+                  setSelectedTags(newVals);
+                }
+              }}
+              multiple={true}
+            />
+            <Dropdown
+              label="Secondary"
             options={[
-              { key: 'all', label: 'All Categories' },
-              ...tags.map(t => ({ key: t, label: t }))
+              { key: 'ja', label: 'Japanese' },
+              { key: 'en', label: 'English' },
+              { key: 'es', label: 'Spanish' },
             ]}
-            selected={selectedTags}
-            onChange={(newVals) => {
-              // 'all' clears selection; otherwise toggle the clicked tag
-              if (newVals.includes('all')) {
-                setSelectedTags([]);
-              } else {
-                setSelectedTags(newVals);
-              }
-            }}
-            multiple={true}
+            selected={[secondaryLang]}
+            onChange={(vals) => vals[0] && handleSecondaryLangChange(vals[0] as SecondaryLanguage)}
+            multiple={false}
           />
+          </>
         )}
       </div>
 
@@ -286,10 +306,8 @@ export function CardListScreen({ onExplain }: { onExplain?: (card: Card) => void
           {cards.map(card => {
             const langLabel = (card.sourceLang || 'ja').toUpperCase();
             const sourceText = getCardSourceText(card);
-            const enText = getCardTranslation(card, 'en') || '';
-            const esText = getCardTranslation(card, 'es') || '';
-            const showEn = enText && card.sourceLang !== 'en';
-            const showEs = esText && card.sourceLang !== 'es';
+            const secondaryText = getCardTranslation(card, secondaryLang) || '';
+            const showSecondary = secondaryText && card.sourceLang !== secondaryLang;
 
             return (
               <div 
@@ -322,22 +340,13 @@ export function CardListScreen({ onExplain }: { onExplain?: (card: Card) => void
                     </span>
                   </div>
                   
-                  {showEn && (
+                  {showSecondary && (
                     <p style={{ 
                       fontSize: 'var(--font-sm)', 
                       color: 'var(--text-secondary)',
                       marginBottom: 'var(--space-xs)'
                     }}>
-                      {enText}
-                    </p>
-                  )}
-                  
-                  {showEs && (
-                    <p style={{ 
-                      fontSize: 'var(--font-sm)', 
-                      color: 'var(--text-tertiary)'
-                    }}>
-                      {esText}
+                      {secondaryText}
                     </p>
                   )}
 

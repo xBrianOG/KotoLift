@@ -2,6 +2,7 @@ import { db } from '../db';
 
 export type NativeLanguage = 'en' | 'es' | 'ja';
 export type LearningMode = 'passive' | 'active' | 'mixed';
+export type SecondaryLanguage = 'en' | 'es' | 'ja';
 
 export interface LearningSettings {
   nativeLang: NativeLanguage;
@@ -13,6 +14,7 @@ export interface LearningSettings {
   customBackground: string | null;
   glassEnabled: boolean;
   avatar: string | null;
+  secondaryLang: SecondaryLanguage;
 }
 
 const DEFAULTS: LearningSettings = {
@@ -25,6 +27,7 @@ const DEFAULTS: LearningSettings = {
   customBackground: null,
   glassEnabled: true,
   avatar: null,
+  secondaryLang: 'ja',
 };
 
 async function readSettings(): Promise<LearningSettings> {
@@ -40,6 +43,7 @@ async function readSettings(): Promise<LearningSettings> {
       customBackground: stored.customBackground || null,
       glassEnabled: stored.glassEnabled ?? true,
       avatar: stored.avatar || null,
+      secondaryLang: stored.secondaryLang as SecondaryLanguage ?? 'ja',
     };
   }
   // Migrate from legacy localStorage
@@ -91,6 +95,7 @@ export function getLearningSettings(): LearningSettings {
     customBackground: null,
     glassEnabled: true,
     avatar: null,
+    secondaryLang: (localStorage.getItem('settings.secondaryLang') || DEFAULTS.secondaryLang) as SecondaryLanguage,
   };
 }
 
@@ -149,4 +154,15 @@ export async function setAvatar(avatar: string | null): Promise<void> {
   await ensureCache();
   await patchSettings({ avatar: avatar });
   if (_cache) _cache.avatar = avatar;
+}
+
+export function getSecondaryLang(): SecondaryLanguage {
+  const settings = getLearningSettings();
+  return settings.secondaryLang;
+}
+
+export async function setSecondaryLang(lang: SecondaryLanguage): Promise<void> {
+  await ensureCache();
+  await patchSettings({ secondaryLang: lang });
+  if (_cache) _cache.secondaryLang = lang;
 }
