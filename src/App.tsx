@@ -16,14 +16,17 @@ import { LoginScreen } from "./components/LoginScreen";
 import { LessonsScreen } from "./components/LessonsScreen";
 import { VocabularyScreen } from "./components/VocabularyScreen";
 import { AssessmentScreen } from "./components/AssessmentScreen";
+import { DeckListScreen } from "./components/DeckListScreen";
+import { DeckCardsScreen } from "./components/DeckCardsScreen";
+import { ImportScreen } from "./components/ImportScreen";
 import { isLoggedIn, clearAuth, devLogin, isDevMode, getStoredUser } from "./services/auth";
 import { initSettings, getLearningSettings, type LearningSettings } from "./services/settings";
-import type { Card } from "./types";
+import type { Card, Deck } from "./types";
 import type { TranscriptData } from "./components/TranscriptViewerScreen";
 import type { VideoPlayerData } from "./components/VideoPlayerScreen";
 import "./types";
 
-type Screen = "home" | "review" | "cards" | "add" | "explain" | "drill" | "settings" | "profile" | "videoImport" | "transcript" | "videoPlayer" | "lessons" | "vocabulary" | "assessment";
+type Screen = "home" | "review" | "cards" | "add" | "explain" | "drill" | "settings" | "profile" | "videoImport" | "transcript" | "videoPlayer" | "lessons" | "vocabulary" | "assessment" | "deckList" | "deckCards" | "import";
 
 function App() {
   const [history, setHistory] = useState<Screen[]>(["home"]);
@@ -32,6 +35,8 @@ function App() {
   const [videoPlayerData, setVideoPlayerData] = useState<VideoPlayerData | null>(null);
   const [pendingExplainCard, setPendingExplainCard] = useState<Card | null>(null);
   const [settings, setSettings] = useState<LearningSettings | null>(null);
+  const [selectedDeck, setSelectedDeck] = useState<Deck | null>(null);
+  const [deckCards, setDeckCards] = useState<Card[]>([]);
 
   const screen = history[history.length - 1];
 
@@ -58,7 +63,7 @@ function App() {
   }, []);
 
   const navigate = (to: string) => {
-    const valid = ["home", "review", "drill", "cards", "add", "explain", "settings", "profile", "videoImport", "transcript", "videoPlayer", "lessons", "vocabulary", "assessment"] as const;
+    const valid = ["home", "review", "drill", "cards", "add", "explain", "settings", "profile", "videoImport", "transcript", "videoPlayer", "lessons", "vocabulary", "assessment", "deckList", "deckCards", "import"] as const;
     if ((valid as readonly string[]).includes(to)) {
       setHistory(h => [...h, to as Screen]);
     }
@@ -126,7 +131,7 @@ function App() {
           onNavigateHome={() => setHistory(["home"])}
         />
       )}
-      {screen === "drill" && <DrillScreen />}
+      {screen === "drill" && <DrillScreen cards={deckCards.length > 0 ? deckCards : undefined} />}
       {screen === "cards" && (
         <CardListScreen
           onExplain={handleExplainCard}
@@ -156,9 +161,35 @@ function App() {
       {screen === "explain" && <ExplainScreen />}
       {screen === "settings" && <SettingsScreen settings={settings} onBack={goBack} onSignOut={handleLogout} userName={getStoredUser()?.name} />}
       {screen === "profile" && <ProfileScreen onBack={goBack} />}
-      {screen === "lessons" && <LessonsScreen onBack={goBack} />}
+      {screen === "lessons" && <LessonsScreen onBack={goBack} onNavigate={navigate} />}
       {screen === "vocabulary" && <VocabularyScreen onBack={goBack} />}
       {screen === "assessment" && <AssessmentScreen onBack={goBack} />}
+      {screen === "deckList" && (
+        <DeckListScreen 
+          onBack={goBack} 
+          onSelectDeck={(deck) => {
+            setSelectedDeck(deck);
+            navigate('deckCards');
+          }}
+          onImport={() => navigate('import')}
+        />
+      )}
+      {screen === "import" && (
+        <ImportScreen 
+          onBack={goBack}
+          onComplete={() => goBack()}
+        />
+      )}
+      {screen === "deckCards" && selectedDeck && (
+        <DeckCardsScreen
+          deck={selectedDeck}
+          onBack={goBack}
+          onReview={(cards) => {
+            setDeckCards(cards);
+            navigate('drill');
+          }}
+        />
+      )}
 
       {pendingExplainCard && (
         <LanguagePicker

@@ -20,6 +20,7 @@ interface LessonContent {
 
 interface LessonsScreenProps {
   onBack: () => void;
+  onNavigate?: (to: string) => void;
 }
 
 const LEVELS = [
@@ -62,6 +63,26 @@ export function LessonsScreen({ onBack }: LessonsScreenProps) {
       <div className="mb-lg">
         <h1 className="text-2xl font-bold mb-xs">Lessons</h1>
         <p className="text-secondary text-sm">Master B1-B2 vocabulary</p>
+      </div>
+
+      {/* My Decks Section */}
+      <div className="card p-md mb-lg" style={{ cursor: 'pointer' }} onClick={() => onNavigate?.('deckList')}>
+        <div className="flex-center gap-md">
+          <div className="flex-center" style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--accent-light)' }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+              <line x1="3" y1="9" x2="21" y2="9" />
+              <line x1="9" y1="21" x2="9" y2="9" />
+            </svg>
+          </div>
+          <div style={{ flex: 1 }}>
+            <h3 className="font-semibold">My Decks</h3>
+            <p className="text-xs text-secondary">Import and review your flashcard decks</p>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </div>
       </div>
 
       <div className="flex gap-sm mb-lg" style={{ overflowX: 'auto' }}>

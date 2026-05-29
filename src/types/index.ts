@@ -12,6 +12,11 @@ export interface Card {
   esText?: string;
   tags: string[];
   notes?: string;
+  // Deck/import tracking
+  deckId?: string;
+  deckName?: string;
+  // Audio for pronunciation
+  audioUrl?: string;
   // Source tracking for video imports
   sourceUrl?: string;
   startMs?: number;
@@ -46,6 +51,15 @@ export interface ReviewState {
 export type Rating = 'again' | 'good' | 'easy';
 
 export type ReviewDirection = 'ja-en' | 'ja-es' | 'en-ja' | 'es-ja' | 'mixed';
+
+export interface Deck {
+  id: string;
+  name: string;
+  description?: string;
+  cardCount: number;
+  createdAt: number;
+  source?: 'import' | 'manual';
+}
 
 export interface ExplainRequest {
   sentence: string;

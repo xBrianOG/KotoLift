@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { getAllCards, deleteCard, updateCard, searchCards, getAllTags } from '../services/cards';
 import type { Card } from '../types';
 import { getCardSourceText, getCardTranslation } from '../types';
-import { Search, ChevronDown, Edit2, Trash2, Info, X, Globe } from 'lucide-react';
+import { Search, ChevronDown, Edit2, Trash2, Info, X } from 'lucide-react';
 import { getSecondaryLang, setSecondaryLang, type SecondaryLanguage } from '../services/settings';
 
 function Dropdown({ 

@@ -109,7 +109,7 @@ router.post('/', async (req, res) => {
     }
 
     // If new fields are provided, use them; otherwise fall back to old format
-    let cardData: any = {
+    const cardData: any = {
       category: category || null,
       tags: tags || [],
       source_lang: source_lang || 'en'
@@ -196,7 +196,9 @@ router.put('/:id', async (req, res) => {
         if (backObj.ja && updateData.ja === undefined) updateData.ja = backObj.ja;
         if (backObj.en && updateData.en === undefined) updateData.en = backObj.en;
         if (backObj.es && updateData.es === undefined) updateData.es = backObj.es;
-      } catch (e) {}
+      } catch (e) {
+        // Ignore JSON parse errors for back field
+      }
     }
 
     const { data, error } = await supabase

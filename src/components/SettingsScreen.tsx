@@ -26,6 +26,7 @@ const PRESET_BACKGROUNDS = [
 
 export function SettingsScreen({ onBack, onSignOut, settings: initialSettings, userName }: { onBack?: () => void; onSignOut?: () => void; settings?: LearningSettings | null; userName?: string } = {}) {
   const [settings, setSettings] = useState<LearningSettings | null>(initialSettings ?? getLearningSettings())
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (initialSettings) {
@@ -69,8 +70,6 @@ export function SettingsScreen({ onBack, onSignOut, settings: initialSettings, u
     await setDailyReminder(settings.dailyReminderEnabled, time)
     setSettings(s => s ? { ...s, dailyReminderTime: time } : s)
   }
-
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleBackgroundSelect = async (background: string | null) => {
     await setCustomBackground(background)

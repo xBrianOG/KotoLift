@@ -1,5 +1,5 @@
 import Dexie, { type Table } from "dexie";
-import type { Card, ReviewState } from "../types";
+import type { Card, ReviewState, Deck } from "../types";
 
 export interface StoredUserStats {
   id: 'singleton';
@@ -24,6 +24,7 @@ export interface StoredUserSettings {
 
 export class SumitomoBenkyoDB extends Dexie {
   cards!: Table<Card>;
+  decks!: Table<Deck>;
   reviewStates!: Table<ReviewState>;
   userStats!: Table<StoredUserStats>;
   userSettings!: Table<StoredUserSettings>;
@@ -37,6 +38,22 @@ export class SumitomoBenkyoDB extends Dexie {
     });
     this.version(2).stores({
       cards: "id, createdAt, *tags, sourceUrl, sourceLang",
+      reviewStates:
+        "id, cardId, promptLang, answerLang, nextReviewAt, [cardId+promptLang+answerLang]",
+      userStats: "id",
+      userSettings: "id",
+    });
+    this.version(3).stores({
+      cards: "id, createdAt, *tags, sourceUrl, sourceLang, deckId",
+      decks: "id, name, createdAt",
+      reviewStates:
+        "id, cardId, promptLang, answerLang, nextReviewAt, [cardId+promptLang+answerLang]",
+      userStats: "id",
+      userSettings: "id",
+    });
+    this.version(4).stores({
+      cards: "id, createdAt, *tags, sourceUrl, sourceLang, deckId, audioUrl",
+      decks: "id, name, createdAt",
       reviewStates:
         "id, cardId, promptLang, answerLang, nextReviewAt, [cardId+promptLang+answerLang]",
       userStats: "id",

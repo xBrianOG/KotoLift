@@ -3,17 +3,26 @@ import { getAllCards } from '../services/cards';
 import { getFrontBack } from '../services/learningDirection';
 import type { Card } from '../types';
 
-export function DrillScreen() {
+type DrillScreenProps = {
+  cards?: Card[];
+};
+
+export function DrillScreen({ cards: initialCards }: DrillScreenProps) {
   const [cards, setCards] = useState<Card[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
 
   const loadCards = useCallback(async () => {
-    const allCards = await getAllCards();
-    setCards(allCards.sort(() => Math.random() - 0.5));
+    // Use provided cards or fetch from server
+    if (initialCards && initialCards.length > 0) {
+      setCards(initialCards.sort(() => Math.random() - 0.5));
+    } else {
+      const allCards = await getAllCards();
+      setCards(allCards.sort(() => Math.random() - 0.5));
+    }
     setCurrentIndex(0);
     setShowAnswer(false);
-  }, []);
+  }, [initialCards]);
 
   useEffect(() => {
     loadCards();

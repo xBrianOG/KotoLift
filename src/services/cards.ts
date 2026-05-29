@@ -20,7 +20,7 @@ async function apiCall(endpoint: string, options: RequestInit = {}) {
     ? `${API_BASE}${endpoint}${endpoint.includes('?') ? '&' : '?'}user_id=${userId}`
     : `${API_BASE}${endpoint}`;
   
-  let body = options.body ? JSON.parse(options.body as string) : undefined;
+  const body = options.body ? JSON.parse(options.body as string) : undefined;
   if (!isGet && body) {
     body.user_id = userId;
   }

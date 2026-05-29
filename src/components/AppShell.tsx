@@ -49,6 +49,7 @@ const navItems = [
 ]
 
 const libraryItems = [
+  { key: 'deckList', label: 'Decks', icon: Layers },
   { key: 'vocabulary', label: 'Vocabulary', icon: BookOpen },
 ]
 
