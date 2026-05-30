@@ -502,7 +502,7 @@ function EditCardModal({ card, onSave, onClose }: EditCardModalProps) {
       enText: sourceLang === 'en' ? sourceText : (enText || undefined),
       esText: sourceLang === 'es' ? sourceText : (esText || undefined),
       tags: tags.split(',').map(t => t.trim()).filter(t => t),
-      notes: notes || undefined
+      notes: notes.length > 0 ? notes : null
     });
     onSave();
   };

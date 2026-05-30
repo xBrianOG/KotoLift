@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { getAuthHeaders } from '../services/auth';
 import { Search, ChevronDown, ChevronLeft, X, Plus } from 'lucide-react';
 
@@ -459,17 +460,20 @@ export function VocabularyScreen({ onBack }: VocabularyScreenProps) {
         </div>
       )}
 
-      {/* Category Modal */}
-      {showCategoryModal && (
+{/* Category Modal */}
+      {showCategoryModal && createPortal(
         <div style={{
-          position: 'fixed', 
+          position: 'fixed',
           inset: 0,
-          background: 'rgba(0,0,0,0.4)', 
-          display: 'flex', 
-          alignItems: 'center', 
+          background: 'rgba(0,0,0,0.4)',
+          display: 'flex',
+          alignItems: 'flex-start',
           justifyContent: 'center',
           zIndex: 100,
-          padding: 'var(--space-lg)'
+          padding: 'var(--space-lg)',
+          paddingTop: 'calc(env(safe-area-inset-top) + var(--space-lg))',
+          paddingBottom: 'calc(env(safe-area-inset-bottom) + var(--space-lg))',
+          overflowY: 'auto'
         }}>
           <div style={{
             background: 'var(--surface)',
@@ -477,11 +481,13 @@ export function VocabularyScreen({ onBack }: VocabularyScreenProps) {
             border: '1px solid var(--border)',
             padding: 'var(--space-xl)',
             maxWidth: 400,
-            width: '100%'
+            width: '100%',
+            marginTop: 'var(--space-xl)',
+            marginBottom: 'var(--space-xl)'
           }}>
             <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
+              display: 'flex',
+              alignItems: 'center',
               justifyContent: 'space-between',
               marginBottom: 'var(--space-lg)'
             }}>
@@ -501,7 +507,7 @@ export function VocabularyScreen({ onBack }: VocabularyScreenProps) {
                 placeholder="New category..."
                 value={newCategoryName}
                 onChange={e => setNewCategoryName(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && createCategory()}
+                onKeyDown={e => e.keyDown === 'Enter' && createCategory()}
                 style={{ flex: 1 }}
               />
               <button className="btn btn-primary" onClick={createCategory}>
@@ -509,7 +515,7 @@ export function VocabularyScreen({ onBack }: VocabularyScreenProps) {
               </button>
             </div>
 
-            <div style={{ maxHeight: 250, overflowY: 'auto' }}>
+            <div style={{ maxHeight: 400, overflowY: 'auto' }}>
               {categories.map(cat => (
                 <div 
                   key={cat.id} 
@@ -541,7 +547,8 @@ export function VocabularyScreen({ onBack }: VocabularyScreenProps) {
               ))}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
