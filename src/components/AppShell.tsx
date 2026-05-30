@@ -164,7 +164,7 @@ export function AppShell({ current, onNavigate, children, userName = 'User', set
             <button
               className={`sidebar-item-minimal ${current === 'settings' ? 'active' : ''}`}
 onClick={() => {
-                    onNavigate(item.key)
+                    onNavigate('settings')
                     setMobileOpen(false)
                   }}
             >
