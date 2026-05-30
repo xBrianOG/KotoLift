@@ -75,6 +75,7 @@ export async function createCard(
       source_lang: lang,
       tags,
       category: tags[0] || null,
+      notes,
     }),
   });
   
@@ -117,6 +118,7 @@ export async function updateCard(
       back,
       tags,
       category: tags?.[0] || null,
+      notes,
     }),
   });
 }
@@ -139,6 +141,7 @@ export async function getAllCards(): Promise<Card[]> {
     esText: fc.es || '',
     translations: JSON.parse(fc.back || '{}'),
     tags: fc.tags || [],
+    notes: fc.notes || '',
     createdAt: new Date(fc.created_at).getTime(),
   }));
 }

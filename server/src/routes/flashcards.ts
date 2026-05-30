@@ -99,7 +99,7 @@ router.get('/:id', async (req, res) => {
 // Create flashcard
 router.post('/', async (req, res) => {
   try {
-    const { user_id, ja, en, es, source_lang, category, tags } = req.body;
+    const { user_id, ja, en, es, source_lang, category, tags, notes } = req.body;
 
     // Accept either new schema (ja/en/es/source_lang) or old schema (front/back)
     const { front, back } = req.body;
@@ -112,7 +112,8 @@ router.post('/', async (req, res) => {
     const cardData: any = {
       category: category || null,
       tags: tags || [],
-      source_lang: source_lang || 'en'
+      source_lang: source_lang || 'en',
+      notes: notes || null,
     };
 
     if (ja !== undefined || en !== undefined || es !== undefined) {
@@ -163,7 +164,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { user_id, ja, en, es, source_lang, category, tags, front, back } = req.body;
+    const { user_id, ja, en, es, source_lang, category, tags, front, back, notes } = req.body;
 
     if (!user_id) {
       return res.status(400).json({ error: 'user_id is required' });
@@ -185,6 +186,7 @@ router.put('/:id', async (req, res) => {
     }
     if (category !== undefined) updateData.category = category;
     if (tags !== undefined) updateData.tags = tags;
+    if (notes !== undefined) updateData.notes = notes;
     
     // Handle old schema for backward compatibility
     if (front !== undefined) updateData.front = front;
