@@ -10,6 +10,7 @@ import { ProfileScreen } from "./components/ProfileScreen";
 import { VideoImportScreen } from "./components/VideoImportScreen";
 import { TranscriptViewerScreen } from "./components/TranscriptViewerScreen";
 import { VideoPlayerScreen } from "./components/VideoPlayerScreen";
+import { VideoLearningScreen } from "./components/VideoLearningScreen";
 import { LanguagePicker } from "./components/LanguagePicker";
 import { AppShell } from "./components/AppShell";
 import { LoginScreen } from "./components/LoginScreen";
@@ -26,7 +27,7 @@ import type { TranscriptData } from "./components/TranscriptViewerScreen";
 import type { VideoPlayerData } from "./components/VideoPlayerScreen";
 import "./types";
 
-type Screen = "home" | "review" | "cards" | "add" | "explain" | "drill" | "settings" | "profile" | "videoImport" | "transcript" | "videoPlayer" | "lessons" | "vocabulary" | "assessment" | "deckList" | "deckCards" | "import";
+type Screen = "home" | "review" | "cards" | "add" | "explain" | "drill" | "settings" | "profile" | "videoImport" | "transcript" | "videoPlayer" | "lessons" | "vocabulary" | "assessment" | "deckList" | "deckCards" | "import" | "videoLearning";
 
 function App() {
   const [history, setHistory] = useState<Screen[]>(["home"]);
@@ -63,7 +64,7 @@ function App() {
   }, []);
 
   const navigate = (to: string) => {
-    const valid = ["home", "review", "drill", "cards", "add", "explain", "settings", "profile", "videoImport", "transcript", "videoPlayer", "lessons", "vocabulary", "assessment", "deckList", "deckCards", "import"] as const;
+    const valid = ["home", "review", "drill", "cards", "add", "explain", "settings", "profile", "videoImport", "transcript", "videoPlayer", "lessons", "vocabulary", "assessment", "deckList", "deckCards", "import", "videoLearning"] as const;
     if ((valid as readonly string[]).includes(to)) {
       setHistory(h => [...h, to as Screen]);
     }
@@ -157,6 +158,9 @@ function App() {
           data={videoPlayerData}
           onBack={goBack}
         />
+      )}
+      {screen === "videoLearning" && (
+        <VideoLearningScreen onBack={goBack} />
       )}
       {screen === "explain" && <ExplainScreen />}
       {screen === "settings" && <SettingsScreen settings={settings} onBack={goBack} onSignOut={handleLogout} userName={getStoredUser()?.name} />}

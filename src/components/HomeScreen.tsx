@@ -229,7 +229,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
           </button>
 
           <button
-            onClick={() => onNavigate('videoImport')}
+            onClick={() => onNavigate('videoLearning')}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -251,8 +251,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
             }}
           >
             <Video size={18} style={{ color: 'var(--text-tertiary)' }} />
-            <span style={{ fontWeight: 500, color: 'var(--text)', fontSize: 'var(--font-sm)' }}>Import from Video</span>
-            <span style={{ fontSize: 9, background: 'var(--accent)', color: 'white', padding: '2px 6px', borderRadius: 4, fontWeight: 600 }}>Coming Soon</span>
+            <span style={{ fontWeight: 500, color: 'var(--text)', fontSize: 'var(--font-sm)' }}>Video Learning</span>
           </button>
         </div>
       </div>
