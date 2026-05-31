@@ -26,11 +26,11 @@ const FAILURE_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 // Helper functions
 function getCookieFile(): string | null {
-  const cookiesBase64 = process.env.YOUTUBE_COOKIES;
-  if (!cookiesBase64) return null;
+  const cookiesEnv = process.env.YOUTUBE_COOKIES;
+  if (!cookiesEnv) return null;
   
   try {
-    const cookies = Buffer.from(cookiesBase64, 'base64').toString('utf-8');
+    const cookies = cookiesEnv.trim();
     const tmpFile = join(tmpdir(), 'yt_cookies.txt');
     writeFileSync(tmpFile, cookies, 'utf-8');
     return tmpFile;
