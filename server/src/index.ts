@@ -20,6 +20,7 @@ import assessmentRouter from "./routes/assessment.js";
 import categoriesRouter from "./routes/categories.js";
 import progressRouter from "./routes/progress.js";
 import flashcardsRouter from "./routes/flashcards.js";
+import ttsRouter from "./routes/tts.js";
 import cors from "cors";
 import fs from "fs";
 
@@ -63,6 +64,7 @@ app.use("/api/assessment", assessmentRouter);
 app.use("/api/categories", categoriesRouter);
 app.use("/api/progress", progressRouter);
 app.use("/api/flashcards", flashcardsRouter);
+app.use("/api/tts", ttsRouter);
 
 app.get("/api/health", (req, res) => {
   res.json({ 

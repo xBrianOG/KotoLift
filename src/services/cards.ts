@@ -106,9 +106,9 @@ export async function updateCard(
   
   const front = sourceText || jaText;
   const back = JSON.stringify({
-    en: enText || translations?.en,
-    es: esText || translations?.es,
-    ja: jaText || translations?.ja,
+    en: enText !== undefined ? enText : (translations?.en ?? null),
+    es: esText !== undefined ? esText : (translations?.es ?? null),
+    ja: jaText !== undefined ? jaText : (translations?.ja ?? null),
   });
   
   await apiCall(`/api/flashcards/${id}`, {
@@ -116,6 +116,9 @@ export async function updateCard(
     body: JSON.stringify({
       front,
       back,
+      ja: jaText !== undefined ? jaText : (translations?.ja ?? null),
+      en: enText !== undefined ? enText : (translations?.en ?? null),
+      es: esText !== undefined ? esText : (translations?.es ?? null),
       tags,
       category: tags?.[0] || null,
       notes,

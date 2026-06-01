@@ -11,6 +11,12 @@ function seededRandom(): number {
 export interface FrontBack {
   front: string;
   back: string;
+  frontLang?: string;
+  backLang?: string;
+  jaContent?: string;
+  enContent?: string;
+  esContent?: string;
+  sourceLang?: string;
 }
 
 export function getFrontBack(card: Card, settings?: { nativeLang?: NativeLanguage; learningMode?: LearningMode }): FrontBack {
@@ -19,12 +25,10 @@ export function getFrontBack(card: Card, settings?: { nativeLang?: NativeLanguag
   
   const sourceLang = card.sourceLang || 'en';
   
-  // Get all language texts - from explicit fields (new schema) or translations object (legacy)
   const jaContent = card.jaText || card.translations?.ja || '';
   const enContent = card.enText || card.translations?.en || '';
   const esContent = card.esText || card.translations?.es || '';
   
-  // Get source text based on sourceLang
   let sourceText = '';
   if (sourceLang === 'ja') {
     sourceText = card.sourceText || jaContent;
@@ -36,69 +40,80 @@ export function getFrontBack(card: Card, settings?: { nativeLang?: NativeLanguag
   
   let mode = learningMode;
   
-  // For mixed mode, pick randomly but consistently within session
   if (mode === 'mixed') {
     mode = seededRandom() > 0.5 ? 'passive' : 'active';
   }
   
   if (mode === 'passive') {
-    // Source → Native: show translations on back
     const backLines: string[] = [];
+    const backLangs: string[] = [];
     
-    // Add Japanese (unless source is Japanese)
     if (sourceLang !== 'ja' && jaContent) {
       backLines.push(jaContent);
+      backLangs.push('ja');
     }
     
-    // Add English (unless source is English)
     if (sourceLang !== 'en' && enContent) {
       backLines.push(enContent);
+      backLangs.push('en');
     }
     
-    // Add Spanish (unless source is Spanish)
     if (sourceLang !== 'es' && esContent) {
       backLines.push(esContent);
+      backLangs.push('es');
     }
+    
+    const firstBackLang = backLangs[0];
+    const firstBackText = backLines[0];
     
     return {
       front: sourceText || '(no text)',
-      back: backLines.join('\n\n') || '(no translations)'
+      back: backLines.join('\n\n') || '(no translations)',
+      frontLang: sourceLang,
+      backLang: firstBackLang,
+      jaContent,
+      enContent,
+      esContent,
+      sourceLang,
     };
   } else {
-    // Active: Native → Source
-    // Show translation on front, source on back
-    
-    // Determine front content based on sourceLang
-    // Default: show the translation that's NOT the source language
     let front = '';
+    let frontLang = '';
     if (sourceLang === 'ja') {
-      // If source is Japanese, show English on front
       front = enContent || esContent || jaContent || '(no text)';
+      frontLang = enContent ? 'en' : esContent ? 'es' : 'ja';
     } else if (sourceLang === 'en') {
-      // If source is English, show Japanese on front
       front = jaContent || esContent || enContent || '(no text)';
+      frontLang = jaContent ? 'ja' : esContent ? 'es' : 'en';
     } else if (sourceLang === 'es') {
-      // If source is Spanish, show Japanese or English on front
       front = jaContent || enContent || esContent || '(no text)';
+      frontLang = jaContent ? 'ja' : enContent ? 'en' : 'es';
     }
     
-    // Build back with source text and other translations
     let back = sourceText || '(no text)';
+    const backLines: string[] = [sourceText];
     
-    // Add other translations on back (only if different from source to avoid duplicates)
     if (sourceLang !== 'ja' && jaContent && jaContent !== sourceText) {
-      back += `\n\n${jaContent}`;
+      backLines.push(jaContent);
     }
     if (sourceLang !== 'en' && enContent && enContent !== sourceText) {
-      back += `\n\n${enContent}`;
+      backLines.push(enContent);
     }
     if (sourceLang !== 'es' && esContent && esContent !== sourceText) {
-      back += `\n\n${esContent}`;
+      backLines.push(esContent);
     }
+    
+    back = backLines.filter(Boolean).join('\n\n') || '(no text)';
     
     return {
       front,
-      back
+      back,
+      frontLang,
+      backLang: sourceLang,
+      jaContent,
+      enContent,
+      esContent,
+      sourceLang,
     };
   }
 }

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { getAuthHeaders } from '../services/auth';
 import { Search, ChevronDown, ChevronLeft, X, Plus } from 'lucide-react';
+import { AudioControls } from './AudioControls';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'https://kotolift.onrender.com';
 
@@ -429,7 +430,10 @@ export function VocabularyScreen({ onBack }: VocabularyScreenProps) {
               onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
             >
               <div>
-                <span style={{ fontWeight: 500, color: 'var(--text)' }}>{word.word}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
+                  <span style={{ fontWeight: 500, color: 'var(--text)' }}>{word.word}</span>
+                  <AudioControls text={word.word} lang="en" showPractice={false} />
+                </div>
                 <span style={{ 
                   fontSize: 'var(--font-sm)', 
                   color: 'var(--text-tertiary)',
@@ -616,9 +620,12 @@ function WordDetail({
         }}>
           {word.word}
         </h1>
-        <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--font-sm)' }}>
-          {word.part_of_speech}
-        </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
+          <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--font-sm)' }}>
+            {word.part_of_speech}
+          </p>
+          <AudioControls text={word.word} lang="en" showPractice={false} />
+        </div>
       </div>
 
       <div style={{ 

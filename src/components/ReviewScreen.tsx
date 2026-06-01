@@ -5,6 +5,7 @@ import { Stars } from './Stars';
 import type { Card, ReviewState, Rating, Language, ReviewDirection } from '../types';
 import { getCardSourceText, getCardTranslation } from '../types';
 import { X, ChevronDown, RotateCcw, Check, Zap } from 'lucide-react';
+import { AudioControls } from './AudioControls';
 
 const DIRECTIONS: { value: ReviewDirection; label: string; from: Language; to: Language }[] = [
   { value: 'ja-en', label: 'JA → EN', from: 'ja', to: 'en' },
@@ -275,6 +276,9 @@ export const ReviewScreen: React.FC<{ onExplain?: (card: Card) => void; onNaviga
 
   const promptText = getCardSourceText(currentCard.card) || getCardTranslation(currentCard.card, dir.from) || '';
   const answerText = getCardTranslation(currentCard.card, dir.to) || getCardSourceText(currentCard.card) || '';
+  const jaContent = currentCard.card.jaText || currentCard.card.translations?.ja || '';
+  const enContent = currentCard.card.enText || currentCard.card.translations?.en || '';
+  const esContent = currentCard.card.esText || currentCard.card.translations?.es || '';
   const progress = ((currentIndex + 1) / cards.length) * 100;
 
   return (
@@ -419,6 +423,21 @@ export const ReviewScreen: React.FC<{ onExplain?: (card: Card) => void; onNaviga
               }}>
                 {answerText}
               </p>
+
+              <div style={{ 
+                marginTop: 'var(--space-md)',
+                display: 'flex',
+                justifyContent: 'center'
+              }}>
+                <AudioControls
+                  text={dir.to === 'en' ? answerText : promptText}
+                  lang={dir.to === 'en' ? 'en' : dir.to === 'es' ? 'es' : 'ja'}
+                  showPractice={practiceMode}
+                  jaContent={jaContent}
+                  enContent={enContent}
+                  esContent={esContent}
+                />
+              </div>
 
               {currentCard.card.tags.length > 0 && (
                 <div style={{ 

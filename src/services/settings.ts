@@ -3,6 +3,7 @@ import { db } from '../db';
 export type NativeLanguage = 'en' | 'es' | 'ja';
 export type LearningMode = 'passive' | 'active' | 'mixed';
 export type SecondaryLanguage = 'en' | 'es' | 'ja';
+export type TTSLanguage = 'auto' | 'en' | 'ja' | 'es';
 
 export interface LearningSettings {
   nativeLang: NativeLanguage;
@@ -15,6 +16,7 @@ export interface LearningSettings {
   glassEnabled: boolean;
   avatar: string | null;
   secondaryLang: SecondaryLanguage;
+  preferredTTSLang: TTSLanguage;
 }
 
 const DEFAULTS: LearningSettings = {
@@ -28,6 +30,7 @@ const DEFAULTS: LearningSettings = {
   glassEnabled: true,
   avatar: null,
   secondaryLang: 'ja',
+  preferredTTSLang: 'auto',
 };
 
 async function readSettings(): Promise<LearningSettings> {
@@ -44,6 +47,7 @@ async function readSettings(): Promise<LearningSettings> {
       glassEnabled: stored.glassEnabled ?? true,
       avatar: stored.avatar || null,
       secondaryLang: stored.secondaryLang as SecondaryLanguage ?? 'ja',
+      preferredTTSLang: (stored.preferredTTSLang as TTSLanguage) || 'auto',
     };
   }
   // Migrate from legacy localStorage
@@ -62,7 +66,19 @@ function migrateLegacySettings(): LearningSettings {
   // Clean up
   ['settings.nativeLang','settings.learningMode','settings.preferWhisper','settings.quizSize','dailyQuiz.enabled','dailyQuiz.time']
     .forEach(k => localStorage.removeItem(k));
-  return { nativeLang, learningMode, preferWhisper, quizSize, dailyReminderEnabled, dailyReminderTime };
+  return {
+    nativeLang,
+    learningMode,
+    preferWhisper,
+    quizSize,
+    dailyReminderEnabled,
+    dailyReminderTime,
+    customBackground: null,
+    glassEnabled: true,
+    avatar: null,
+    secondaryLang: 'ja',
+    preferredTTSLang: 'auto',
+  };
 }
 
 async function patchSettings(patch: Partial<LearningSettings>): Promise<void> {
@@ -96,6 +112,7 @@ export function getLearningSettings(): LearningSettings {
     glassEnabled: true,
     avatar: null,
     secondaryLang: (localStorage.getItem('settings.secondaryLang') || DEFAULTS.secondaryLang) as SecondaryLanguage,
+    preferredTTSLang: (localStorage.getItem('settings.preferredTTSLang') as TTSLanguage) || 'auto',
   };
 }
 
@@ -165,4 +182,10 @@ export async function setSecondaryLang(lang: SecondaryLanguage): Promise<void> {
   await ensureCache();
   await patchSettings({ secondaryLang: lang });
   if (_cache) _cache.secondaryLang = lang;
+}
+
+export async function setPreferredTTSLang(lang: TTSLanguage): Promise<void> {
+  await ensureCache();
+  await patchSettings({ preferredTTSLang: lang });
+  if (_cache) _cache.preferredTTSLang = lang;
 }

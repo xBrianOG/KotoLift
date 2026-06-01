@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { getAllCards } from '../services/cards';
 import { getFrontBack } from '../services/learningDirection';
 import type { Card } from '../types';
+import { AudioControls } from './AudioControls';
 
 type DrillScreenProps = {
   cards?: Card[];
@@ -50,7 +51,15 @@ export function DrillScreen({ cards: initialCards }: DrillScreenProps) {
     );
   }
 
-  const { front, back } = getFrontBack(currentCard);
+  const { front, back, backLang, frontLang, jaContent, enContent, esContent } = getFrontBack(currentCard);
+  const langMap: Record<string, string> = {
+    'en': 'en',
+    'ja': 'ja',
+    'es': 'es',
+  };
+  const ttsLang = langMap[backLang || frontLang || 'en'] || 'en';
+  const backFirst = back.split('\n\n').find(line => line && !line.startsWith('(no ')) || '';
+  const ttsText = backFirst || front.split('\n\n').find(line => line && !line.startsWith('(no ')) || '';
 
   return (
     <div>
@@ -69,6 +78,16 @@ export function DrillScreen({ cards: initialCards }: DrillScreenProps) {
             <p style={{ fontSize: '1.5rem', marginTop: 16, textAlign: 'center', whiteSpace: 'pre-wrap' }}>
               {back}
             </p>
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 'var(--space-md)' }}>
+              <AudioControls
+                text={ttsText}
+                lang={ttsLang}
+                showPractice={true}
+                jaContent={jaContent}
+                enContent={enContent}
+                esContent={esContent}
+              />
+            </div>
           </>
         )}
         

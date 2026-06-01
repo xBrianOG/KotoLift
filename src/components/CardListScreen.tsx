@@ -498,9 +498,9 @@ function EditCardModal({ card, onSave, onClose }: EditCardModalProps) {
     await updateCard(card.id, {
       sourceText,
       translations: { ...card.translations, ...translationsUpdate },
-      jaText: sourceLang === 'ja' ? sourceText : (jaText || undefined),
-      enText: sourceLang === 'en' ? sourceText : (enText || undefined),
-      esText: sourceLang === 'es' ? sourceText : (esText || undefined),
+      jaText: sourceLang === 'ja' ? sourceText : (jaText.length > 0 ? jaText : null),
+      enText: sourceLang === 'en' ? sourceText : (enText.length > 0 ? enText : null),
+      esText: sourceLang === 'es' ? sourceText : (esText.length > 0 ? esText : null),
       tags: tags.split(',').map(t => t.trim()).filter(t => t),
       notes: notes.length > 0 ? notes : null
     });

@@ -9,8 +9,10 @@ import {
   setDailyReminder,
   setCustomBackground,
   setGlassEnabled,
+  setPreferredTTSLang,
   type NativeLanguage,
   type LearningMode,
+  type TTSLanguage,
   type LearningSettings,
 } from '../services/settings'
 import { getAllCards, createCard } from '../services/cards'
@@ -58,6 +60,11 @@ export function SettingsScreen({ onBack, onSignOut, settings: initialSettings, u
   const handlePreferWhisperChange = async (prefer: boolean) => {
     await setPreferWhisper(prefer)
     setSettings(s => s ? { ...s, preferWhisper: prefer } : s)
+  }
+
+  const handlePreferredTTSLangChange = async (lang: TTSLanguage) => {
+    await setPreferredTTSLang(lang)
+    setSettings(s => s ? { ...s, preferredTTSLang: lang } : s)
   }
 
   const handleReminderToggle = async () => {
@@ -204,6 +211,22 @@ export function SettingsScreen({ onBack, onSignOut, settings: initialSettings, u
             >
               <option value="captions">Prefer YouTube Captions</option>
               <option value="whisper">Always use Whisper</option>
+            </select>
+          </div>
+          <div className="flex-between p-md">
+            <div>
+              <span className="font-medium">TTS Voice</span>
+              <p className="text-xs text-secondary mt-xs">Auto speaks the card's target language</p>
+            </div>
+            <select
+              value={settings.preferredTTSLang}
+              onChange={(e) => handlePreferredTTSLangChange(e.target.value as TTSLanguage)}
+              className="bg-transparent border-none text-secondary text-right font-medium cursor-pointer outline-none"
+            >
+              <option value="auto">Auto</option>
+              <option value="en">English</option>
+              <option value="ja">Japanese</option>
+              <option value="es">Spanish</option>
             </select>
           </div>
         </div>
