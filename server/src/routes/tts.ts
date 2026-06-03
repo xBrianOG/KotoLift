@@ -36,6 +36,11 @@ const VOICE_BY_LANG: Record<string, string> = {
   es: 'shimmer',
 };
 
+const MIN_VALID_AUDIO_BYTES = 1000;
+const SHORT_TEXT_THRESHOLD = 8;
+const JA_VOICE_CHAIN: string[] = ['alloy', 'shimmer', 'onyx', 'nova'];
+const PAUSE_PREFIX = '… ';
+
 async function generateOpenAITTS(text: string, voice: string, model: string = 'tts-1'): Promise<Buffer | null> {
   if (!openai) {
     return null;
@@ -50,11 +55,45 @@ async function generateOpenAITTS(text: string, voice: string, model: string = 't
     });
 
     const buffer = Buffer.from(await response.arrayBuffer());
+    if (buffer.length < MIN_VALID_AUDIO_BYTES) {
+      console.error(`[TTS] OpenAI returned suspiciously small audio: ${buffer.length} bytes for text "${text}" (voice=${voice} model=${model})`);
+      return null;
+    }
     return buffer;
   } catch (err) {
     console.error('[TTS] OpenAI error:', err);
     return null;
   }
+}
+
+interface TTSAttempt {
+  buffer: Buffer;
+  source: string;
+}
+
+async function tryOpenAITTSChain(text: string, lang: string, preferredVoice?: string): Promise<TTSAttempt | null> {
+  const isShort = text.length <= SHORT_TEXT_THRESHOLD;
+  const defaultVoices = lang === 'ja' ? JA_VOICE_CHAIN : [VOICE_BY_LANG[lang] || 'alloy'];
+  const voices = preferredVoice && !defaultVoices.includes(preferredVoice)
+    ? [preferredVoice, ...defaultVoices]
+    : defaultVoices;
+  const model = 'tts-1';
+
+  for (const voice of voices) {
+    const buf = await generateOpenAITTS(text, voice, model);
+    if (buf) {
+      return { buffer: buf, source: `openai:${voice}:${model}` };
+    }
+  }
+
+  if (isShort) {
+    const buf = await generateOpenAITTS(PAUSE_PREFIX + text, voices[0], model);
+    if (buf) {
+      return { buffer: buf, source: `openai:pause-prefix:${voices[0]}:${model}` };
+    }
+  }
+
+  return null;
 }
 
 async function generateMacOSTTS(text: string, voice: string, rate: number): Promise<Buffer | null> {
@@ -147,10 +186,7 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'text too long' });
     }
 
-    const openaiVoice = voice || VOICE_BY_LANG[lang] || 'alloy';
-    const model = 'tts-1';
-
-    const cacheKey = hashText(text, openaiVoice, rate, model);
+    const cacheKey = hashText(text, lang, rate, 'tts-1');
     const cachePath = join(CACHE_DIR, `${cacheKey}.wav`);
 
     if (existsSync(cachePath)) {
@@ -169,35 +205,48 @@ router.post('/', async (req, res) => {
       } catch (e) {}
     }
 
-    let audioBuffer = await generateOpenAITTS(text, openaiVoice, model);
-    let ttsSource = 'openai';
+    const result = await tryOpenAITTSChain(text, lang, voice);
+    let audioBuffer = result?.buffer ?? null;
+    let ttsSource = result?.source ?? 'failed';
 
-    if (!audioBuffer) {
-      console.log('[TTS] OpenAI failed, falling back to macOS say');
-      const fallbackVoice = lang === 'ja' ? 'Kyoko' : lang === 'es' ? 'Mónica' : 'Samantha';
-      audioBuffer = await generateMacOSTTS(text, fallbackVoice, rate);
-      ttsSource = 'say';
-    }
+    if (audioBuffer) {
+      try {
+        writeFileSync(cachePath, audioBuffer);
+      } catch (e) {}
 
-    if (!audioBuffer) {
-      return res.status(503).json({ 
-        error: 'TTS unavailable',
-        message: 'Both OpenAI TTS and macOS TTS failed. Use browser SpeechSynthesis instead.'
+      res.set({
+        'Content-Type': 'audio/wav',
+        'Content-Length': String(audioBuffer.length),
+        'Cache-Control': 'public, max-age=86400',
+        'Accept-Ranges': 'bytes',
+        'X-TTS-Source': ttsSource,
       });
+      return res.send(audioBuffer);
     }
 
-    try {
-      writeFileSync(cachePath, audioBuffer);
-    } catch (e) {}
+    if (process.platform === 'darwin') {
+      console.log('[TTS] OpenAI chain exhausted, trying macOS say (local dev)');
+      const fallbackVoice = lang === 'ja' ? 'Kyoko' : lang === 'es' ? 'Mónica' : 'Samantha';
+      const sayBuffer = await generateMacOSTTS(text, fallbackVoice, rate);
+      if (sayBuffer) {
+        const sayCacheKey = hashText(text, `say:${fallbackVoice}`, rate, 'say');
+        const sayCachePath = join(CACHE_DIR, `${sayCacheKey}.wav`);
+        try { writeFileSync(sayCachePath, sayBuffer); } catch (e) {}
+        res.set({
+          'Content-Type': 'audio/wav',
+          'Content-Length': String(sayBuffer.length),
+          'Cache-Control': 'public, max-age=86400',
+          'Accept-Ranges': 'bytes',
+          'X-TTS-Source': `say:${fallbackVoice}`,
+        });
+        return res.send(sayBuffer);
+      }
+    }
 
-    res.set({
-      'Content-Type': 'audio/wav',
-      'Content-Length': String(audioBuffer.length),
-      'Cache-Control': 'public, max-age=86400',
-      'Accept-Ranges': 'bytes',
-      'X-TTS-Source': ttsSource,
+    return res.status(503).json({
+      error: 'TTS unavailable',
+      message: 'OpenAI TTS chain exhausted (all voices returned empty audio) and no platform fallback is available on this host.',
     });
-    res.send(audioBuffer);
   } catch (err) {
     console.error('[TTS] route error:', err);
     res.status(500).json({ error: 'Internal error' });
