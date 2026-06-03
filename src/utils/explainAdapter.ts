@@ -1,4 +1,4 @@
-import type { ExplainResponse } from "../types";
+import type { ExplainResponse, TatoebaExample } from "../types";
 
 export function normalizeExplainResponse(input: any): ExplainResponse {
   const detected_language = input?.detected_language ?? input?.language ?? 'ja';
@@ -23,6 +23,17 @@ export function normalizeExplainResponse(input: any): ExplainResponse {
     tags: input?.suggested_tags ?? [],
   };
 
+  const rawExamples = Array.isArray(input?.examples) ? input.examples : [];
+  const examples: TatoebaExample[] = rawExamples
+    .map((e: any): TatoebaExample | null => {
+      const ja = typeof e?.ja === 'string' ? e.ja : '';
+      const en = typeof e?.en === 'string' ? e.en : '';
+      const es = typeof e?.es === 'string' ? e.es : '';
+      if (!ja && !en && !es) return null;
+      return { ja, en, es };
+    })
+    .filter((e: TatoebaExample | null): e is TatoebaExample => e !== null);
+
   return {
     detected_language,
     translations,
@@ -32,5 +43,6 @@ export function normalizeExplainResponse(input: any): ExplainResponse {
     alternatives,
     mistakes,
     suggested_flashcard,
+    examples,
   };
 }

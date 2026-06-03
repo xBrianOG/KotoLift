@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import type { FormEvent } from "react";
-import type { ExplainResponse } from "../types";
+import type { ExplainResponse, TatoebaExample } from "../types";
 import { normalizeExplainResponse } from "../utils/explainAdapter";
 import { Accordion } from "./Accordion";
 
@@ -39,6 +39,10 @@ export function ExplainScreen({ initialSentence }: { initialSentence?: string } 
   const [includeEn, setIncludeEn] = useState(true);
   const [includeEs, setIncludeEs] = useState(true);
 
+  const [addedExamples, setAddedExamples] = useState<Set<number>>(new Set());
+  const [addingExampleIdx, setAddingExampleIdx] = useState<number | null>(null);
+  const [exampleError, setExampleError] = useState<string | null>(null);
+
   useEffect(() => {
     if (initialSentence) setSentence(initialSentence);
     try {
@@ -70,6 +74,9 @@ export function ExplainScreen({ initialSentence }: { initialSentence?: string } 
     setError(null);
     setResult(null);
     setCardAdded(false);
+    setAddedExamples(new Set());
+    setAddingExampleIdx(null);
+    setExampleError(null);
 
     log("[ExplainScreen] Starting explain request");
     log("[ExplainScreen] Sentence:", sentence.trim());
@@ -149,6 +156,52 @@ export function ExplainScreen({ initialSentence }: { initialSentence?: string } 
     const card = await createCard(front, enText, esText, tags, undefined, sourceLang, undefined, undefined, undefined, jaText);
     await ensureReviewStates(card);
     setCardAdded(true);
+  };
+
+  const handleAddExampleAsCard = async (example: TatoebaExample, idx: number) => {
+    if (!result) return;
+    if (addingExampleIdx !== null || addedExamples.has(idx)) return;
+
+    setExampleError(null);
+    setAddingExampleIdx(idx);
+    try {
+      const { createCard } = await import('../services/cards');
+      const { ensureReviewStates } = await import('../services/review');
+
+      const sourceLang = result.detected_language;
+      const sourceText =
+        sourceLang === 'ja' ? example.ja :
+        sourceLang === 'en' ? example.en :
+                              example.es;
+      if (!sourceText) {
+        setExampleError('Example has no source-language text');
+        return;
+      }
+
+      const baseTags = result.suggested_flashcard?.tags ?? [];
+      const tags = [...baseTags, 'from-explain'];
+
+      const card = await createCard(
+        sourceText,
+        example.en,
+        example.es,
+        tags,
+        undefined,
+        sourceLang,
+        undefined, undefined, undefined,
+        example.ja,
+      );
+      await ensureReviewStates(card);
+      setAddedExamples((prev) => {
+        const next = new Set(prev);
+        next.add(idx);
+        return next;
+      });
+    } catch (e) {
+      setExampleError(e instanceof Error ? e.message : 'Failed to add card');
+    } finally {
+      setAddingExampleIdx(null);
+    }
   };
 
   const selectedCount = [includeJa, includeEn, includeEs].filter(Boolean).length;
@@ -247,6 +300,40 @@ export function ExplainScreen({ initialSentence }: { initialSentence?: string } 
                 </div>
               ))}
             </div>
+          </Accordion>
+
+          <Accordion title={`Examples${result.examples?.length ? ` (${result.examples.length})` : ''}`}>
+            {result.examples?.length ? (
+              <div className="flex-col gap-lg">
+                {result.examples.map((ex, i) => {
+                  const isAdded = addedExamples.has(i);
+                  const isAdding = addingExampleIdx === i;
+                  return (
+                    <div key={i} className="flex-col gap-xs" style={{ paddingBottom: 'var(--space-sm)', borderBottom: i < result.examples!.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                      {ex.ja && <p className="mb-xs"><span className="lang-badge text-xs mr-sm border-none bg-surface">JA</span> {ex.ja}</p>}
+                      {ex.en && <p className="mb-xs"><span className="lang-badge text-xs mr-sm border-none bg-surface">EN</span> {ex.en}</p>}
+                      {ex.es && <p><span className="lang-badge text-xs mr-sm border-none bg-surface">ES</span> {ex.es}</p>}
+                      <div className="flex-center" style={{ justifyContent: 'flex-end', marginTop: 'var(--space-xs)' }}>
+                        <button
+                          type="button"
+                          onClick={() => handleAddExampleAsCard(ex, i)}
+                          disabled={isAdded || isAdding || addingExampleIdx !== null}
+                          className={`btn ${isAdded ? 'btn-secondary' : 'btn-success'}`}
+                          style={{ padding: 'var(--space-xs) var(--space-sm)', fontSize: 'var(--font-sm)' }}
+                        >
+                          {isAdded ? '✓ Added' : isAdding ? 'Adding…' : 'Add as Card'}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+                {exampleError && (
+                  <p className="text-sm" style={{ color: 'var(--danger)' }}>{exampleError}</p>
+                )}
+              </div>
+            ) : (
+              <p className="text-secondary text-sm">No examples found for this word.</p>
+            )}
           </Accordion>
 
           <Accordion title="Mistakes">

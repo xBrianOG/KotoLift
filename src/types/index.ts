@@ -66,6 +66,12 @@ export interface ExplainRequest {
   focus: 'english' | 'spanish' | 'both';
 }
 
+export interface TatoebaExample {
+  ja: string;
+  en: string;
+  es: string;
+}
+
 export interface ExplainResponse {
   detected_language: 'ja' | 'en' | 'es';
   translations: { ja: string; en: string; es: string };
@@ -75,4 +81,5 @@ export interface ExplainResponse {
   alternatives: Array<{ tone: 'neutral' | 'casual' | 'formal'; ja: string; en: string; es: string }>;
   mistakes: string[];
   suggested_flashcard: { ja: string; en: string; es: string; tags: string[] };
+  examples?: TatoebaExample[];
 }

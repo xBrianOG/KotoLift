@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import OpenAI from 'openai';
+import { fetchExamples, type ExampleSourceLang } from '../services/tatoeba.js';
 
 const router = Router();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || '' });
@@ -102,6 +103,18 @@ Rules:
     }
 
     const parsed = JSON.parse(content);
+
+    const detected = (parsed?.detected_language || 'ja') as ExampleSourceLang;
+    const queryForExamples =
+      (typeof parsed?.translations?.[detected] === 'string' && parsed.translations[detected]) ||
+      sentence.trim();
+    try {
+      parsed.examples = await fetchExamples(queryForExamples, detected, 3);
+    } catch (e) {
+      console.warn('[Explain] Tatoeba lookup failed:', e);
+      parsed.examples = [];
+    }
+
     return res.json(parsed);
   } catch (e: any) {
     console.error('[Explain] Error:', e.message);

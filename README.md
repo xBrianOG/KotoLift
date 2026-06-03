@@ -72,13 +72,13 @@ Or deploy to Vercel/Cloudflare Pages for full PWA experience.
 
 ### Backend Setup
 
-The Explain feature uses **Google Gemini API** (free tier: 15 requests/minute, 1500 requests/day).
+The Explain feature uses the **OpenAI API** (gpt-4o-mini) for translations, grammar, vocabulary, and alternatives. Example sentences are sourced from the free, public [Tatoeba](https://tatoeba.org) API — no key required.
 
 #### Option 1: Vercel Deployment (Recommended)
 
-1. Get a free Gemini API key:
-   - Go to [Google AI Studio](https://makersuite.google.com/app/apikey)
-   - Click "Create API Key"
+1. Get an OpenAI API key:
+   - Go to [OpenAI API Keys](https://platform.openai.com/settings)
+   - Click "Create new secret key"
    - Copy your API key
 
 2. Deploy to Vercel:
@@ -91,12 +91,13 @@ The Explain feature uses **Google Gemini API** (free tier: 15 requests/minute, 1
 3. Set the environment variable:
 
    ```bash
-   vercel env add GEMINI_API_KEY
+   vercel env add OPENAI_API_KEY
    ```
 
-   Paste your Gemini API key when prompted.
+   Paste your OpenAI API key when prompted.
 
 4. Redeploy:
+
    ```bash
    vercel --prod
    ```
@@ -112,9 +113,9 @@ The Explain feature uses **Google Gemini API** (free tier: 15 requests/minute, 1
 4. Add the namespace ID to `wrangler.toml`
 5. Set the API key:
    ```bash
-   wrangler secret put GEMINI_API_KEY
+   wrangler secret put OPENAI_API_KEY
    ```
-   Enter your Gemini API key when prompted.
+   Enter your OpenAI API key when prompted.
 6. Deploy:
    ```bash
    wrangler deploy
