@@ -34,7 +34,7 @@ const TATOEBA_BASE = 'https://api.tatoeba.org/v1/sentences';
 const DEFAULT_TIMEOUT_MS = 2500;
 const DEFAULT_LIMIT = 3;
 
-function exampleFromSentence(s: TatoebaSentence, sourceLang: ExampleSourceLang): TatoebaExample | null {
+function exampleFromSentence(s: TatoebaSentence, sourceLang: ExampleSourceLang): TatoebaExample {
   const result: TatoebaExample = { ja: '', en: '', es: '' };
   result[sourceLang] = s.text;
   for (const tr of s.translations || []) {
@@ -42,7 +42,6 @@ function exampleFromSentence(s: TatoebaSentence, sourceLang: ExampleSourceLang):
     else if (tr.lang === 'eng') result.en = tr.text;
     else if (tr.lang === 'spa') result.es = tr.text;
   }
-  if (!result.ja || !result.en || !result.es) return null;
   return result;
 }
 
@@ -60,9 +59,19 @@ export async function fetchExamples(
     .filter((l) => l !== sourceLang)
     .map((l) => LANG_TO_TATOEBA[l]);
 
-  // Tatoeba filter semantics: `trans:lang=a,b` is OR within a group, AND
-  // across groups. To require *both* languages we use one group per lang.
-  // see https://api.tatoeba.org/openapi (paths./v1/sentences.parameters)
+  const strict = await search(trimmed, tatoebaSource, otherLangs, limit, timeoutMs);
+  if (strict.length > 0) return strict;
+
+  return searchLoose(trimmed, tatoebaSource, otherLangs, limit, timeoutMs);
+}
+
+async function search(
+  query: string,
+  tatoebaSource: 'jpn' | 'eng' | 'spa',
+  otherLangs: Array<'jpn' | 'eng' | 'spa'>,
+  limit: number,
+  timeoutMs: number,
+): Promise<TatoebaExample[]> {
   const url = new URL(TATOEBA_BASE);
   url.searchParams.set('lang', tatoebaSource);
   otherLangs.forEach((code, i) => {
@@ -70,13 +79,38 @@ export async function fetchExamples(
     url.searchParams.set(`trans:${n}:lang`, code);
     url.searchParams.set(`showtrans:${n}:lang`, code);
   });
-  url.searchParams.set('q', trimmed);
+  url.searchParams.set('q', query);
   url.searchParams.set('sort', 'relevance');
   url.searchParams.set('limit', String(Math.max(limit * 2, limit)));
+  return runSearch(url, query, tatoebaSource, limit, timeoutMs);
+}
 
+async function searchLoose(
+  query: string,
+  tatoebaSource: 'jpn' | 'eng' | 'spa',
+  otherLangs: Array<'jpn' | 'eng' | 'spa'>,
+  limit: number,
+  timeoutMs: number,
+): Promise<TatoebaExample[]> {
+  const url = new URL(TATOEBA_BASE);
+  url.searchParams.set('lang', tatoebaSource);
+  url.searchParams.set('trans:lang', otherLangs.join(','));
+  url.searchParams.set('showtrans:lang', otherLangs.join(','));
+  url.searchParams.set('q', query);
+  url.searchParams.set('sort', 'relevance');
+  url.searchParams.set('limit', String(Math.max(limit * 3, limit)));
+  return runSearch(url, query, tatoebaSource, limit, timeoutMs);
+}
+
+async function runSearch(
+  url: URL,
+  trimmed: string,
+  tatoebaSource: 'jpn' | 'eng' | 'spa',
+  limit: number,
+  timeoutMs: number,
+): Promise<TatoebaExample[]> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
-
   try {
     const response = await fetch(url.toString(), { signal: controller.signal });
     if (!response.ok) {
@@ -88,8 +122,7 @@ export async function fetchExamples(
 
     return data.data
       .filter((s) => s.lang === tatoebaSource)
-      .map((s) => exampleFromSentence(s, sourceLang))
-      .filter((e): e is TatoebaExample => e !== null)
+      .map((s) => exampleFromSentence(s, thisLang(tatoebaSource)))
       .slice(0, limit);
   } catch (err) {
     if (err instanceof Error && err.name === 'AbortError') {
@@ -101,4 +134,10 @@ export async function fetchExamples(
   } finally {
     clearTimeout(timer);
   }
+}
+
+function thisLang(code: 'jpn' | 'eng' | 'spa'): ExampleSourceLang {
+  if (code === 'jpn') return 'ja';
+  if (code === 'eng') return 'en';
+  return 'es';
 }
