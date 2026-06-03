@@ -43,18 +43,44 @@ function getCookieFile(): string | null {
 
 function isRateLimitError(e: any): boolean {
   const msg = e.message || '';
-  return msg.includes('rate') || 
-         msg.includes('429') || 
+  return msg.includes('rate') ||
+         msg.includes('429') ||
          msg.includes('Too many requests') ||
          msg.includes('requests in a short period');
 }
 
+/**
+ * YouTube's anti-bot message wraps the actual cause inside a "Could not
+ * retrieve a transcript for the video ... This is most likely caused by:
+ * The video is unplayable for the following reason: Sign in to confirm
+ * you're not a bot" string. This is a TRANSIENT scrape-side block, not a
+ * missing-captions condition. yt-dlp can usually get past it (it uses a
+ * different fetch path), so we route it through the fallback.
+ */
+function isBotBlockError(e: any): boolean {
+  const msg = e.message || '';
+  return msg.includes("you're not a bot") ||
+         msg.includes('Sign in to confirm') ||
+         msg.includes('not a bot') ||
+         msg.includes('Consent cookie') ||
+         msg.includes('PO Token');
+}
+
+/**
+ * The library says "no captions exist for this video" when the video
+ * has captions disabled or none were published. yt-dlp cannot conjure
+ * captions that don't exist, so we skip the fallback in this case.
+ * Note: "Could not retrieve" used to match here, but the library also
+ * wraps its bot-block message with that phrase — hence the
+ * isBotBlockError check above taking precedence.
+ */
 function isNoTranscriptError(e: any): boolean {
   const msg = e.message || '';
-  return msg.includes('No transcript') || 
-         msg.includes('no captions') ||
-         msg.includes('not available') ||
-         msg.includes('could not retrieve');
+  if (isBotBlockError(e)) return false;
+  return msg.includes('No transcript was found') ||
+         msg.includes('Transcript is disabled') ||
+         msg.includes('No transcripts were found') ||
+         msg.includes('Subtitles are disabled');
 }
 
 function cleanCache(): void {
