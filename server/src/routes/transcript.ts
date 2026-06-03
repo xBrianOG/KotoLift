@@ -27,14 +27,31 @@ const SUCCESS_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 const FAILURE_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 // Helper functions
+let cachedCookieFile: string | null = null;
+let cachedCookieHash: string | null = null;
+
 function getCookieFile(): string | null {
   const cookiesEnv = process.env.YOUTUBE_COOKIES;
   if (!cookiesEnv) return null;
-  
+
+  const trimmed = cookiesEnv.trim();
+  // Cheap content hash so we only re-write the temp file when the
+  // env var actually changes (vs. on every request).
+  let hash = 0;
+  for (let i = 0; i < trimmed.length; i++) {
+    hash = ((hash << 5) - hash + trimmed.charCodeAt(i)) | 0;
+  }
+  const hashStr = String(hash);
+
+  if (cachedCookieFile && cachedCookieHash === hashStr) {
+    return cachedCookieFile;
+  }
+
   try {
-    const cookies = cookiesEnv.trim();
     const tmpFile = join(tmpdir(), 'yt_cookies.txt');
-    writeFileSync(tmpFile, cookies, 'utf-8');
+    writeFileSync(tmpFile, trimmed, 'utf-8');
+    cachedCookieFile = tmpFile;
+    cachedCookieHash = hashStr;
     return tmpFile;
   } catch {
     return null;
@@ -169,12 +186,33 @@ function parseVtt(vtt: string): ParsedVttSegment[] {
  * Fall back to yt-dlp when the JS transcript library gets rate-limited or
  * the video has no usable captions through the unofficial API. yt-dlp is
  * already installed in the Docker image. Returns null on failure.
+ *
+ * Tries multiple YouTube player clients in order. The default 'web'
+ * client is the most aggressively anti-bot-scraped. 'mediaconnect'
+ * and 'ios' have much weaker bot detection and are usually
+ * successful when the web client gets the 'Sign in to confirm'
+ * block. We try them in sequence and return the first success.
  */
 async function tryYtDlp(
   videoId: string,
   lang: string,
   cookieFile: string | null,
   timeoutMs = 12000,
+): Promise<ParsedVttSegment[] | null> {
+  const PLAYER_CLIENTS = ['mediaconnect', 'ios', 'tv', 'web'];
+  for (const client of PLAYER_CLIENTS) {
+    const result = await tryYtDlpWithClient(videoId, lang, cookieFile, client, timeoutMs);
+    if (result && result.length > 0) return result;
+  }
+  return null;
+}
+
+async function tryYtDlpWithClient(
+  videoId: string,
+  lang: string,
+  cookieFile: string | null,
+  playerClient: string,
+  timeoutMs: number,
 ): Promise<ParsedVttSegment[] | null> {
   const workDir = join(tmpdir(), `yt-dlp-${randomBytes(6).toString('hex')}`);
   try {
@@ -192,6 +230,7 @@ async function tryYtDlp(
     '--convert-subs', 'vtt',
     '--no-warnings',
     '--no-playlist',
+    '--extractor-args', `youtube:player_client=${playerClient}`,
     '-o', outTemplate,
   ];
   if (cookieFile) {
@@ -207,7 +246,7 @@ async function tryYtDlp(
     const timer = setTimeout(() => {
       try { proc.kill('SIGKILL'); } catch { /* ignore */ }
       cleanup();
-      console.warn(`[Transcript] yt-dlp timeout for ${videoId}`);
+      console.warn(`[Transcript] yt-dlp timeout (client=${playerClient}) for ${videoId}`);
       resolve(null);
     }, timeoutMs);
 
@@ -224,13 +263,13 @@ async function tryYtDlp(
 
     proc.on('error', (e) => {
       cleanup();
-      console.warn(`[Transcript] yt-dlp spawn error: ${e.message}`);
+      console.warn(`[Transcript] yt-dlp spawn error (client=${playerClient}): ${e.message}`);
       resolve(null);
     });
     proc.on('close', (code) => {
       if (code !== 0) {
         cleanup();
-        console.warn(`[Transcript] yt-dlp exit ${code}: ${stderr.slice(-200)}`);
+        console.warn(`[Transcript] yt-dlp exit ${code} (client=${playerClient}): ${stderr.slice(-200)}`);
         resolve(null);
         return;
       }
@@ -239,7 +278,7 @@ async function tryYtDlp(
         const vttFile = files.find((f) => f.endsWith('.vtt'));
         if (!vttFile) {
           cleanup();
-          console.warn(`[Transcript] yt-dlp produced no .vtt for ${videoId}`);
+          console.warn(`[Transcript] yt-dlp produced no .vtt (client=${playerClient}) for ${videoId}`);
           resolve(null);
           return;
         }
@@ -247,14 +286,15 @@ async function tryYtDlp(
         const parsed = parseVtt(vttContent);
         cleanup();
         if (parsed.length === 0) {
-          console.warn(`[Transcript] yt-dlp vtt had no usable cues for ${videoId}`);
+          console.warn(`[Transcript] yt-dlp vtt had no usable cues (client=${playerClient}) for ${videoId}`);
           resolve(null);
           return;
         }
+        console.log(`[Transcript] yt-dlp succeeded (client=${playerClient}) for ${videoId}: ${parsed.length} segments`);
         resolve(parsed);
       } catch (e) {
         cleanup();
-        console.warn(`[Transcript] yt-dlp post-process error: ${e instanceof Error ? e.message : e}`);
+        console.warn(`[Transcript] yt-dlp post-process error (client=${playerClient}): ${e instanceof Error ? e.message : e}`);
         resolve(null);
       }
     });
@@ -396,6 +436,8 @@ router.get('/:videoId', async (req, res) => {
       // Fall back to yt-dlp for anything that isn't definitively "no
       // captions exist" — yt-dlp can usually get past rate-limit and
       // bot-block, and is worth a try for unknown errors too.
+      // tryYtDlp internally tries multiple player clients
+      // (mediaconnect → ios → tv → web) in order.
       let ytdlpSegments: ParsedVttSegment[] | null = null;
       if (!noTranscript) {
         console.log(`[Transcript] Library failed, trying yt-dlp fallback for ${videoId}`);
@@ -419,7 +461,7 @@ router.get('/:videoId', async (req, res) => {
             method: 'yt-dlp auto-captions',
           };
         }
-        console.log(`[Transcript] yt-dlp fallback also failed for ${videoId}`);
+        console.log(`[Transcript] yt-dlp fallback exhausted all clients for ${videoId}`);
       }
 
       // Determine error type and cache appropriately
