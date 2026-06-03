@@ -5,6 +5,8 @@ import { normalizeExplainResponse } from "../utils/explainAdapter";
 import { Accordion } from "./Accordion";
 
 const API_URL = import.meta.env.VITE_EXPLAIN_API_URL || "/api/explain";
+const API_BASE = (import.meta as any).env?.VITE_API_BASE || "https://kotolift.onrender.com";
+const REGENERATE_URL = `${API_BASE}/api/regenerate-examples`;
 
 const log = (...args: unknown[]) => {
   if (import.meta.env.DEV) {
@@ -42,6 +44,7 @@ export function ExplainScreen({ initialSentence }: { initialSentence?: string } 
   const [addedExamples, setAddedExamples] = useState<Set<number>>(new Set());
   const [addingExampleIdx, setAddingExampleIdx] = useState<number | null>(null);
   const [exampleError, setExampleError] = useState<string | null>(null);
+  const [regenerating, setRegenerating] = useState(false);
 
   useEffect(() => {
     if (initialSentence) setSentence(initialSentence);
@@ -204,6 +207,37 @@ export function ExplainScreen({ initialSentence }: { initialSentence?: string } 
     }
   };
 
+  const handleRegenerateExamples = async () => {
+    if (!result || regenerating) return;
+    setRegenerating(true);
+    setExampleError(null);
+    try {
+      const response = await fetch(REGENERATE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sentence: sentence.trim(),
+          detected_language: result.detected_language,
+          translations: result.translations,
+          current_examples: result.examples ?? [],
+        }),
+      });
+      if (!response.ok) {
+        const errBody = await response.json().catch(() => ({}));
+        throw new Error(errBody.error || `HTTP ${response.status}`);
+      }
+      const data = await response.json();
+      const next = Array.isArray(data.examples) ? data.examples : [];
+      if (next.length === 0) throw new Error('No examples returned');
+      setResult({ ...result, examples: next });
+      setAddedExamples(new Set());
+    } catch (e) {
+      setExampleError(e instanceof Error ? e.message : 'Failed to regenerate');
+    } finally {
+      setRegenerating(false);
+    }
+  };
+
   const selectedCount = [includeJa, includeEn, includeEs].filter(Boolean).length;
 
   return (
@@ -303,6 +337,20 @@ export function ExplainScreen({ initialSentence }: { initialSentence?: string } 
           </Accordion>
 
           <Accordion title={`Examples${result.examples?.length ? ` (${result.examples.length})` : ''}`}>
+            {result.examples?.length && (
+              <div className="flex-center" style={{ justifyContent: 'flex-end', marginBottom: 'var(--space-sm)' }}>
+                <button
+                  type="button"
+                  onClick={handleRegenerateExamples}
+                  disabled={regenerating}
+                  className="btn btn-subtle"
+                  style={{ padding: 'var(--space-xs) var(--space-sm)', fontSize: 'var(--font-sm)' }}
+                  title="Generate a fresh set of example sentences"
+                >
+                  {regenerating ? 'Regenerating…' : '↻ Regenerate'}
+                </button>
+              </div>
+            )}
             {result.examples?.length ? (
               <div className="flex-col gap-lg">
                 {result.examples.map((ex, i) => {

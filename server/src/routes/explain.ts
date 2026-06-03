@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import OpenAI from 'openai';
-import { fetchExamples, type ExampleSourceLang } from '../services/tatoeba.js';
 
 const router = Router();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || '' });
@@ -68,7 +67,12 @@ Return a JSON object with this exact structure:
     "en": "<English translation>",
     "es": "<Spanish translation>",
     "tags": ["<relevant tag 1>", "<relevant tag 2>"]
-  }
+  },
+  "examples": [
+    { "ja": "<short example sentence in Japanese>", "en": "<English translation>", "es": "<Spanish translation>" },
+    { "ja": "<short example sentence in Japanese>", "en": "<English translation>", "es": "<Spanish translation>" },
+    { "ja": "<short example sentence in Japanese>", "en": "<English translation>", "es": "<Spanish translation>" }
+  ]
 }
 
 Rules:
@@ -81,7 +85,8 @@ Rules:
 - suggested_flashcard: create a useful flashcard (front in original language, back in other languages)
 - score_1_to_5: 5 = perfectly natural, 1 = very unnatural/incorrect
 - tags should be short (1-2 words), lowercase, no spaces (use hyphens). Include: grammar, vocabulary, or specific topics like "particles", "verb-conjugation", "keigo", "casual-speech", etc.
-- mistakes array should be empty if no mistakes, never null`;
+- mistakes array should be empty if no mistakes, never null
+- examples: provide 3 short, natural-sounding example sentences that show the input word/phrase being used in real context. Each example MUST use the input word/phrase in the user's INTENDED meaning (e.g. "commitment" as in promise/obligation, not "committed" as in suicide). Provide all three languages for each example. Keep examples short (under 60 chars per language).`;
 
   const userPrompt = `Sentence to analyze: ${sentence.trim()}`;
 
@@ -93,7 +98,7 @@ Rules:
         { role: 'user', content: userPrompt }
       ],
       response_format: { type: 'json_object' },
-      max_tokens: 2000,
+      max_tokens: 2500,
       temperature: 0.7
     });
 
@@ -102,20 +107,7 @@ Rules:
       return res.status(500).json({ error: 'No response from OpenAI' });
     }
 
-    const parsed = JSON.parse(content);
-
-    const detected = (parsed?.detected_language || 'ja') as ExampleSourceLang;
-    const queryForExamples =
-      (typeof parsed?.translations?.[detected] === 'string' && parsed.translations[detected]) ||
-      sentence.trim();
-    try {
-      parsed.examples = await fetchExamples(queryForExamples, detected, 3);
-    } catch (e) {
-      console.warn('[Explain] Tatoeba lookup failed:', e);
-      parsed.examples = [];
-    }
-
-    return res.json(parsed);
+    return res.json(JSON.parse(content));
   } catch (e: any) {
     console.error('[Explain] Error:', e.message);
     return res.status(500).json({ error: e.message || 'Failed to generate explanation' });

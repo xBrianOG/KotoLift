@@ -72,7 +72,7 @@ Or deploy to Vercel/Cloudflare Pages for full PWA experience.
 
 ### Backend Setup
 
-The Explain feature uses the **OpenAI API** (gpt-4o-mini) for translations, grammar, vocabulary, and alternatives. Example sentences are sourced from the free, public [Tatoeba](https://tatoeba.org) API — no key required.
+The Explain feature uses the **OpenAI API** (gpt-4o-mini) for translations, grammar, vocabulary, alternatives, and example sentences — everything is generated in a single call. There is a separate `POST /api/regenerate-examples` endpoint for getting a fresh set of examples on demand (used by the "Regenerate" button in the UI).
 
 #### Option 1: Vercel Deployment (Recommended)
 

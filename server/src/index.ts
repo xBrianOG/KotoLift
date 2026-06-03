@@ -21,6 +21,7 @@ import categoriesRouter from "./routes/categories.js";
 import progressRouter from "./routes/progress.js";
 import flashcardsRouter from "./routes/flashcards.js";
 import ttsRouter from "./routes/tts.js";
+import regenerateExamplesRouter from "./routes/regenerateExamples.js";
 import cors from "cors";
 import fs from "fs";
 
@@ -65,6 +66,7 @@ app.use("/api/categories", categoriesRouter);
 app.use("/api/progress", progressRouter);
 app.use("/api/flashcards", flashcardsRouter);
 app.use("/api/tts", ttsRouter);
+app.use("/api/regenerate-examples", regenerateExamplesRouter);
 
 app.get("/api/health", (req, res) => {
   res.json({ 

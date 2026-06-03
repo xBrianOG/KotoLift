@@ -1,5 +1,4 @@
 import OpenAI from "openai";
-import { fetchExamples, type ExampleSourceLang } from "./lib/tatoeba";
 
 export default async function handler(req: any, res: any) {
   // CORS Headers
@@ -61,8 +60,15 @@ Return STRICT JSON only:
     "en": "...",
     "es": "...",
     "tags": ["..."]
-  }
-}`;
+  },
+  "examples": [
+    { "ja": "short example sentence", "en": "English translation", "es": "Spanish translation" },
+    { "ja": "short example sentence", "en": "English translation", "es": "Spanish translation" },
+    { "ja": "short example sentence", "en": "English translation", "es": "Spanish translation" }
+  ]
+}
+
+Use the input word/phrase in the user's INTENDED meaning (e.g. "commitment" as in promise/obligation, not "committed" as in suicide). Examples should be short (under 60 chars per language), natural, and contextually varied.`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
@@ -84,20 +90,7 @@ Return STRICT JSON only:
       throw new Error("No response from OpenAI");
     }
 
-    const parsed = JSON.parse(content);
-
-    const detected = (parsed?.detected_language || "ja") as ExampleSourceLang;
-    const queryForExamples =
-      (typeof parsed?.translations?.[detected] === "string" && parsed.translations[detected]) ||
-      String(sentence).trim();
-    try {
-      parsed.examples = await fetchExamples(queryForExamples, detected, 3);
-    } catch (e) {
-      console.warn("[Explain] Tatoeba lookup failed:", e);
-      parsed.examples = [];
-    }
-
-    return res.status(200).json(parsed);
+    return res.status(200).json(JSON.parse(content));
   } catch (error: any) {
     console.error("[API Error]", error);
     return res.status(500).json({
