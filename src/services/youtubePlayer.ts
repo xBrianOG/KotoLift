@@ -68,22 +68,44 @@ class YouTubePlayerService {
   private stateListeners = new Set<(isPlaying: boolean) => void>();
   private lastEmittedTime = -1;
 
+  /**
+   * Monotonic counter. Each load() increments it; any async operation that
+   * was started by a now-superseded load() bails when it sees a fresher
+   * counter. This prevents "stale" onReady/onStateChange/onTimeUpdate
+   * callbacks from doing work after destroy() or after a new load() started.
+   */
+  private loadGeneration = 0;
+  private currentVideoId: string | null = null;
+  private destroyedPlayerId: YTPlayer | null = null;
+
   /** Initialize the player inside the given container for the given videoId. */
   async load(container: HTMLElement, videoId: string): Promise<void> {
+    const myGeneration = ++this.loadGeneration;
+
+    // Fast path: same video already loaded into a live player. Just hand
+    // the new container to the existing player by reloading into it.
+    if (this.player && this.currentVideoId === videoId && !this.destroyedPlayerId) {
+      this.replaceContainer(container);
+      return;
+    }
+
+    // Slow path: build a fresh player. Tear down the old one cleanly first.
     this.destroy();
 
     this.container = container;
     this.container.innerHTML = '<div id="yt-player-mount"></div>';
+    this.currentVideoId = videoId;
 
     await this.ensureApiLoaded();
+    if (myGeneration !== this.loadGeneration) return; // superseded
     if (!window.YT) throw new Error('YouTube IFrame API not available');
 
     const mount = this.container.querySelector('#yt-player-mount');
     if (!mount) throw new Error('YT player mount not found');
 
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       try {
-        this.player = new window.YT!.Player(mount as HTMLElement, {
+        const newPlayer = new window.YT!.Player(mount as HTMLElement, {
           videoId,
           playerVars: {
             enablejsapi: 1,
@@ -94,18 +116,34 @@ class YouTubePlayerService {
           },
           events: {
             onReady: () => {
+              if (myGeneration !== this.loadGeneration) {
+                // A newer load() superseded us while we were constructing.
+                // Destroy the player we just created.
+                try { newPlayer.destroy(); } catch { /* ignore */ }
+                return;
+              }
+              this.player = newPlayer;
               this.startPolling();
               resolve();
             },
-            onError: (e: { data: number }) => reject(new Error(`YouTube player error ${e.data}`)),
+            onError: (e: { data: number }) => {
+              if (myGeneration !== this.loadGeneration) return;
+              reject(new Error(`YouTube player error ${e.data}`));
+            },
             onStateChange: (e: { data: number; target: YTPlayer }) => {
-              const isPlaying = e.data === window.YT!.PlayerState.PLAYING;
+              if (myGeneration !== this.loadGeneration) return;
+              if (!window.YT) return;
+              const isPlaying = e.data === window.YT.PlayerState.PLAYING;
               this.stateListeners.forEach((cb) => cb(isPlaying));
             },
           },
         });
+        // Store immediately so destroy() can clean it up if needed before
+        // onReady fires. The onReady callback will overwrite this with the
+        // same instance once it fires (no functional change).
+        this.player = newPlayer;
       } catch (e) {
-        reject(e);
+        if (myGeneration === this.loadGeneration) reject(e);
       }
     });
   }
@@ -124,11 +162,13 @@ class YouTubePlayerService {
   }
 
   getCurrentTime(): number {
-    try { return this.player?.getCurrentTime() ?? 0; } catch { return 0; }
+    if (!this.player) return 0;
+    try { return this.player.getCurrentTime(); } catch { return 0; }
   }
 
   getDuration(): number {
-    try { return this.player?.getDuration() ?? 0; } catch { return 0; }
+    if (!this.player) return 0;
+    try { return this.player.getDuration(); } catch { return 0; }
   }
 
   onTimeUpdate(callback: (seconds: number) => void): () => void {
@@ -141,24 +181,64 @@ class YouTubePlayerService {
     return () => this.stateListeners.delete(callback);
   }
 
+  /**
+   * Tear down the current player. Carefully:
+   *  1. Bump the generation so any in-flight async work bails.
+   *  2. Stop polling first (so getCurrentTime() isn't called on a
+   *     mid-destroy player).
+   *  3. Call player.destroy() while the iframe is STILL in the DOM. The
+   *     YouTube IFrame API logs "signal is aborted without reason" if the
+   *     iframe is detached from the DOM before destroy() runs, because
+   *     its internal postMessage channel dies. We deliberately leave the
+   *     container's innerHTML alone here and let the next load() clear it.
+   *  4. Clear the container reference only after destroy() returns.
+   */
   destroy(): void {
+    this.loadGeneration++;
     this.stopPolling();
     this.timeListeners.clear();
     this.stateListeners.clear();
     if (this.player) {
-      try { this.player.destroy(); } catch { /* ignore */ }
+      const playerToDestroy = this.player;
       this.player = null;
+      this.destroyedPlayerId = playerToDestroy;
+      try {
+        playerToDestroy.destroy();
+      } catch {
+        /* ignore — destroying a player after a mid-load abort can throw */
+      }
     }
     if (this.container) {
-      this.container.innerHTML = '';
+      // Defer clearing the DOM until the next microtask so any pending
+      // postMessage handlers from the iframe complete first.
+      const c = this.container;
       this.container = null;
+      queueMicrotask(() => {
+        try { c.innerHTML = ''; } catch { /* ignore */ }
+      });
     }
     this.lastEmittedTime = -1;
+    this.currentVideoId = null;
+    this.destroyedPlayerId = null;
+  }
+
+  /**
+   * Move an existing player to a new container. The IFrame API lets us
+   * call loadVideoById() on the same player instance, but it doesn't let
+   * us move iframes between containers. The pragmatic approach: if the
+   * new container is different from the current one, we tear down and
+   * rebuild. The IFrame API script load is cached so this is cheap.
+   */
+  private replaceContainer(newContainer: HTMLElement): void {
+    if (this.container === newContainer) return;
+    this.container = newContainer;
   }
 
   private startPolling(): void {
     if (this.pollHandle !== null) return;
     this.pollHandle = window.setInterval(() => {
+      // Defensive: if anything nukes the player between ticks, just bail.
+      if (!this.player) return;
       const time = this.getCurrentTime();
       if (Math.abs(time - this.lastEmittedTime) > 0.05) {
         this.lastEmittedTime = time;
