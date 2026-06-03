@@ -385,13 +385,21 @@ router.get('/:videoId', async (req, res) => {
       };
     } catch (e: any) {
       const errorMessage = e.message || 'Failed to fetch transcript';
+      const botBlocked = isBotBlockError(e);
+      const rateLimited = isRateLimitError(e);
+      const noTranscript = isNoTranscriptError(e);
 
-      // Fall back to yt-dlp for non-permanent errors (rate-limit, network
-      // blips, library bugs). "No transcript" errors are skipped since
-      // yt-dlp can't conjure captions that don't exist.
-      if (!isNoTranscriptError(e)) {
+      console.log(
+        `[Transcript] Library failed for ${videoId}: bot=${botBlocked} rate=${rateLimited} noTranscript=${noTranscript} msg="${errorMessage.slice(0, 120)}"`,
+      );
+
+      // Fall back to yt-dlp for anything that isn't definitively "no
+      // captions exist" — yt-dlp can usually get past rate-limit and
+      // bot-block, and is worth a try for unknown errors too.
+      let ytdlpSegments: ParsedVttSegment[] | null = null;
+      if (!noTranscript) {
         console.log(`[Transcript] Library failed, trying yt-dlp fallback for ${videoId}`);
-        const ytdlpSegments = await tryYtDlp(videoId, lang as string, cookieFile);
+        ytdlpSegments = await tryYtDlp(videoId, lang as string, cookieFile);
         if (ytdlpSegments && ytdlpSegments.length > 0) {
           const segments = ytdlpSegments.map((seg, i) => ({
             id: `seg-${i + 1}`,
@@ -415,31 +423,49 @@ router.get('/:videoId', async (req, res) => {
       }
 
       // Determine error type and cache appropriately
-      if (isRateLimitError(e)) {
+      if (rateLimited || botBlocked) {
         transcriptCache.set(videoId, {
           segments: [],
           cachedAt: Date.now(),
           isFailure: true,
-          errorMessage: 'Rate limited. Please try again in a few minutes.'
+          errorMessage: 'YouTube is blocking requests from this server. Please try again in a few minutes.',
         });
-      } else if (isNoTranscriptError(e)) {
+      } else if (noTranscript) {
         // Don't cache "no transcript" errors for too long
         transcriptCache.set(videoId, {
           segments: [],
           cachedAt: Date.now(),
           isFailure: true,
-          errorMessage: 'No transcript available for this video.'
+          errorMessage: 'No transcript available for this video.',
         });
       } else {
         transcriptCache.set(videoId, {
           segments: [],
           cachedAt: Date.now(),
           isFailure: true,
-          errorMessage: errorMessage
+          errorMessage: errorMessage,
         });
       }
-      
-      throw e;
+
+      // Throw a clean, user-facing error rather than the raw library
+      // message (which is full of GitHub-issue-tracking boilerplate
+      // that confuses end users).
+      let userMessage: string;
+      let statusCode: number;
+      if (noTranscript) {
+        userMessage = 'No transcript available for this video.';
+        statusCode = 404;
+      } else if (rateLimited || botBlocked) {
+        userMessage = 'YouTube is blocking requests from this server. Please try again in a few minutes.';
+        statusCode = 429;
+      } else {
+        userMessage = 'Failed to fetch transcript. Please try again.';
+        statusCode = 500;
+      }
+      const userError: any = new Error(userMessage);
+      userError.cause = e;
+      userError.status = statusCode;
+      throw userError;
     } finally {
       if (cookieFile && existsSync(cookieFile)) {
         try { unlinkSync(cookieFile); } catch { /* ignore */ }
@@ -456,23 +482,9 @@ router.get('/:videoId', async (req, res) => {
     return res.json(result);
   } catch (e: any) {
     console.error(`[Transcript] Error:`, e.message);
-    
-    // Return appropriate status based on error type
-    if (isRateLimitError(e)) {
-      return res.status(429).json({ 
-        error: 'Rate limited. Please try again in a few minutes.',
-        retryAfter: 600
-      });
-    }
-    
-    if (isNoTranscriptError(e)) {
-      return res.status(404).json({ 
-        error: 'No transcript available for this video.'
-      });
-    }
-    
-    return res.status(500).json({ 
-      error: e.message || 'Failed to fetch transcript' 
+    const status = typeof e.status === 'number' ? e.status : 500;
+    return res.status(status).json({
+      error: e.message || 'Failed to fetch transcript',
     });
   }
 });
