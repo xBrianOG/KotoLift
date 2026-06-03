@@ -310,9 +310,9 @@ export function ExplainScreen({ initialSentence }: { initialSentence?: string } 
                   const isAdding = addingExampleIdx === i;
                   return (
                     <div key={i} className="flex-col gap-xs" style={{ paddingBottom: 'var(--space-sm)', borderBottom: i < result.examples!.length - 1 ? '1px solid var(--border)' : 'none' }}>
-                      {ex.ja && <p className="mb-xs"><span className="lang-badge text-xs mr-sm border-none bg-surface">JA</span> {ex.ja}</p>}
-                      {ex.en && <p className="mb-xs"><span className="lang-badge text-xs mr-sm border-none bg-surface">EN</span> {ex.en}</p>}
-                      {ex.es && <p><span className="lang-badge text-xs mr-sm border-none bg-surface">ES</span> {ex.es}</p>}
+                      <p className="mb-xs"><span className="lang-badge text-xs mr-sm border-none bg-surface">JA</span> {ex.ja || '—'}</p>
+                      <p className="mb-xs"><span className="lang-badge text-xs mr-sm border-none bg-surface">EN</span> {ex.en || '—'}</p>
+                      <p><span className="lang-badge text-xs mr-sm border-none bg-surface">ES</span> {ex.es || '—'}</p>
                       <div className="flex-center" style={{ justifyContent: 'flex-end', marginTop: 'var(--space-xs)' }}>
                         <button
                           type="button"

@@ -34,7 +34,7 @@ const TATOEBA_BASE = 'https://api.tatoeba.org/v1/sentences';
 const DEFAULT_TIMEOUT_MS = 2500;
 const DEFAULT_LIMIT = 3;
 
-function exampleFromSentence(s: TatoebaSentence, sourceLang: ExampleSourceLang): TatoebaExample {
+function exampleFromSentence(s: TatoebaSentence, sourceLang: ExampleSourceLang): TatoebaExample | null {
   const result: TatoebaExample = { ja: '', en: '', es: '' };
   result[sourceLang] = s.text;
   for (const tr of s.translations || []) {
@@ -42,6 +42,7 @@ function exampleFromSentence(s: TatoebaSentence, sourceLang: ExampleSourceLang):
     else if (tr.lang === 'eng') result.en = tr.text;
     else if (tr.lang === 'spa') result.es = tr.text;
   }
+  if (!result.ja || !result.en || !result.es) return null;
   return result;
 }
 
@@ -87,8 +88,9 @@ export async function fetchExamples(
 
     return data.data
       .filter((s) => s.lang === tatoebaSource)
-      .slice(0, limit)
-      .map((s) => exampleFromSentence(s, sourceLang));
+      .map((s) => exampleFromSentence(s, sourceLang))
+      .filter((e): e is TatoebaExample => e !== null)
+      .slice(0, limit);
   } catch (err) {
     if (err instanceof Error && err.name === 'AbortError') {
       console.warn(`[Tatoeba] timeout after ${timeoutMs}ms for query "${trimmed}"`);
