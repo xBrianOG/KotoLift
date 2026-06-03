@@ -5,7 +5,7 @@ interface SubtitleOverlayProps {
   segments: TranscriptSegment[];
   currentTimeMs: number;
   onSegmentClick: (segment: TranscriptSegment) => void;
-  onWordClick: (word: string, segment: TranscriptSegment, e: React.MouseEvent) => void;
+  onWordClick?: (word: string, segment: TranscriptSegment, e: React.MouseEvent) => void;
 }
 
 function formatTime(ms: number): string {
@@ -63,7 +63,7 @@ export function SubtitleOverlay({ segments, currentTimeMs, onSegmentClick, onWor
         {words.map((word, i) => (
           <span
             key={i}
-            onClick={(e) => onWordClick(word, activeSegment, e)}
+            onClick={onWordClick ? (e) => onWordClick(word, activeSegment, e) : undefined}
             onMouseEnter={() => setHoveredWord(word)}
             onMouseLeave={() => setHoveredWord(null)}
             style={{

@@ -1,8 +1,10 @@
 import { Router } from 'express';
+import { spawn } from 'child_process';
 import { YouTubeTranscriptApi } from 'youtube-transcript-api-js';
-import { writeFileSync, unlinkSync, existsSync } from 'fs';
+import { writeFileSync, unlinkSync, existsSync, readdirSync, readFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
+import { randomBytes } from 'crypto';
 
 const router = Router();
 
@@ -67,6 +69,171 @@ function cleanCache(): void {
 
 // Periodic cache cleanup (every 10 minutes)
 setInterval(cleanCache, 10 * 60 * 1000);
+
+interface ParsedVttSegment {
+  startMs: number;
+  endMs: number;
+  text: string;
+}
+
+/**
+ * Parse a WebVTT (.vtt) file into our standard segment shape.
+ * yt-dlp emits WebVTT for both manual and auto-generated captions.
+ */
+function parseVtt(vtt: string): ParsedVttSegment[] {
+  const lines = vtt.split(/\r?\n/);
+  const segments: ParsedVttSegment[] = [];
+  let i = 0;
+
+  function parseTimestamp(raw: string): number {
+    // VTT timestamps are HH:MM:SS.mmm or MM:SS.mmm
+    const parts = raw.split(':');
+    const seconds = parts.pop() as string;
+    const minutes = parts.length ? parseInt(parts.pop() as string, 10) : 0;
+    const hours = parts.length ? parseInt(parts.pop() as string, 10) : 0;
+    const [secStr, msStr] = seconds.split('.');
+    return (hours * 3600 + minutes * 60 + parseInt(secStr, 10)) * 1000 + parseInt((msStr || '0').padEnd(3, '0').slice(0, 3), 10);
+  }
+
+  function stripCueText(raw: string): string {
+    // Strip WebVTT tags (<c.classname>, <v Speaker>, <i>, etc.) and de-HTML
+    return raw
+      .replace(/<[^>]+>/g, '')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&apos;/g, "'")
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  while (i < lines.length) {
+    const line = lines[i].trim();
+    if (line === '' || line === 'WEBVTT' || line.startsWith('NOTE') || line.startsWith('STYLE') || line.startsWith('REGION')) {
+      i++;
+      continue;
+    }
+    if (line.includes('-->')) {
+      const [startRaw, endRawWithPos] = line.split('-->');
+      const endRaw = endRawWithPos.trim().split(/\s+/)[0];
+      i++;
+      const textLines: string[] = [];
+      while (i < lines.length && lines[i].trim() !== '') {
+        textLines.push(lines[i]);
+        i++;
+      }
+      const text = stripCueText(textLines.join('\n'));
+      if (text) {
+        segments.push({
+          startMs: parseTimestamp(startRaw.trim()),
+          endMs: parseTimestamp(endRaw),
+          text,
+        });
+      }
+    } else {
+      i++;
+    }
+  }
+  return segments;
+}
+
+/**
+ * Fall back to yt-dlp when the JS transcript library gets rate-limited or
+ * the video has no usable captions through the unofficial API. yt-dlp is
+ * already installed in the Docker image. Returns null on failure.
+ */
+async function tryYtDlp(
+  videoId: string,
+  lang: string,
+  cookieFile: string | null,
+  timeoutMs = 12000,
+): Promise<ParsedVttSegment[] | null> {
+  const workDir = join(tmpdir(), `yt-dlp-${randomBytes(6).toString('hex')}`);
+  try {
+    mkdirSync(workDir, { recursive: true });
+  } catch {
+    return null;
+  }
+
+  const outTemplate = join(workDir, `${videoId}.%(ext)s`);
+  const args = [
+    '--write-auto-sub',
+    '--skip-download',
+    '--sub-lang', `${lang},${lang === 'en' ? 'en-US' : 'en'}`,
+    '--sub-format', 'vtt',
+    '--convert-subs', 'vtt',
+    '--no-warnings',
+    '--no-playlist',
+    '-o', outTemplate,
+  ];
+  if (cookieFile) {
+    args.push('--cookies', cookieFile);
+  }
+  args.push(`https://www.youtube.com/watch?v=${videoId}`);
+
+  return new Promise((resolve) => {
+    const proc = spawn('yt-dlp', args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    let stderr = '';
+    proc.stderr.on('data', (d) => { stderr += d.toString(); });
+
+    const timer = setTimeout(() => {
+      try { proc.kill('SIGKILL'); } catch { /* ignore */ }
+      cleanup();
+      console.warn(`[Transcript] yt-dlp timeout for ${videoId}`);
+      resolve(null);
+    }, timeoutMs);
+
+    function cleanup() {
+      clearTimeout(timer);
+      try {
+        const files = readdirSync(workDir);
+        for (const f of files) {
+          try { unlinkSync(join(workDir, f)); } catch { /* ignore */ }
+        }
+        try { unlinkSync(workDir); } catch { /* ignore */ }
+      } catch { /* ignore */ }
+    }
+
+    proc.on('error', (e) => {
+      cleanup();
+      console.warn(`[Transcript] yt-dlp spawn error: ${e.message}`);
+      resolve(null);
+    });
+    proc.on('close', (code) => {
+      if (code !== 0) {
+        cleanup();
+        console.warn(`[Transcript] yt-dlp exit ${code}: ${stderr.slice(-200)}`);
+        resolve(null);
+        return;
+      }
+      try {
+        const files = readdirSync(workDir);
+        const vttFile = files.find((f) => f.endsWith('.vtt'));
+        if (!vttFile) {
+          cleanup();
+          console.warn(`[Transcript] yt-dlp produced no .vtt for ${videoId}`);
+          resolve(null);
+          return;
+        }
+        const vttContent = readFileSync(join(workDir, vttFile), 'utf-8');
+        const parsed = parseVtt(vttContent);
+        cleanup();
+        if (parsed.length === 0) {
+          console.warn(`[Transcript] yt-dlp vtt had no usable cues for ${videoId}`);
+          resolve(null);
+          return;
+        }
+        resolve(parsed);
+      } catch (e) {
+        cleanup();
+        console.warn(`[Transcript] yt-dlp post-process error: ${e instanceof Error ? e.message : e}`);
+        resolve(null);
+      }
+    });
+  });
+}
 
 async function fetchTranscriptWithRetry(videoId: string, lang: string, cookieFile: string | null, maxRetries = 2): Promise<any> {
   let lastError: any;
@@ -192,7 +359,35 @@ router.get('/:videoId', async (req, res) => {
       };
     } catch (e: any) {
       const errorMessage = e.message || 'Failed to fetch transcript';
-      
+
+      // Fall back to yt-dlp for non-permanent errors (rate-limit, network
+      // blips, library bugs). "No transcript" errors are skipped since
+      // yt-dlp can't conjure captions that don't exist.
+      if (!isNoTranscriptError(e)) {
+        console.log(`[Transcript] Library failed, trying yt-dlp fallback for ${videoId}`);
+        const ytdlpSegments = await tryYtDlp(videoId, lang as string, cookieFile);
+        if (ytdlpSegments && ytdlpSegments.length > 0) {
+          const segments = ytdlpSegments.map((seg, i) => ({
+            id: `seg-${i + 1}`,
+            startMs: seg.startMs,
+            endMs: seg.endMs,
+            text: seg.text,
+          }));
+          transcriptCache.set(videoId, {
+            segments,
+            cachedAt: Date.now(),
+            isFailure: false,
+          });
+          return {
+            title: `Video ${videoId}`,
+            segments,
+            videoId,
+            method: 'yt-dlp auto-captions',
+          };
+        }
+        console.log(`[Transcript] yt-dlp fallback also failed for ${videoId}`);
+      }
+
       // Determine error type and cache appropriately
       if (isRateLimitError(e)) {
         transcriptCache.set(videoId, {

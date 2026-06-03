@@ -1,7 +1,10 @@
-import { useState, useRef, useEffect } from 'react';
+import { useRef, useState } from 'react';
 import { createCard, getAllCards } from '../services/cards';
 import { ensureReviewStates } from '../services/review';
 import { translateText, type SupportedLang } from '../services/api';
+import { extractVideoIdFromUrl } from '../utils/youtube';
+import { VideoPlayer, type VideoPlayerHandle } from './VideoPlayer';
+import { SubtitleOverlay } from './SubtitleOverlay';
 
 export interface TranscriptSegment {
   id: string;
@@ -15,16 +18,12 @@ export interface VideoPlayerData {
   title: string;
   segments: TranscriptSegment[];
   sourceLang: string;
+  videoId?: string;
 }
 
 interface VideoPlayerScreenProps {
   data: VideoPlayerData;
   onBack: () => void;
-}
-
-function extractVideoId(url: string): string | null {
-  const match = url.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-  return match ? match[1] : null;
 }
 
 function formatTime(ms: number): string {
@@ -36,92 +35,67 @@ function formatTime(ms: number): string {
 
 export function VideoPlayerScreen({ data, onBack }: VideoPlayerScreenProps) {
   const [search, setSearch] = useState('');
-  const [currentTime, setCurrentTime] = useState(0);
-  const [playing, setPlaying] = useState(false);
+  const [currentTimeMs, setCurrentTimeMs] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [savingIds, setSavingIds] = useState<Set<string>>(new Set());
   const [selectedSegment, setSelectedSegment] = useState<TranscriptSegment | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const playerRef = useRef<any>(null);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [videoError, setVideoError] = useState<string | null>(null);
 
-  const videoId = extractVideoId(data.url);
+  const playerRef = useRef<VideoPlayerHandle>(null);
+
+  const videoId = data.videoId ?? extractVideoIdFromUrl(data.url);
   const sourceLang = data.sourceLang as SupportedLang;
-  const targetLangs: SupportedLang[] = sourceLang === 'en' 
-    ? ['es', 'ja'] 
-    : sourceLang === 'es' 
-      ? ['en', 'ja'] 
+  const targetLangs: SupportedLang[] = sourceLang === 'en'
+    ? ['es', 'ja']
+    : sourceLang === 'es'
+      ? ['en', 'ja']
       : ['en', 'es'];
 
   const filteredSegments = search.trim()
-    ? data.segments.filter(s => s.text.toLowerCase().includes(search.toLowerCase()))
+    ? data.segments.filter((s) => s.text.toLowerCase().includes(search.toLowerCase()))
     : data.segments;
 
   const currentSegmentIndex = filteredSegments.findIndex(
-    seg => currentTime >= seg.startMs && currentTime < seg.endMs
+    (seg) => currentTimeMs >= seg.startMs && currentTimeMs < seg.endMs,
   );
-
   const currentSegment = currentSegmentIndex >= 0 ? filteredSegments[currentSegmentIndex] : null;
 
-  useEffect(() => {
-    if (!playerRef.current) return;
-    
-    const interval = setInterval(() => {
-      if (playerRef.current && playerRef.current.getCurrentTime) {
-        try {
-          const time = playerRef.current.getCurrentTime();
-          setCurrentTime(time * 1000);
-        } catch (e) {
-          // Ignore errors
-        }
-      }
-    }, 500);
-    
-    return () => clearInterval(interval);
-  }, [playing]);
-
-  const seekTo = (ms: number) => {
-    if (playerRef.current && playerRef.current.seekTo) {
-      playerRef.current.seekTo(ms / 1000, true);
-    }
+  const seekToSegment = (seg: TranscriptSegment) => {
+    playerRef.current?.seekTo(seg.startMs / 1000);
+    setSelectedSegment(seg);
   };
 
   const checkDuplicate = async (_url: string, _startMs: number, text: string): Promise<boolean> => {
     const cards = await getAllCards();
-    return cards.some(c => c.sourceText === text);
-  };
-
-  const handleSegmentClick = (seg: TranscriptSegment) => {
-    seekTo(seg.startMs);
-    setSelectedSegment(seg);
+    return cards.some((c) => c.sourceText === text);
   };
 
   const handleCreateCard = async () => {
     if (!selectedSegment) return;
-    
     if (savingIds.has(selectedSegment.id)) return;
-    
+
     const isDup = await checkDuplicate(data.url, selectedSegment.startMs, selectedSegment.text);
     if (isDup) {
-      setSavedIds(prev => new Set(prev).add(selectedSegment.id));
+      setSavedIds((prev) => new Set(prev).add(selectedSegment.id));
       setShowConfirmModal(false);
       setSelectedSegment(null);
       return;
     }
-    
-    setSavingIds(prev => new Set(prev).add(selectedSegment.id));
-    
+
+    setSavingIds((prev) => new Set(prev).add(selectedSegment.id));
+
     try {
       const translations: Record<string, string> = {};
-      
       await Promise.all(
         targetLangs.map(async (lang) => {
           try {
             translations[lang] = await translateText(selectedSegment.text, sourceLang, lang);
-          } catch (e) {
+          } catch {
             translations[lang] = '(translation failed)';
           }
-        })
+        }),
       );
 
       const card = await createCard(
@@ -134,18 +108,18 @@ export function VideoPlayerScreen({ data, onBack }: VideoPlayerScreenProps) {
         data.url,
         selectedSegment.startMs,
         selectedSegment.endMs,
-        translations.ja || ''
+        translations.ja || '',
       );
-      
+
       await ensureReviewStates(card);
-      
-      setSavedIds(prev => new Set(prev).add(selectedSegment.id));
+
+      setSavedIds((prev) => new Set(prev).add(selectedSegment.id));
       setShowConfirmModal(false);
       setSelectedSegment(null);
     } catch (err) {
       console.error('Failed to save card:', err);
     } finally {
-      setSavingIds(prev => {
+      setSavingIds((prev) => {
         const next = new Set(prev);
         next.delete(selectedSegment.id);
         return next;
@@ -160,17 +134,30 @@ export function VideoPlayerScreen({ data, onBack }: VideoPlayerScreenProps) {
 
   if (!videoId) {
     return (
-      <div className="screen" style={{ padding: 'var(--space-xl)', paddingTop: 'calc(env(safe-area-inset-top) + var(--space-xl))' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', marginBottom: 'var(--space-xl)' }}>
-          <button 
+      <div
+        className="screen"
+        style={{
+          padding: 'var(--space-xl)',
+          paddingTop: 'calc(env(safe-area-inset-top) + var(--space-xl))',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--space-md)',
+            marginBottom: 'var(--space-xl)',
+          }}
+        >
+          <button
             onClick={onBack}
-            style={{ 
-              padding: 'var(--space-sm) var(--space-md)', 
-              border: 'none', 
+            style={{
+              padding: 'var(--space-sm) var(--space-md)',
+              border: 'none',
               background: 'transparent',
               color: 'var(--accent)',
               fontWeight: 600,
-              fontSize: 'var(--font-base)'
+              fontSize: 'var(--font-base)',
             }}
           >
             ← Back
@@ -182,60 +169,103 @@ export function VideoPlayerScreen({ data, onBack }: VideoPlayerScreenProps) {
   }
 
   return (
-    <div className="screen" style={{ 
-      padding: 'var(--space-xl)',
-      paddingTop: 'calc(env(safe-area-inset-top) + var(--space-xl))',
-      minHeight: '100%'
-    }}>
-      {/* Header */}
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: 'var(--space-md)', 
-        marginBottom: 'var(--space-md)'
-      }}>
-        <button 
+    <div
+      className="screen"
+      style={{
+        padding: 'var(--space-xl)',
+        paddingTop: 'calc(env(safe-area-inset-top) + var(--space-xl))',
+        minHeight: '100%',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 'var(--space-md)',
+          marginBottom: 'var(--space-md)',
+        }}
+      >
+        <button
           onClick={onBack}
-          style={{ 
-            padding: 'var(--space-sm) var(--space-md)', 
-            border: 'none', 
+          style={{
+            padding: 'var(--space-sm) var(--space-md)',
+            border: 'none',
             background: 'transparent',
             color: 'var(--accent)',
             fontWeight: 600,
-            fontSize: 'var(--font-base)'
+            fontSize: 'var(--font-base)',
           }}
         >
           ← Back
         </button>
-        <h2 style={{ fontSize: 'var(--font-lg)', fontWeight: 600, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <h2
+          style={{
+            fontSize: 'var(--font-lg)',
+            fontWeight: 600,
+            flex: 1,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
           {data.title}
         </h2>
+        <button
+          onClick={() => playerRef.current?.[isPlaying ? 'pause' : 'play']()}
+          className="btn btn-subtle"
+          style={{ padding: 'var(--space-xs) var(--space-md)', fontSize: 'var(--font-sm)' }}
+        >
+          {isPlaying ? 'Pause' : 'Play'}
+        </button>
       </div>
 
-      {/* Video Player */}
-      <div style={{ marginBottom: 'var(--space-md)' }}>
-        <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0 }}>
-          <iframe
-            ref={iframeRef}
-            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-            src={`https://www.youtube.com/embed/${videoId}?enablejsapi=1`}
-            frameBorder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          />
+      <div style={{ marginBottom: 'var(--space-md)', position: 'relative' }}>
+        <VideoPlayer
+          ref={playerRef}
+          videoId={videoId}
+          onTimeUpdate={(s) => setCurrentTimeMs(Math.round(s * 1000))}
+          onPlayStateChange={setIsPlaying}
+          onError={setVideoError}
+        />
+        <SubtitleOverlay
+          segments={filteredSegments}
+          currentTimeMs={currentTimeMs}
+          onSegmentClick={seekToSegment}
+        />
+      </div>
+
+      {videoError && (
+        <div
+          className="card"
+          style={{
+            borderColor: 'var(--danger)',
+            color: 'var(--danger)',
+            marginBottom: 'var(--space-md)',
+            fontSize: 'var(--font-sm)',
+          }}
+        >
+          {videoError}
         </div>
-      </div>
+      )}
 
-      {/* Current Segment Info */}
       {currentSegment && (
-        <div style={{ 
-          padding: 'var(--space-md)', 
-          background: 'var(--bg-card)', 
-          borderRadius: 8,
-          marginBottom: 'var(--space-md)',
-          border: '1px solid var(--border)'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-sm)' }}>
+        <div
+          style={{
+            padding: 'var(--space-md)',
+            background: 'var(--bg-card)',
+            borderRadius: 8,
+            marginBottom: 'var(--space-md)',
+            border: '1px solid var(--border)',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 'var(--space-sm)',
+            }}
+          >
             <span style={{ fontSize: 'var(--font-xs)', color: 'var(--text-secondary)' }}>
               {formatTime(currentSegment.startMs)} - {formatTime(currentSegment.endMs)}
             </span>
@@ -249,7 +279,7 @@ export function VideoPlayerScreen({ data, onBack }: VideoPlayerScreenProps) {
                 background: savedIds.has(currentSegment.id) ? 'var(--success)' : 'var(--accent)',
                 color: 'white',
                 fontSize: 'var(--font-sm)',
-                cursor: savedIds.has(currentSegment.id) ? 'default' : 'pointer'
+                cursor: savedIds.has(currentSegment.id) ? 'default' : 'pointer',
               }}
             >
               {savedIds.has(currentSegment.id) ? '✓ Saved' : '+ Card'}
@@ -259,7 +289,6 @@ export function VideoPlayerScreen({ data, onBack }: VideoPlayerScreenProps) {
         </div>
       )}
 
-      {/* Search */}
       <div style={{ marginBottom: 'var(--space-md)' }}>
         <input
           type="text"
@@ -270,33 +299,49 @@ export function VideoPlayerScreen({ data, onBack }: VideoPlayerScreenProps) {
         />
       </div>
 
-      {/* Transcript List - Scrollable box */}
-      <div style={{ 
-        maxHeight: '40vh',
-        overflowY: 'auto',
-        border: '1px solid var(--border)', 
-        borderRadius: 8,
-        background: 'var(--bg-card)',
-        marginBottom: '40px',
-        flexShrink: 0
-      }}>
+      <div
+        style={{
+          maxHeight: '40vh',
+          overflowY: 'auto',
+          border: '1px solid var(--border)',
+          borderRadius: 8,
+          background: 'var(--bg-card)',
+          marginBottom: '40px',
+          flexShrink: 0,
+        }}
+      >
         {filteredSegments.map((seg) => (
           <div
             key={seg.id}
-            onClick={() => handleSegmentClick(seg)}
+            onClick={() => seekToSegment(seg)}
             style={{
               padding: 'var(--space-sm) var(--space-md)',
               borderBottom: '1px solid var(--border)',
               cursor: 'pointer',
-              background: currentSegment?.id === seg.id ? 'var(--selected-bg, #f0f9ff)' : 'transparent'
+              background: currentSegment?.id === seg.id ? 'var(--selected-bg, #f0f9ff)' : 'transparent',
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: 'var(--font-xs)', color: 'var(--text-secondary)', minWidth: 50 }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 'var(--font-xs)',
+                  color: 'var(--text-secondary)',
+                  minWidth: 50,
+                }}
+              >
                 {formatTime(seg.startMs)}
               </span>
               <button
-                onClick={(e) => { e.stopPropagation(); handleSaveClick(seg); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSaveClick(seg);
+                }}
                 disabled={savedIds.has(seg.id)}
                 style={{
                   padding: '2px 8px',
@@ -306,7 +351,7 @@ export function VideoPlayerScreen({ data, onBack }: VideoPlayerScreenProps) {
                   color: 'white',
                   fontSize: 'var(--font-xs)',
                   cursor: savedIds.has(seg.id) ? 'default' : 'pointer',
-                  opacity: savedIds.has(seg.id) ? 0.7 : 1
+                  opacity: savedIds.has(seg.id) ? 0.7 : 1,
                 }}
               >
                 {savedIds.has(seg.id) ? '✓' : '+'}
@@ -319,31 +364,49 @@ export function VideoPlayerScreen({ data, onBack }: VideoPlayerScreenProps) {
         ))}
       </div>
 
-      {/* Confirm Modal */}
       {showConfirmModal && selectedSegment && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0,0,0,0.8)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: 16,
-          zIndex: 100
-        }}>
-          <div className="card" style={{ width: '100%', maxWidth: 500, maxHeight: '90vh', overflow: 'auto' }}>
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.8)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+            zIndex: 100,
+          }}
+        >
+          <div
+            className="card"
+            style={{
+              width: '100%',
+              maxWidth: 500,
+              maxHeight: '90vh',
+              overflow: 'auto',
+            }}
+          >
             <h3 style={{ marginBottom: 16 }}>Create Card</h3>
-            
+
             <div style={{ marginBottom: 16 }}>
               <span className="lang-badge">{sourceLang.toUpperCase()}</span>
-              <p style={{ marginTop: 8, fontSize: 'var(--font-base)', lineHeight: 1.5 }}>
+              <p
+                style={{
+                  marginTop: 8,
+                  fontSize: 'var(--font-base)',
+                  lineHeight: 1.5,
+                }}
+              >
                 {selectedSegment.text}
               </p>
             </div>
-            
+
             <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
               <button
-                onClick={() => { setShowConfirmModal(false); setSelectedSegment(null); }}
+                onClick={() => {
+                  setShowConfirmModal(false);
+                  setSelectedSegment(null);
+                }}
                 style={{
                   flex: 1,
                   padding: 'var(--space-md)',
@@ -352,7 +415,7 @@ export function VideoPlayerScreen({ data, onBack }: VideoPlayerScreenProps) {
                   background: 'transparent',
                   color: 'var(--text-primary)',
                   fontSize: 'var(--font-base)',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
                 }}
               >
                 Cancel
