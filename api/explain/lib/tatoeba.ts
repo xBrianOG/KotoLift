@@ -57,13 +57,18 @@ export async function fetchExamples(
   const tatoebaSource = LANG_TO_TATOEBA[sourceLang];
   const otherLangs = (Object.keys(LANG_TO_TATOEBA) as ExampleSourceLang[])
     .filter((l) => l !== sourceLang)
-    .map((l) => LANG_TO_TATOEBA[l])
-    .join(',');
+    .map((l) => LANG_TO_TATOEBA[l]);
 
+  // Tatoeba filter semantics: `trans:lang=a,b` is OR within a group, AND
+  // across groups. To require *both* languages we use one group per lang.
+  // see https://api.tatoeba.org/openapi (paths./v1/sentences.parameters)
   const url = new URL(TATOEBA_BASE);
   url.searchParams.set('lang', tatoebaSource);
-  url.searchParams.set('trans:lang', otherLangs);
-  url.searchParams.set('showtrans:lang', otherLangs);
+  otherLangs.forEach((code, i) => {
+    const n = i + 1;
+    url.searchParams.set(`trans:${n}:lang`, code);
+    url.searchParams.set(`showtrans:${n}:lang`, code);
+  });
   url.searchParams.set('q', trimmed);
   url.searchParams.set('sort', 'relevance');
   url.searchParams.set('limit', String(Math.max(limit * 2, limit)));
