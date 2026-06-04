@@ -164,7 +164,32 @@ cd server && npm run build && cd ..
 | `PG_HOST` / `PG_PORT` / `PG_USER` / `PG_PASSWORD` / `PG_DATABASE` | Yes (server-side) | Direct Postgres connection for the seed script |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` / `GOOGLE_REDIRECT_URI` | No | Google OAuth credentials for sign-in |
 | `APP_URL` | No | Frontend public URL. Defaults to `https://sumi.sumidev.com` |
-| `YOUTUBE_COOKIES` | No | Optional. Cookies file content for YouTube transcript scraping on rate-limited networks |
+| `YOUTUBE_COOKIES` | No | YouTube cookies.txt content (Netscape format). Required on datacenter IPs to bypass YouTube's anti-bot block. See "YouTube cookies setup" below for how to extract. |
+
+---
+
+## YouTube cookies setup
+
+YouTube aggressively blocks datacenter IPs (Render, Vercel, AWS, etc.) with the "Sign in to confirm you're not a bot" page. The app handles this with two layered fallbacks: a chain of yt-dlp player clients (`mediaconnect` → `ios` → `tv` → `web`) and, when all of them get blocked, a real browser session via uploaded cookies.
+
+**To extract and upload cookies:**
+
+1. Install a browser extension that exports cookies in Netscape format. Recommended:
+   - Chrome/Edge: [Get cookies.txt LOCALLY](https://chrome.google.com/webstore/detail/get-cookiestxt-locally/cclelgahpmopnbnfnkjngehhmifcbplm)
+   - Firefox: [cookies.txt](https://addons.mozilla.org/en-US/firefox/addon/cookies-txt/)
+2. Go to `youtube.com` and make sure you're signed in.
+3. Click the extension icon → Export. Save the file as `cookies.txt`.
+4. Upload the file to the running app. Either:
+   - **CLI** (no redeploy needed):
+     ```bash
+     curl -X POST -H "Content-Type: text/plain" \
+          --data-binary @cookies.txt \
+          https://your-app.onrender.com/api/transcript/cookies
+     ```
+   - **At deploy time:** paste the file contents into the `YOUTUBE_COOKIES` env var on Render.
+5. The server writes the cookies to `data/yt_cookies.txt` (persistent) and passes them to yt-dlp via `--cookies` on every transcript fetch. The next request should succeed.
+
+Check status with `GET /api/transcript/cookies/status`. Clear with `DELETE /api/transcript/cookies`.
 
 ---
 

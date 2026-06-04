@@ -50,6 +50,9 @@ app.use(cors({
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+// Accept raw text/plain bodies (used by the YouTube cookies upload
+// endpoint, where the user POSTs a cookies.txt file directly).
+app.use(express.text({ type: 'text/plain', limit: '5mb' }));
 
 // API Routes
 app.use("/api/video", videoRouter);

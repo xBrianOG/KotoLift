@@ -1,12 +1,20 @@
 import { Router } from 'express';
 import { spawn } from 'child_process';
 import { YouTubeTranscriptApi } from 'youtube-transcript-api-js';
-import { writeFileSync, unlinkSync, existsSync, readdirSync, readFileSync, mkdirSync } from 'fs';
-import { join } from 'path';
+import { writeFileSync, unlinkSync, existsSync, readdirSync, readFileSync, mkdirSync, statSync } from 'fs';
+import { join, dirname, resolve as resolvePath } from 'path';
 import { tmpdir } from 'os';
 import { randomBytes } from 'crypto';
+import { fileURLToPath } from 'url';
 
 const router = Router();
+
+// Resolve a stable on-disk location for the YouTube cookies file. We
+// keep the data dir under server/data so the file persists across
+// Render redeploys (it lives in the persistent disk volume).
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const PERSISTENT_COOKIE_PATH = resolvePath(__dirname, '../../data/yt_cookies.txt');
 
 // Cache structure
 interface CacheEntry {
@@ -26,32 +34,48 @@ const inFlightRequests = new Map<string, Promise<any>>();
 const SUCCESS_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 const FAILURE_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
-// Helper functions
-let cachedCookieFile: string | null = null;
-let cachedCookieHash: string | null = null;
+// Cookie source resolution. Priority order:
+//   1. server/data/yt_cookies.txt  (uploaded at runtime via /api/transcript/cookies)
+//   2. YOUTUBE_COOKIES env var     (deploy-time, baked into Render config)
+// In either case, we write to /tmp/yt_cookies.txt and hand the path to
+// yt-dlp. The path is content-hashed so we only re-write when the
+// cookie contents change.
+let resolvedCookieFile: string | null = null;
+let resolvedCookieHash: string | null = null;
+
+function readCookieSource(): string | null {
+  if (existsSync(PERSISTENT_COOKIE_PATH)) {
+    try {
+      const content = readFileSync(PERSISTENT_COOKIE_PATH, 'utf-8').trim();
+      if (content) return content;
+    } catch { /* ignore */ }
+  }
+  const envCookies = process.env.YOUTUBE_COOKIES?.trim();
+  if (envCookies) return envCookies;
+  return null;
+}
 
 function getCookieFile(): string | null {
-  const cookiesEnv = process.env.YOUTUBE_COOKIES;
-  if (!cookiesEnv) return null;
+  const content = readCookieSource();
+  if (!content) return null;
 
-  const trimmed = cookiesEnv.trim();
   // Cheap content hash so we only re-write the temp file when the
-  // env var actually changes (vs. on every request).
+  // cookie content actually changes (vs. on every request).
   let hash = 0;
-  for (let i = 0; i < trimmed.length; i++) {
-    hash = ((hash << 5) - hash + trimmed.charCodeAt(i)) | 0;
+  for (let i = 0; i < content.length; i++) {
+    hash = ((hash << 5) - hash + content.charCodeAt(i)) | 0;
   }
   const hashStr = String(hash);
 
-  if (cachedCookieFile && cachedCookieHash === hashStr) {
-    return cachedCookieFile;
+  if (resolvedCookieFile && resolvedCookieHash === hashStr) {
+    return resolvedCookieFile;
   }
 
   try {
     const tmpFile = join(tmpdir(), 'yt_cookies.txt');
-    writeFileSync(tmpFile, trimmed, 'utf-8');
-    cachedCookieFile = tmpFile;
-    cachedCookieHash = hashStr;
+    writeFileSync(tmpFile, content, 'utf-8');
+    resolvedCookieFile = tmpFile;
+    resolvedCookieHash = hashStr;
     return tmpFile;
   } catch {
     return null;
@@ -535,6 +559,102 @@ router.get('/:videoId', async (req, res) => {
 router.post('/cache/clear', (req, res) => {
   transcriptCache.clear();
   res.json({ success: true, message: 'Cache cleared' });
+});
+
+/**
+ * Upload YouTube cookies at runtime. Accepts a raw cookies.txt body
+ * (Netscape format, the standard export from browser cookie exporters).
+ * Persists to data/yt_cookies.txt so it survives Render restarts
+ * (data/ is the persistent disk volume). Call once after extracting
+ * cookies from a logged-in browser; subsequent transcript fetches
+ * will use them via the --cookies flag to yt-dlp.
+ *
+ * Example:
+ *   curl -X POST -H "Content-Type: text/plain" --data-binary @cookies.txt \
+ *        https://your-app/api/transcript/cookies
+ */
+router.post('/cookies', (req, res) => {
+  try {
+    // Express body parser uses bodyParser.text() for text/plain by default
+    // when content-type matches. We accept either text/plain (raw body)
+    // or JSON { "cookies": "..." }.
+    let cookies: string | null = null;
+    const ct = (req.headers['content-type'] || '').toLowerCase();
+    if (ct.includes('application/json')) {
+      cookies = typeof req.body?.cookies === 'string' ? req.body.cookies : null;
+    } else {
+      cookies = typeof req.body === 'string' ? req.body.trim() : null;
+    }
+
+    if (!cookies) {
+      return res.status(400).json({
+        error: 'No cookies in body. Send raw cookies.txt as text/plain or JSON { "cookies": "..." }',
+      });
+    }
+
+    // Sanity check: a valid Netscape cookies file starts with a header line
+    // beginning with "# Netscape" or "# HTTP Cookie" or a tab-separated
+    // domain line. We don't enforce strictly, just check the first line.
+    const firstLine = cookies.split('\n')[0]?.trim() || '';
+    const looksValid =
+      firstLine.startsWith('# Netscape') ||
+      firstLine.startsWith('# HTTP Cookie') ||
+      firstLine.includes('\t') ||
+      firstLine.startsWith('#') /* comment lines are fine too */;
+    if (!looksValid) {
+      return res.status(400).json({
+        error: 'File does not look like a Netscape-format cookies.txt. First line: ' + firstLine.slice(0, 80),
+      });
+    }
+
+    // Make sure the data dir exists, then write.
+    mkdirSync(dirname(PERSISTENT_COOKIE_PATH), { recursive: true });
+    writeFileSync(PERSISTENT_COOKIE_PATH, cookies, 'utf-8');
+    const size = statSync(PERSISTENT_COOKIE_PATH).size;
+
+    // Invalidate the in-process resolution cache so the new cookies
+    // take effect on the very next transcript request.
+    resolvedCookieFile = null;
+    resolvedCookieHash = null;
+
+    console.log(`[Transcript] YouTube cookies uploaded (${size} bytes) to ${PERSISTENT_COOKIE_PATH}`);
+    return res.json({
+      success: true,
+      path: PERSISTENT_COOKIE_PATH,
+      bytes: size,
+      message: 'Cookies saved. Next transcript requests will use them.',
+    });
+  } catch (e) {
+    console.error('[Transcript] Cookie upload failed:', e);
+    return res.status(500).json({ error: e instanceof Error ? e.message : 'Upload failed' });
+  }
+});
+
+/** GET current cookie status. Useful for the setup UI / debugging. */
+router.get('/cookies/status', (_req, res) => {
+  const persistentExists = existsSync(PERSISTENT_COOKIE_PATH);
+  const envSet = !!process.env.YOUTUBE_COOKIES?.trim();
+  const source = persistentExists ? 'persistent-file' : envSet ? 'env-var' : 'none';
+  return res.json({
+    source,
+    persistentPath: PERSISTENT_COOKIE_PATH,
+    persistentExists,
+    envSet,
+  });
+});
+
+/** DELETE cookies (for clearing a bad cookie file). */
+router.delete('/cookies', (_req, res) => {
+  try {
+    if (existsSync(PERSISTENT_COOKIE_PATH)) {
+      unlinkSync(PERSISTENT_COOKIE_PATH);
+    }
+    resolvedCookieFile = null;
+    resolvedCookieHash = null;
+    return res.json({ success: true, message: 'Cookies cleared' });
+  } catch (e) {
+    return res.status(500).json({ error: e instanceof Error ? e.message : 'Delete failed' });
+  }
 });
 
 export default router;
