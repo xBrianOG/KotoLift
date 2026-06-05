@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { fetchTranscript } from '../services/transcript';
+import { fetchTranscriptSafe, type TranscriptOutcome } from '../services/transcript';
 import { extractVideoIdFromUrl } from '../utils/youtube';
+import type { VideoPlayerData } from './VideoPlayerScreen';
+
+export type { VideoPlayerData };
 
 interface VideoImportScreenProps {
-  onComplete?: (createdCount: number) => void;
   onCancel?: () => void;
-  onViewTranscript?: (data: { url: string; title: string; segments: Awaited<ReturnType<typeof fetchTranscript>>['segments']; sourceLang: string; videoId: string }) => void;
-  onOpenPlayer?: (data: { url: string; title: string; segments: Awaited<ReturnType<typeof fetchTranscript>>['segments']; sourceLang: string; videoId: string }) => void;
+  onOpenPlayer?: (data: VideoPlayerData) => void;
 }
 
 export function VideoImportScreen({ onCancel, onOpenPlayer }: VideoImportScreenProps) {
@@ -27,20 +28,34 @@ export function VideoImportScreen({ onCancel, onOpenPlayer }: VideoImportScreenP
     setLoading(true);
     setError(null);
 
-    try {
-      const result = await fetchTranscript(trimmedUrl, 'en');
+    // Always navigate to the player, even if the transcript fetch failed.
+    // The video is just an iframe embed (no anti-bot), so it will play
+    // regardless. The player screen shows a banner if the transcript
+    // is missing or failed.
+    const outcome: TranscriptOutcome = await fetchTranscriptSafe(trimmedUrl, 'en');
+
+    if (outcome.ok) {
       onOpenPlayer?.({
         url: trimmedUrl,
-        title: result.title || `Video ${videoId}`,
-        segments: result.segments,
+        title: outcome.data.title || `Video ${videoId}`,
+        segments: outcome.data.segments,
         sourceLang: 'en',
         videoId,
+        transcriptStatus: 'ok',
       });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch transcript');
-    } finally {
-      setLoading(false);
+    } else {
+      onOpenPlayer?.({
+        url: trimmedUrl,
+        title: `Video ${videoId}`,
+        segments: [],
+        sourceLang: 'en',
+        videoId,
+        transcriptStatus: outcome.status,
+        transcriptMessage: outcome.message,
+      });
     }
+
+    setLoading(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -80,7 +95,8 @@ export function VideoImportScreen({ onCancel, onOpenPlayer }: VideoImportScreenP
           marginBottom: 'var(--space-xl)',
         }}
       >
-        Paste a YouTube URL to extract subtitles and start learning with interactive transcripts.
+        Paste a YouTube URL. We'll load the video and try to fetch the transcript.
+        If the transcript isn't available, you can still watch the video.
       </p>
 
       <div style={{ width: '100%', maxWidth: 500 }}>

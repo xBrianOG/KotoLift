@@ -141,9 +141,7 @@ function App() {
       {screen === "add" && <AddCardScreen onSave={() => navigate('cards')} onNavigateToVideoImport={() => navigate('videoImport')} />}
       {screen === "videoImport" && (
         <VideoImportScreen
-          onComplete={() => { navigate('cards'); }}
           onCancel={goBack}
-          onViewTranscript={handleViewTranscript}
           onOpenPlayer={handleOpenPlayer}
         />
       )}

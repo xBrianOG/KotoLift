@@ -3,15 +3,12 @@ import { createCard, getAllCards } from '../services/cards';
 import { ensureReviewStates } from '../services/review';
 import { translateText, type SupportedLang } from '../services/api';
 import { extractVideoIdFromUrl } from '../utils/youtube';
+import { fetchTranscriptSafe, type TranscriptSegment } from '../services/transcript';
 import { VideoPlayer, type VideoPlayerHandle } from './VideoPlayer';
 import { SubtitleOverlay } from './SubtitleOverlay';
+import { CookieUploadBanner } from './CookieUploadBanner';
 
-export interface TranscriptSegment {
-  id: string;
-  startMs: number;
-  endMs: number;
-  text: string;
-}
+export type TranscriptStatus = 'ok' | 'no-transcript' | 'transient' | 'unknown';
 
 export interface VideoPlayerData {
   url: string;
@@ -19,6 +16,8 @@ export interface VideoPlayerData {
   segments: TranscriptSegment[];
   sourceLang: string;
   videoId?: string;
+  transcriptStatus: TranscriptStatus;
+  transcriptMessage?: string;
 }
 
 interface VideoPlayerScreenProps {
@@ -42,6 +41,10 @@ export function VideoPlayerScreen({ data, onBack }: VideoPlayerScreenProps) {
   const [selectedSegment, setSelectedSegment] = useState<TranscriptSegment | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [videoError, setVideoError] = useState<string | null>(null);
+  const [segments, setSegments] = useState<TranscriptSegment[]>(data.segments);
+  const [transcriptStatus, setTranscriptStatus] = useState<TranscriptStatus>(data.transcriptStatus);
+  const [transcriptMessage, setTranscriptMessage] = useState<string | undefined>(data.transcriptMessage);
+  const [retrying, setRetrying] = useState(false);
 
   const playerRef = useRef<VideoPlayerHandle>(null);
 
@@ -54,8 +57,8 @@ export function VideoPlayerScreen({ data, onBack }: VideoPlayerScreenProps) {
       : ['en', 'es'];
 
   const filteredSegments = search.trim()
-    ? data.segments.filter((s) => s.text.toLowerCase().includes(search.toLowerCase()))
-    : data.segments;
+    ? segments.filter((s) => s.text.toLowerCase().includes(search.toLowerCase()))
+    : segments;
 
   const currentSegmentIndex = filteredSegments.findIndex(
     (seg) => currentTimeMs >= seg.startMs && currentTimeMs < seg.endMs,
@@ -65,6 +68,21 @@ export function VideoPlayerScreen({ data, onBack }: VideoPlayerScreenProps) {
   const seekToSegment = (seg: TranscriptSegment) => {
     playerRef.current?.seekTo(seg.startMs / 1000);
     setSelectedSegment(seg);
+  };
+
+  const handleRetryTranscript = async () => {
+    if (retrying) return;
+    setRetrying(true);
+    const outcome = await fetchTranscriptSafe(data.url, 'en');
+    if (outcome.ok) {
+      setSegments(outcome.data.segments);
+      setTranscriptStatus('ok');
+      setTranscriptMessage(undefined);
+    } else {
+      setTranscriptStatus(outcome.status);
+      setTranscriptMessage(outcome.message);
+    }
+    setRetrying(false);
   };
 
   const checkDuplicate = async (_url: string, _startMs: number, text: string): Promise<boolean> => {
@@ -289,12 +307,22 @@ export function VideoPlayerScreen({ data, onBack }: VideoPlayerScreenProps) {
         </div>
       )}
 
+      {transcriptStatus !== 'ok' && segments.length === 0 && (
+        <TranscriptStatusBanner
+          status={transcriptStatus}
+          message={transcriptMessage}
+          retrying={retrying}
+          onRetry={handleRetryTranscript}
+        />
+      )}
+
       <div style={{ marginBottom: 'var(--space-md)' }}>
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search transcript..."
+          placeholder={segments.length > 0 ? 'Search transcript...' : 'No transcript available'}
+          disabled={segments.length === 0}
           style={{ width: '100%' }}
         />
       </div>
@@ -308,9 +336,15 @@ export function VideoPlayerScreen({ data, onBack }: VideoPlayerScreenProps) {
           background: 'var(--bg-card)',
           marginBottom: '40px',
           flexShrink: 0,
+          opacity: segments.length === 0 ? 0.5 : 1,
         }}
       >
-        {filteredSegments.map((seg) => (
+        {segments.length === 0 ? (
+          <div style={{ padding: 'var(--space-md)', color: 'var(--text-secondary)', textAlign: 'center' }}>
+            {retrying ? 'Fetching transcript…' : 'No transcript available.'}
+          </div>
+        ) : (
+          filteredSegments.map((seg) => (
           <div
             key={seg.id}
             onClick={() => seekToSegment(seg)}
@@ -361,7 +395,8 @@ export function VideoPlayerScreen({ data, onBack }: VideoPlayerScreenProps) {
               {seg.text}
             </p>
           </div>
-        ))}
+          ))
+        )}
       </div>
 
       {showConfirmModal && selectedSegment && (
@@ -432,6 +467,66 @@ export function VideoPlayerScreen({ data, onBack }: VideoPlayerScreenProps) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+interface TranscriptStatusBannerProps {
+  status: TranscriptStatus;
+  message?: string;
+  retrying: boolean;
+  onRetry: () => void;
+}
+
+function TranscriptStatusBanner({ status, message, retrying, onRetry }: TranscriptStatusBannerProps) {
+  if (status === 'transient' || status === 'unknown') {
+    return (
+      <div>
+        <CookieUploadBanner message={message} onUploadSuccess={onRetry} />
+        {retrying && (
+          <div
+            style={{
+              fontSize: 'var(--font-xs)',
+              color: 'var(--text-secondary)',
+              marginTop: 'var(--space-xs)',
+              textAlign: 'center',
+            }}
+          >
+            Retrying transcript…
+          </div>
+        )}
+        <div style={{ marginTop: 'var(--space-sm)', textAlign: 'center' }}>
+          <button
+            onClick={onRetry}
+            disabled={retrying}
+            className="btn btn-subtle"
+            style={{ padding: 'var(--space-xs) var(--space-sm)', fontSize: 'var(--font-sm)' }}
+          >
+            {retrying ? 'Retrying…' : 'Retry transcript'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // 'no-transcript': the video genuinely has no captions. yt-dlp can't help.
+  // Just show a friendly empty state, no need for the cookie upload UI.
+  return (
+    <div
+      style={{
+        background: 'var(--bg-card)',
+        border: '1px solid var(--border)',
+        borderRadius: 8,
+        padding: 'var(--space-md)',
+        marginBottom: 'var(--space-md)',
+        fontSize: 'var(--font-sm)',
+        color: 'var(--text-secondary)',
+      }}
+    >
+      <div style={{ fontWeight: 600, marginBottom: 4, color: 'var(--text)' }}>
+        No captions available
+      </div>
+      <div>{message || 'This video does not have captions. You can still watch it.'}</div>
     </div>
   );
 }
