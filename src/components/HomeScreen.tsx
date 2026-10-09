@@ -234,7 +234,10 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
           </button>
 
           <button
-            onClick={() => onNavigate('videoLearning')}
+            type="button"
+            disabled
+            aria-disabled="true"
+            aria-describedby="video-learning-unavailable"
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -243,20 +246,18 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
               background: 'transparent',
               border: 'none',
               borderRadius: 'var(--radius-md)',
-              cursor: 'pointer',
+              cursor: 'not-allowed',
               textAlign: 'left',
               transition: 'background 0.15s ease',
-              width: '100%'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--bg)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent';
+              width: '100%',
+              opacity: 0.65
             }}
           >
             <Video size={18} style={{ color: 'var(--text-tertiary)' }} />
-            <span style={{ fontWeight: 500, color: 'var(--text)', fontSize: 'var(--font-sm)' }}>Video Learning</span>
+            <span style={{ fontWeight: 500, color: 'var(--text)', fontSize: 'var(--font-sm)' }}>Video learning — Coming soon</span>
+            <span id="video-learning-unavailable" style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', border: 0 }}>
+              Video learning is temporarily unavailable.
+            </span>
           </button>
         </div>
       </div>

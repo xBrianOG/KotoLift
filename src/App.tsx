@@ -7,10 +7,6 @@ import { DrillScreen } from "./components/DrillScreen";
 import { HomeScreen } from "./components/HomeScreen";
 import { SettingsScreen } from "./components/SettingsScreen";
 import { ProfileScreen } from "./components/ProfileScreen";
-import { VideoImportScreen } from "./components/VideoImportScreen";
-import { TranscriptViewerScreen } from "./components/TranscriptViewerScreen";
-import { VideoPlayerScreen } from "./components/VideoPlayerScreen";
-import { VideoLearningScreen } from "./components/VideoLearningScreen";
 import { LanguagePicker } from "./components/LanguagePicker";
 import { AppShell } from "./components/AppShell";
 import { LoginScreen } from "./components/LoginScreen";
@@ -21,25 +17,27 @@ import { DeckListScreen } from "./components/DeckListScreen";
 import { DeckCardsScreen } from "./components/DeckCardsScreen";
 import { ImportScreen } from "./components/ImportScreen";
 import { isLoggedIn, clearAuth, devLogin, isDevMode, getStoredUser } from "./services/auth";
-import { initSettings, getLearningSettings, type LearningSettings } from "./services/settings";
+import { initSettings, type LearningSettings } from "./services/settings";
 import type { Card, Deck } from "./types";
-import type { TranscriptData } from "./components/TranscriptViewerScreen";
-import type { VideoPlayerData } from "./components/VideoPlayerScreen";
 import "./types";
 
 type Screen = "home" | "review" | "cards" | "add" | "explain" | "drill" | "settings" | "profile" | "videoImport" | "transcript" | "videoPlayer" | "lessons" | "vocabulary" | "assessment" | "deckList" | "deckCards" | "import" | "videoLearning";
+const DISABLED_VIDEO_SCREENS = new Set<string>(["videoImport", "videoPlayer", "videoLearning", "transcript"]);
+
+function isDisabledVideoScreen(screen: string): boolean {
+  return DISABLED_VIDEO_SCREENS.has(screen);
+}
 
 function App() {
   const [history, setHistory] = useState<Screen[]>(["home"]);
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
-  const [transcriptData, setTranscriptData] = useState<TranscriptData | null>(null);
-  const [videoPlayerData, setVideoPlayerData] = useState<VideoPlayerData | null>(null);
   const [pendingExplainCard, setPendingExplainCard] = useState<Card | null>(null);
   const [settings, setSettings] = useState<LearningSettings | null>(null);
   const [selectedDeck, setSelectedDeck] = useState<Deck | null>(null);
   const [deckCards, setDeckCards] = useState<Card[]>([]);
 
-  const screen = history[history.length - 1];
+  const rawScreen = history[history.length - 1];
+  const screen = isDisabledVideoScreen(rawScreen) ? "home" : rawScreen;
 
   useEffect(() => {
     // Prime Dexie settings cache on startup
@@ -52,18 +50,16 @@ function App() {
     } else {
       setAuthenticated(isLoggedIn());
     }
-
-    const saved = localStorage.getItem('transcript.last');
-    if (saved) {
-      try {
-        setTranscriptData(JSON.parse(saved));
-      } catch {
-        // ignore parse errors
-      }
-    }
   }, []);
 
+  useEffect(() => {
+    if (isDisabledVideoScreen(rawScreen)) {
+      setHistory(["home"]);
+    }
+  }, [rawScreen]);
+
   const navigate = (to: string) => {
+    if (isDisabledVideoScreen(to)) return;
     const valid = ["home", "review", "drill", "cards", "add", "explain", "settings", "profile", "videoImport", "transcript", "videoPlayer", "lessons", "vocabulary", "assessment", "deckList", "deckCards", "import", "videoLearning"] as const;
     if ((valid as readonly string[]).includes(to)) {
       setHistory(h => [...h, to as Screen]);
@@ -82,17 +78,6 @@ function App() {
     clearAuth();
     setAuthenticated(false);
     setHistory(["home"]);
-  };
-
-  const handleViewTranscript = (data: TranscriptData) => {
-    setTranscriptData(data);
-    localStorage.setItem('transcript.last', JSON.stringify(data));
-    navigate('transcript');
-  };
-
-  const handleOpenPlayer = (data: VideoPlayerData) => {
-    setVideoPlayerData(data);
-    navigate('videoPlayer');
   };
 
   const handleExplainCard = (card: Card) => {
@@ -138,28 +123,7 @@ function App() {
           onExplain={handleExplainCard}
         />
       )}
-      {screen === "add" && <AddCardScreen onSave={() => navigate('cards')} onNavigateToVideoImport={() => navigate('videoImport')} />}
-      {screen === "videoImport" && (
-        <VideoImportScreen
-          onCancel={goBack}
-          onOpenPlayer={handleOpenPlayer}
-        />
-      )}
-      {screen === "transcript" && transcriptData && (
-        <TranscriptViewerScreen
-          data={transcriptData}
-          onBack={goBack}
-        />
-      )}
-      {screen === "videoPlayer" && videoPlayerData && (
-        <VideoPlayerScreen
-          data={videoPlayerData}
-          onBack={goBack}
-        />
-      )}
-      {screen === "videoLearning" && (
-        <VideoLearningScreen onBack={goBack} />
-      )}
+      {screen === "add" && <AddCardScreen onSave={() => navigate('cards')} />}
       {screen === "explain" && <ExplainScreen />}
       {screen === "settings" && <SettingsScreen settings={settings} onBack={goBack} onSignOut={handleLogout} userName={getStoredUser()?.name} />}
       {screen === "profile" && <ProfileScreen onBack={goBack} />}
