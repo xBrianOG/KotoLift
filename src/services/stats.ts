@@ -15,11 +15,11 @@ export type { StoredUserStats as UserStats };
 
 /* ── helpers ── */
 
-async function readStats(): Promise<StoredUserStats & { totalCards: number }> {
+async function readStats(): Promise<StoredUserStats & { totalCards: number | null }> {
   const stored = await db.userStats.get('singleton');
   
   // Get card count using existing function
-  let totalCards = 0;
+  let totalCards: number | null = null;
   try {
     const cards = await getAllCards();
     totalCards = cards.length;
@@ -45,15 +45,25 @@ function migrateLegacyStats(): StoredUserStats {
   return { id: 'singleton', streak, stars, streakDate, lastSessionDate };
 }
 
+function toStoredStats(stats: StoredUserStats & { totalCards: number | null }): StoredUserStats {
+  return {
+    id: stats.id,
+    streak: stats.streak,
+    stars: stats.stars,
+    streakDate: stats.streakDate,
+    lastSessionDate: stats.lastSessionDate,
+  };
+}
+
 /* ── public API ── */
 
-export async function getStats(): Promise<StoredUserStats & { totalCards: number }> {
+export async function getStats(): Promise<StoredUserStats & { totalCards: number | null }> {
   return readStats();
 }
 
 export async function addStars(count: number): Promise<void> {
   const stats = await readStats();
-  await db.userStats.put({ ...stats, stars: stats.stars + count });
+  await db.userStats.put({ ...toStoredStats(stats), stars: stats.stars + count });
 }
 
 export async function updateStreak(): Promise<void> {
@@ -65,7 +75,7 @@ export async function updateStreak(): Promise<void> {
   const newStreak = stats.streakDate === yesterday ? stats.streak + 1 : 1;
 
   await db.userStats.put({
-    ...stats,
+    ...toStoredStats(stats),
     streak: newStreak,
     streakDate: today,
     lastSessionDate: today,

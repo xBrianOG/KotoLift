@@ -63,6 +63,21 @@ export function storeAuth(result: AuthResult): void {
   localStorage.setItem(USER_KEY, JSON.stringify(result.user));
 }
 
+export async function verifyGoogleAuthToken(token: string): Promise<AuthResult> {
+  const response = await fetch(`${API_BASE}/api/auth/google/verify?token=${encodeURIComponent(token)}`);
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Google sign in verification failed' }));
+    throw new Error(error.error || 'Google sign in verification failed');
+  }
+
+  const authResult: AuthResult = await response.json();
+  if (!authResult.user?.id) {
+    throw new Error('Google sign in verification did not return a user id');
+  }
+  return authResult;
+}
+
 export function clearAuth(): void {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
@@ -165,6 +180,21 @@ export async function signInWithGoogle(): Promise<AuthResult> {
   }
 
   try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const redirectToken = urlParams.get('auth_token');
+    const redirectError = urlParams.get('auth_error');
+
+    if (redirectError) {
+      throw new Error(decodeURIComponent(redirectError));
+    }
+
+    if (redirectToken) {
+      const authResult = await verifyGoogleAuthToken(redirectToken);
+      window.history.replaceState({}, document.title, window.location.pathname);
+      storeAuth(authResult);
+      return authResult;
+    }
+
     // Get OAuth URL from backend
     const response = await fetch(`${API_BASE}/api/auth/google`, {
       method: 'POST',
@@ -204,7 +234,7 @@ export async function signInWithGoogle(): Promise<AuthResult> {
       }
 
       // Listen for messages from the popup
-      const checkAuth = setInterval(() => {
+      const checkAuth = setInterval(async () => {
         try {
           if (authWindow.closed) {
             clearInterval(checkAuth);
@@ -215,9 +245,13 @@ export async function signInWithGoogle(): Promise<AuthResult> {
             if (token && userStr) {
               localStorage.removeItem('google_auth_token');
               localStorage.removeItem('google_auth_user');
-              const user = JSON.parse(userStr);
-              storeAuth({ token, user });
-              resolve({ token, user });
+              JSON.parse(userStr);
+              verifyGoogleAuthToken(token)
+                .then(authResult => {
+                  storeAuth(authResult);
+                  resolve(authResult);
+                })
+                .catch(reject);
             } else {
               reject(new Error('Sign in was cancelled'));
             }
@@ -230,8 +264,6 @@ export async function signInWithGoogle(): Promise<AuthResult> {
       // Also check for token in current URL (fallback for redirect flow)
       const urlParams = new URLSearchParams(window.location.search);
       const token = urlParams.get('auth_token');
-      const name = urlParams.get('auth_name');
-      const email = urlParams.get('auth_email');
       const error = urlParams.get('auth_error');
 
       if (error) {
@@ -243,18 +275,14 @@ export async function signInWithGoogle(): Promise<AuthResult> {
       if (token) {
         clearInterval(checkAuth);
         authWindow.close();
-        
-        // Clean URL
-        window.history.replaceState({}, document.title, window.location.pathname);
-        
-        const user: User = {
-          id: `google-${Date.now()}`,
-          email: email || undefined,
-          name: name || undefined
-        };
-        
-        storeAuth({ token, user });
-        resolve({ token, user });
+
+        verifyGoogleAuthToken(token)
+          .then(authResult => {
+            window.history.replaceState({}, document.title, window.location.pathname);
+            storeAuth(authResult);
+            resolve(authResult);
+          })
+          .catch(reject);
       }
     });
   } catch (err: any) {

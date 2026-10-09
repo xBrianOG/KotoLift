@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { getAllCards, deleteCard, updateCard, searchCards, getAllTags } from '../services/cards';
+import { getAllCards, deleteCard, updateCard, filterCards, deriveTags } from '../services/cards';
 import type { Card } from '../types';
 import { getCardSourceText, getCardTranslation } from '../types';
 import { Search, ChevronDown, Edit2, Trash2, Info, X } from 'lucide-react';
@@ -159,14 +159,24 @@ function Dropdown({
 }
 
 export function CardListScreen({ onExplain }: { onExplain?: (card: Card) => void } = {}) {
-  const [cards, setCards] = useState<Card[]>([]);
-  const [tags, setTags] = useState<string[]>([]);
+  const [allCards, setAllCards] = useState<Card[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [editingCard, setEditingCard] = useState<Card | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Card | null>(null);
   const [secondaryLang, setSecondaryLangState] = useState<SecondaryLanguage>(() => getSecondaryLang());
+  const requestIdRef = useRef(0);
+
+  const cards = useMemo(
+    () => filterCards(allCards, debouncedQuery, selectedTags),
+    [allCards, debouncedQuery, selectedTags],
+  );
+
+  const tags = useMemo(() => deriveTags(allCards), [allCards]);
 
   const handleSecondaryLangChange = async (lang: SecondaryLanguage) => {
     setSecondaryLangState(lang);
@@ -179,18 +189,29 @@ export function CardListScreen({ onExplain }: { onExplain?: (card: Card) => void
   }, [searchQuery]);
 
   const loadCards = useCallback(async () => {
-    if (debouncedQuery || selectedTags.length > 0) {
-      const results = await searchCards(debouncedQuery, selectedTags);
-      setCards(results);
-    } else {
-      const allCards = await getAllCards();
-      setCards(allCards);
+    const requestId = requestIdRef.current + 1;
+    requestIdRef.current = requestId;
+    setLoading(true);
+    setError(null);
+
+    try {
+      const loadedCards = await getAllCards();
+      if (requestId !== requestIdRef.current) return;
+      setAllCards(loadedCards);
+      setHasLoaded(true);
+    } catch (err) {
+      if (requestId !== requestIdRef.current) return;
+      console.error('Failed to load cards:', err);
+      setError('Unable to load your cards. The server may still be waking up.');
+    } finally {
+      if (requestId === requestIdRef.current) {
+        setLoading(false);
+      }
     }
-  }, [debouncedQuery, selectedTags]);
+  }, []);
 
   useEffect(() => {
     loadCards();
-    getAllTags().then(setTags);
   }, [loadCards]);
 
   const handleDelete = async (card: Card) => {
@@ -225,7 +246,7 @@ export function CardListScreen({ onExplain }: { onExplain?: (card: Card) => void
           fontSize: 'var(--font-sm)', 
           color: 'var(--text-tertiary)' 
         }}>
-          {cards.length} cards
+          {hasLoaded ? `${cards.length} cards` : 'Loading cards'}
         </p>
       </div>
 
@@ -292,8 +313,47 @@ export function CardListScreen({ onExplain }: { onExplain?: (card: Card) => void
         )}
       </div>
 
+      {error && hasLoaded && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 'var(--space-md)',
+          padding: 'var(--space-md)',
+          marginBottom: 'var(--space-lg)',
+          background: 'var(--danger-light)',
+          borderRadius: 'var(--radius-md)',
+          color: 'var(--danger)',
+          fontSize: 'var(--font-sm)'
+        }}>
+          <span>{error}</span>
+          <button className="btn btn-secondary" onClick={loadCards} disabled={loading}>
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Card List */}
-      {cards.length === 0 ? (
+      {loading && !hasLoaded ? (
+        <div style={{
+          textAlign: 'center',
+          padding: 'var(--space-3xl)',
+          color: 'var(--text-tertiary)'
+        }}>
+          <p style={{ fontSize: 'var(--font-base)' }}>Loading your cards...</p>
+        </div>
+      ) : error && !hasLoaded ? (
+        <div style={{
+          textAlign: 'center',
+          padding: 'var(--space-3xl)',
+          color: 'var(--text-tertiary)'
+        }}>
+          <p style={{ fontSize: 'var(--font-base)', color: 'var(--danger)', marginBottom: 'var(--space-md)' }}>{error}</p>
+          <button className="btn btn-secondary" onClick={loadCards} disabled={loading}>
+            Retry
+          </button>
+        </div>
+      ) : cards.length === 0 ? (
         <div style={{ 
           textAlign: 'center', 
           padding: 'var(--space-3xl)',

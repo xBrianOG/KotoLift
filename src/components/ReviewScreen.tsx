@@ -22,41 +22,59 @@ export const ReviewScreen: React.FC<{ onExplain?: (card: Card) => void; onNaviga
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [completed, setCompleted] = useState(false);
   const [score, setScore] = useState<number>(0);
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
   const swipeCooldown = useRef(false);
+  const requestIdRef = useRef(0);
 
   const loadCards = useCallback(async () => {
+    const requestId = requestIdRef.current + 1;
+    requestIdRef.current = requestId;
     setLoading(true);
-    const dir = DIRECTIONS.find(d => d.value === direction)!;
-    
-    let dueCards: Array<ReviewState & { card: Card }>;
-    if (direction === 'mixed') {
-      dueCards = practiceMode
-        ? await getMixedPracticeReviewStates([
-            { promptLang: 'ja', answerLang: 'en' },
-            { promptLang: 'ja', answerLang: 'es' },
-            { promptLang: 'en', answerLang: 'ja' },
-            { promptLang: 'es', answerLang: 'ja' },
-          ])
-        : await getMixedReviewStates([
-            { promptLang: 'ja', answerLang: 'en' },
-            { promptLang: 'ja', answerLang: 'es' },
-            { promptLang: 'en', answerLang: 'ja' },
-            { promptLang: 'es', answerLang: 'ja' },
-          ]);
-    } else {
-      dueCards = practiceMode
-        ? await getPracticeReviewStates(dir.from, dir.to)
-        : await getDueReviewStates(dir.from, dir.to);
+    setLoadError(null);
+
+    try {
+      const dir = DIRECTIONS.find(d => d.value === direction)!;
+      let dueCards: Array<ReviewState & { card: Card }>;
+
+      if (direction === 'mixed') {
+        dueCards = practiceMode
+          ? await getMixedPracticeReviewStates([
+              { promptLang: 'ja', answerLang: 'en' },
+              { promptLang: 'ja', answerLang: 'es' },
+              { promptLang: 'en', answerLang: 'ja' },
+              { promptLang: 'es', answerLang: 'ja' },
+            ])
+          : await getMixedReviewStates([
+              { promptLang: 'ja', answerLang: 'en' },
+              { promptLang: 'ja', answerLang: 'es' },
+              { promptLang: 'en', answerLang: 'ja' },
+              { promptLang: 'es', answerLang: 'ja' },
+            ]);
+      } else {
+        dueCards = practiceMode
+          ? await getPracticeReviewStates(dir.from, dir.to)
+          : await getDueReviewStates(dir.from, dir.to);
+      }
+
+      if (requestId !== requestIdRef.current) return;
+      setCards(dueCards);
+      setCurrentIndex(0);
+      setShowAnswer(false);
+      setHasLoaded(true);
+    } catch (err) {
+      if (requestId !== requestIdRef.current) return;
+      console.error('Failed to load review cards:', err);
+      setLoadError('Unable to load review cards. The server may still be waking up.');
+    } finally {
+      if (requestId === requestIdRef.current) {
+        setLoading(false);
+      }
     }
-    
-    setCards(dueCards);
-    setCurrentIndex(0);
-    setShowAnswer(false);
-    setLoading(false);
   }, [direction, practiceMode]);
 
   useEffect(() => {
@@ -112,7 +130,6 @@ export const ReviewScreen: React.FC<{ onExplain?: (card: Card) => void; onNaviga
   };
 
   const currentCard = cards[currentIndex];
-  const dir = DIRECTIONS.find(d => d.value === direction)!;
 
   // Completion screen
   if (completed) {
@@ -176,7 +193,7 @@ export const ReviewScreen: React.FC<{ onExplain?: (card: Card) => void; onNaviga
   }
 
   // Loading state
-  if (loading) {
+  if (loading && !hasLoaded) {
     return (
       <div style={{
         position: 'fixed',
@@ -187,7 +204,29 @@ export const ReviewScreen: React.FC<{ onExplain?: (card: Card) => void; onNaviga
         justifyContent: 'center',
         zIndex: 200
       }}>
-        <p style={{ color: 'var(--text-secondary)' }}>Loading...</p>
+        <p style={{ color: 'var(--text-secondary)' }}>Loading your cards...</p>
+      </div>
+    );
+  }
+
+  if (loadError && !hasLoaded) {
+    return (
+      <div style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'var(--bg)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 200,
+        padding: 'var(--space-xl)'
+      }}>
+        <div style={{ textAlign: 'center', maxWidth: 320 }}>
+          <p style={{ color: 'var(--danger)', marginBottom: 'var(--space-md)' }}>{loadError}</p>
+          <button className="btn btn-secondary" onClick={loadCards} disabled={loading}>
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
@@ -247,35 +286,54 @@ export const ReviewScreen: React.FC<{ onExplain?: (card: Card) => void; onNaviga
           padding: 'var(--space-xl)'
         }}>
           <div style={{ textAlign: 'center', maxWidth: 280 }}>
-            <p style={{ 
-              fontSize: 'var(--font-lg)', 
-              fontWeight: 500, 
-              color: 'var(--text)',
-              marginBottom: 'var(--space-sm)'
-            }}>
-              All caught up!
-            </p>
-            <p style={{ 
-              color: 'var(--text-tertiary)', 
-              fontSize: 'var(--font-sm)',
-              marginBottom: 'var(--space-lg)'
-            }}>
-              No cards due for review right now.
-            </p>
-            <button
-              className="btn btn-secondary"
-              onClick={() => setPracticeMode(true)}
-            >
-              Practice Mode
-            </button>
+            {loadError ? (
+              <>
+                <p style={{ color: 'var(--danger)', fontSize: 'var(--font-sm)', marginBottom: 'var(--space-lg)' }}>
+                  {loadError}
+                </p>
+                <button className="btn btn-secondary" onClick={loadCards} disabled={loading}>
+                  Retry
+                </button>
+              </>
+            ) : loading ? (
+              <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--font-sm)' }}>
+                Loading your cards...
+              </p>
+            ) : (
+              <>
+                <p style={{ 
+                  fontSize: 'var(--font-lg)', 
+                  fontWeight: 500, 
+                  color: 'var(--text)',
+                  marginBottom: 'var(--space-sm)'
+                }}>
+                  All caught up!
+                </p>
+                <p style={{ 
+                  color: 'var(--text-tertiary)', 
+                  fontSize: 'var(--font-sm)',
+                  marginBottom: 'var(--space-lg)'
+                }}>
+                  No cards due for review right now.
+                </p>
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => setPracticeMode(true)}
+                >
+                  Practice Mode
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
     );
   }
 
-  const promptText = getCardSourceText(currentCard.card) || getCardTranslation(currentCard.card, dir.from) || '';
-  const answerText = getCardTranslation(currentCard.card, dir.to) || getCardSourceText(currentCard.card) || '';
+  const promptLang = currentCard.promptLang;
+  const answerLang = currentCard.answerLang;
+  const promptText = getCardTranslation(currentCard.card, promptLang) || getCardSourceText(currentCard.card) || '';
+  const answerText = getCardTranslation(currentCard.card, answerLang) || getCardSourceText(currentCard.card) || '';
   const jaContent = currentCard.card.jaText || currentCard.card.translations?.ja || '';
   const enContent = currentCard.card.enText || currentCard.card.translations?.en || '';
   const esContent = currentCard.card.esText || currentCard.card.translations?.es || '';
@@ -291,6 +349,23 @@ export const ReviewScreen: React.FC<{ onExplain?: (card: Card) => void; onNaviga
       zIndex: 200
     }}>
       {/* Header */}
+      {loadError && (
+        <div style={{
+          padding: 'var(--space-sm) var(--space-lg)',
+          background: 'var(--danger-light)',
+          color: 'var(--danger)',
+          fontSize: 'var(--font-sm)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 'var(--space-md)'
+        }}>
+          <span>{loadError}</span>
+          <button className="btn btn-secondary" onClick={loadCards} disabled={loading}>
+            Retry
+          </button>
+        </div>
+      )}
       <div style={{
         display: 'flex',
         alignItems: 'center',
@@ -393,7 +468,7 @@ export const ReviewScreen: React.FC<{ onExplain?: (card: Card) => void; onNaviga
           {/* Prompt */}
           <div style={{ marginBottom: showAnswer ? 'var(--space-xl)' : 0 }}>
             <span className="lang-badge" style={{ marginBottom: 'var(--space-md)', display: 'inline-block' }}>
-              {dir.from.toUpperCase()}
+              {promptLang.toUpperCase()}
             </span>
             <p style={{
               fontSize: 'clamp(1.5rem, 5vw, 2.5rem)',
@@ -413,7 +488,7 @@ export const ReviewScreen: React.FC<{ onExplain?: (card: Card) => void; onNaviga
               borderTop: '1px solid var(--border)'
             }}>
               <span className="lang-badge" style={{ marginBottom: 'var(--space-md)', display: 'inline-block' }}>
-                {dir.to.toUpperCase()}
+                {answerLang.toUpperCase()}
               </span>
               <p style={{
                 fontSize: 'clamp(1.25rem, 4vw, 1.75rem)',
@@ -430,8 +505,8 @@ export const ReviewScreen: React.FC<{ onExplain?: (card: Card) => void; onNaviga
                 justifyContent: 'center'
               }}>
                 <AudioControls
-                  text={dir.to === 'en' ? answerText : promptText}
-                  lang={dir.to === 'en' ? 'en' : dir.to === 'es' ? 'es' : 'ja'}
+                  text={answerLang === 'en' ? answerText : promptText}
+                  lang={answerLang === 'en' ? 'en' : answerLang === 'es' ? 'es' : 'ja'}
                   showPractice={practiceMode}
                   jaContent={jaContent}
                   enContent={enContent}
