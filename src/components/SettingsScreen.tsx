@@ -4,7 +4,6 @@ import {
   getLearningSettings,
   setNativeLang,
   setLearningMode,
-  setPreferWhisper,
   setQuizSize,
   setDailyReminder,
   setCustomBackground,
@@ -55,11 +54,6 @@ export function SettingsScreen({ onBack, onSignOut, settings: initialSettings, u
   const handleLearningModeChange = async (mode: LearningMode) => {
     await setLearningMode(mode)
     setSettings(s => s ? { ...s, learningMode: mode } : s)
-  }
-
-  const handlePreferWhisperChange = async (prefer: boolean) => {
-    await setPreferWhisper(prefer)
-    setSettings(s => s ? { ...s, preferWhisper: prefer } : s)
   }
 
   const handlePreferredTTSLangChange = async (lang: TTSLanguage) => {
@@ -202,12 +196,17 @@ export function SettingsScreen({ onBack, onSignOut, settings: initialSettings, u
               <option value="mixed">Mixed</option>
             </select>
           </div>
-          <div className="flex-between p-md">
-            <span className="font-medium">Video Transcription</span>
+          <div className="flex-between p-md" style={{ opacity: 0.65 }}>
+            <div>
+              <span className="font-medium">Video transcription — Coming soon</span>
+              <p className="text-xs text-secondary mt-xs">Video learning is temporarily unavailable.</p>
+            </div>
             <select
               value={settings.preferWhisper ? 'whisper' : 'captions'}
-              onChange={(e) => handlePreferWhisperChange(e.target.value === 'whisper')}
-              className="bg-transparent border-none text-secondary text-right font-medium cursor-pointer outline-none"
+              disabled
+              aria-disabled="true"
+              className="bg-transparent border-none text-secondary text-right font-medium outline-none"
+              style={{ cursor: 'not-allowed' }}
             >
               <option value="captions">Prefer YouTube Captions</option>
               <option value="whisper">Always use Whisper</option>

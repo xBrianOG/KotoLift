@@ -4,10 +4,9 @@ import { ensureReviewStates } from '../services/review';
 
 interface AddCardScreenProps {
   onSave: () => void;
-  onNavigateToVideoImport?: () => void;
 }
 
-export function AddCardScreen({ onSave, onNavigateToVideoImport }: AddCardScreenProps) {
+export function AddCardScreen({ onSave }: AddCardScreenProps) {
   const [jaText, setJaText] = useState('');
   const [enText, setEnText] = useState('');
   const [esText, setEsText] = useState('');
@@ -130,15 +129,19 @@ export function AddCardScreen({ onSave, onNavigateToVideoImport }: AddCardScreen
           {saving ? 'Saving...' : 'Save Card'}
         </button>
 
-        {onNavigateToVideoImport && (
-          <button 
-            type="button"
-            onClick={onNavigateToVideoImport}
-            className="btn btn-secondary btn-full"
-          >
-            🎬 Import from video
-          </button>
-        )}
+        <button 
+          type="button"
+          className="btn btn-secondary btn-full"
+          disabled
+          aria-disabled="true"
+          aria-describedby="video-import-unavailable"
+          style={{ opacity: 0.65, cursor: 'not-allowed' }}
+        >
+          Import from video — Coming soon
+        </button>
+        <p id="video-import-unavailable" className="text-secondary text-sm" style={{ textAlign: 'center' }}>
+          Video import is temporarily unavailable. Manual flashcards still work.
+        </p>
       </form>
     </div>
   );
