@@ -8,7 +8,7 @@ type HomeScreenProps = {
 
 export function HomeScreen({ onNavigate }: HomeScreenProps) {
   const [streak, setStreak] = useState(0);
-  const [totalCards, setTotalCards] = useState(0);
+  const [totalCards, setTotalCards] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [greeting, setGreeting] = useState('Good morning');
 
@@ -18,11 +18,16 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
     else if (hour < 17) setGreeting('Good afternoon');
     else setGreeting('Good evening');
 
-    getStats().then(stats => {
-      setStreak(stats.streak);
-      setTotalCards(stats.totalCards);
-      setLoading(false);
-    });
+    getStats()
+      .then(stats => {
+        setStreak(stats.streak);
+        setTotalCards(stats.totalCards);
+      })
+      .catch(err => {
+        console.error('Failed to load stats:', err);
+        setTotalCards(null);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   return (
@@ -134,7 +139,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
             fontWeight: 600, 
             color: 'var(--text)'
           }}>
-            {loading ? '—' : totalCards}
+            {loading ? '—' : totalCards ?? 'Unavailable'}
           </div>
         </div>
         

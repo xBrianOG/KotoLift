@@ -12,6 +12,19 @@ const MILLIS_PER_DAY = 24 * 60 * 60 * 1_000;
 const TEN_MINUTES = 10 * 60 * 1_000;
 const DEFAULT_EF = 2.5;
 
+async function attachCardsToStates<T extends ReviewState>(states: T[]): Promise<Array<T & { card: Card }>> {
+  const cardIds = [...new Set(states.map(s => s.cardId))];
+  if (cardIds.length === 0) return [];
+
+  const allCards = await getAllCards();
+  const cards = allCards.filter(c => cardIds.includes(c.id));
+  const cardMap = new Map(cards.map(c => [c.id, c]));
+
+  return states
+    .map(state => ({ ...state, card: cardMap.get(state.cardId)! }))
+    .filter(item => item.card);
+}
+
 /** SM-2 rating mapping: again=0, good=3, easy=5 */
 function ratingToQuality(rating: Rating): number {
   switch (rating) {
@@ -44,14 +57,7 @@ export async function getDueReviewStates(
     .sort((a, b) => a.nextReviewAt - b.nextReviewAt)
     .slice(0, limit);
 
-  const cardIds = [...new Set(sortedStates.map(s => s.cardId))];
-  const allCards = await getAllCards();
-  const cards = allCards.filter(c => cardIds.includes(c.id));
-  const cardMap = new Map(cards.map(c => [c.id, c]));
-
-  return sortedStates
-    .map(state => ({ ...state, card: cardMap.get(state.cardId)! }))
-    .filter(item => item.card);
+  return attachCardsToStates(sortedStates);
 }
 
 export async function getMixedReviewStates(
@@ -59,7 +65,7 @@ export async function getMixedReviewStates(
   limit = 1000
 ): Promise<Array<ReviewState & { card: Card }>> {
   const now = Date.now();
-  const allDue: Array<ReviewState & { card: Card }> = [];
+  const allDue: ReviewState[] = [];
 
   for (const dir of directions) {
     const due = await db.reviewStates
@@ -68,18 +74,12 @@ export async function getMixedReviewStates(
       .and(rs => rs.promptLang === dir.promptLang && rs.answerLang === dir.answerLang)
       .toArray();
 
-    const cardIds = [...new Set(due.map(s => s.cardId))];
-    const allCards = await getAllCards();
-    const cards = allCards.filter(c => cardIds.includes(c.id));
-    const cardMap = new Map(cards.map(c => [c.id, c]));
-
-    for (const state of due) {
-      const card = cardMap.get(state.cardId);
-      if (card) allDue.push({ ...state, card });
-    }
+    allDue.push(...due);
   }
 
-  return allDue
+  const withCards = await attachCardsToStates(allDue);
+
+  return withCards
     .sort(() => Math.random() - 0.5)
     .slice(0, limit);
 }
@@ -96,14 +96,7 @@ export async function getPracticeReviewStates(
 
   const shuffled = allStates.sort(() => Math.random() - 0.5).slice(0, limit);
 
-  const cardIds = [...new Set(shuffled.map(s => s.cardId))];
-  const allCards = await getAllCards();
-  const cards = allCards.filter(c => cardIds.includes(c.id));
-  const cardMap = new Map(cards.map(c => [c.id, c]));
-
-  return shuffled
-    .map(state => ({ ...state, card: cardMap.get(state.cardId)! }))
-    .filter(item => item.card);
+  return attachCardsToStates(shuffled);
 }
 
 export async function getMixedPracticeReviewStates(
@@ -117,14 +110,7 @@ export async function getMixedPracticeReviewStates(
 
   const shuffled = filtered.sort(() => Math.random() - 0.5).slice(0, limit);
 
-  const cardIds = [...new Set(shuffled.map(s => s.cardId))];
-  const allCards = await getAllCards();
-  const cards = allCards.filter(c => cardIds.includes(c.id));
-  const cardMap = new Map(cards.map(c => [c.id, c]));
-
-  return shuffled
-    .map(state => ({ ...state, card: cardMap.get(state.cardId)! }))
-    .filter(item => item.card);
+  return attachCardsToStates(shuffled);
 }
 
 /** SM-2 spaced repetition rating */
